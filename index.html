@@ -680,9 +680,12 @@ async function apiCall(action, payload = {}) {
   const body = { ...payload };
   if (accessToken) body.token = accessToken;
   
+  // ✅ สำคัญ: ใช้ text/plain เพื่อเลี่ยง CORS preflight
   const response = await fetch(url.toString(), {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 
+      'Content-Type': 'text/plain;charset=utf-8'  // ← เปลี่ยนตรงนี้
+    },
     body: JSON.stringify(body)
   });
   
@@ -691,7 +694,6 @@ async function apiCall(action, payload = {}) {
   if (!result.ok) throw new Error(result.error || 'เกิดข้อผิดพลาด');
   return result.data;
 }
-
 function toast(message) { const el = $('#toast'); el.textContent = message; el.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('show'), 3500); }
 function err(e) { return e && e.message ? e.message : 'เกิดข้อผิดพลาด'; }
 function isAuthError(e) { const m = err(e); return m.includes('เข้าสู่ระบบ') || m.includes('เซสชัน'); }
