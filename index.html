@@ -52,14 +52,13 @@ body {
 .eyebrow { font-size: 11px; letter-spacing: 2px; opacity: 0.9; text-transform: uppercase; font-weight: 600; color: rgba(255,255,255,0.85); }
 .topbar-content h1 { font-size: 22px; font-weight: 700; margin: 0; letter-spacing: 0.5px; text-shadow: 0 2px 4px rgba(0,0,0,0.2); line-height: 1.2; }
 .topbar-subtitle { font-size: 13px; color: rgba(255,255,255,0.9); margin: 0; font-weight: 400; }
-.topbar-right { display: flex; gap: var(--space-3); align-items: center; }
+.topbar-right { display: flex; gap: var(--space-2); align-items: center; flex-wrap: wrap; justify-content: flex-end; }
+.topbar-right .btn { padding: var(--space-2) var(--space-4); font-size: 13px; }
 .session-badge {
   background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3);
   padding: var(--space-2) var(--space-4); border-radius: var(--radius-xl);
-  font-size: 13px; font-weight: 500; backdrop-filter: blur(10px);
-  box-shadow: var(--shadow-sm); transition: all 0.2s ease; white-space: nowrap;
+  font-size: 13px; font-weight: 500; backdrop-filter: blur(10px); white-space: nowrap;
 }
-.session-badge:hover { background: rgba(255,255,255,0.25); transform: translateY(-1px); }
 .app-container { max-width: 1400px; margin: 0 auto; padding: var(--space-6); min-height: calc(100vh - 100px); display: flex; flex-direction: column; }
 .loading-overlay {
   position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -87,8 +86,6 @@ body {
 }
 .tab:hover { color: var(--primary); background: var(--gray-50); }
 .tab.active { color: var(--primary); border-bottom-color: var(--accent); font-weight: 600; background: var(--gray-50); }
-.tab.logout { margin-left: auto; color: var(--danger); }
-.tab.logout:hover { background: var(--danger-light); }
 .view {
   display: none; background: #fff; border: 1px solid var(--gray-200);
   border-radius: var(--radius-lg); padding: var(--space-8);
@@ -108,14 +105,14 @@ body {
 }
 .section-heading h2 { font-size: 24px; margin: 0 0 var(--space-1) 0; font-weight: 700; color: var(--primary); letter-spacing: -0.3px; }
 .section-heading p { color: var(--gray-600); margin: 0; font-size: 13px; line-height: 1.5; }
-.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: var(--space-4); margin-bottom: var(--space-6); }
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: var(--space-5); margin-bottom: var(--space-6); }
 .card {
   border: 1px solid var(--gray-200); border-radius: var(--radius-lg);
   padding: var(--space-5); background: #fff; transition: all 0.3s ease;
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-sm); display: flex; flex-direction: column;
 }
 .card:hover { box-shadow: var(--shadow-lg); border-color: var(--accent-light); transform: translateY(-3px); }
-.card h3 { margin: 0 0 var(--space-2) 0; font-size: 17px; font-weight: 600; color: var(--primary); line-height: 1.4; }
+.card h3 { margin: 0 0 var(--space-2) 0; font-size: 17px; font-weight: 700; color: var(--primary); line-height: 1.4; }
 .card .meta { color: var(--gray-600); font-size: 12px; margin-top: var(--space-2); line-height: 1.6; }
 .card .btn { margin-top: var(--space-3); }
 .card-actions { display: flex; gap: var(--space-2); margin-top: var(--space-4); flex-wrap: wrap; }
@@ -132,7 +129,7 @@ body {
 .empty {
   color: var(--gray-500); padding: var(--space-12); text-align: center;
   border: 2px dashed var(--gray-300); border-radius: var(--radius-lg);
-  font-size: 15px; background: var(--gray-50);
+  font-size: 15px; background: var(--gray-50); grid-column: 1 / -1;
 }
 .empty::before { content: '📋'; display: block; font-size: 48px; margin-bottom: var(--space-4); opacity: 0.5; }
 .btn {
@@ -153,8 +150,6 @@ body {
 .ghost:hover { background: var(--gray-200); border-color: var(--gray-400); }
 .danger { background: linear-gradient(135deg, var(--danger) 0%, #b91c1c 100%); color: #fff; }
 .danger:hover { background: linear-gradient(135deg, #b91c1c 0%, var(--danger) 100%); }
-.success-btn { background: linear-gradient(135deg, var(--success) 0%, #047857 100%); color: #fff; }
-.success-btn:hover { background: linear-gradient(135deg, #047857 0%, var(--success) 100%); }
 label { display: block; font-weight: 600; font-size: 13px; color: var(--gray-700); margin-bottom: var(--space-2); }
 input, select, textarea {
   width: 100%; padding: var(--space-3) var(--space-4);
@@ -187,23 +182,49 @@ input::placeholder, textarea::placeholder { color: var(--gray-400); }
   margin-top: 0; font-size: 28px; font-weight: 700; color: var(--primary);
   text-align: center; margin-bottom: var(--space-6); letter-spacing: -0.5px;
 }
-.login-card .btn { margin-top: var(--space-4); width: 100%; padding: var(--space-3) var(--space-4); font-size: 15px; font-weight: 600; }
-.login-tabs { display: flex; gap: 0; margin-bottom: var(--space-6); border-bottom: 2px solid var(--gray-200); border-radius: var(--radius-md) var(--radius-md) 0 0; overflow: hidden; background: var(--gray-50); }
-.login-tab {
-  flex: 1; border: 0; background: transparent; color: var(--gray-600);
-  padding: var(--space-3) var(--space-4); cursor: pointer; font-family: inherit;
-  font-weight: 600; font-size: 14px; border-bottom: 3px solid transparent;
-  margin-bottom: -2px; transition: all 0.2s ease;
-}
-.login-tab:hover { color: var(--primary); background: var(--gray-100); }
-.login-tab.active { color: var(--primary); border-bottom-color: var(--accent); background: #fff; }
-.login-form { animation: fadeIn 0.3s ease; }
+.login-card .btn { margin-top: var(--space-3); width: 100%; padding: var(--space-3) var(--space-4); font-size: 15px; font-weight: 600; }
 .login-form label { display: block; margin-bottom: var(--space-4); }
-.login-form input {
-  width: 100%; padding: var(--space-3) var(--space-4);
-  border: 1px solid var(--gray-300); border-radius: var(--radius-md); font-size: 14px;
+
+/* ===== FORM THUMBNAIL (mini preview) ===== */
+.form-thumb {
+  position: relative; width: 100%; aspect-ratio: 210 / 297;
+  overflow: hidden; background: #fff;
+  border: 1px solid var(--gray-300); border-radius: var(--radius-sm);
+  margin: var(--space-3) 0;
 }
-.login-form input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.1); }
+.form-thumb-canvas {
+  position: absolute; top: 0; left: 0; margin: 0;
+  box-shadow: none; border: 0; transform-origin: 0 0; pointer-events: none;
+}
+.form-thumb-badge {
+  position: absolute; top: var(--space-2); right: var(--space-2);
+  background: rgba(30, 58, 95, 0.85); color: #fff; font-size: 10px;
+  padding: 2px 8px; border-radius: var(--radius-sm); z-index: 2;
+}
+
+/* ===== SUBMITTER BOX ===== */
+.submitter-box {
+  background: var(--info-light); border: 1px solid var(--info);
+  border-radius: var(--radius-lg); padding: var(--space-5);
+  margin-bottom: var(--space-5);
+}
+.submitter-box h3 { color: var(--info); margin-bottom: var(--space-3); font-size: 15px; }
+.submitter-grid { display: grid; grid-template-columns: 2fr 1fr; gap: var(--space-4); }
+.submitter-note { font-size: 12px; color: var(--gray-600); margin-top: var(--space-2); }
+
+/* ===== SUBMISSION SUCCESS ===== */
+.submission-success { text-align: center; padding: var(--space-8); }
+.submission-success .success-icon { font-size: 64px; margin-bottom: var(--space-4); }
+.submission-success h2 { color: var(--success); margin-bottom: var(--space-4); }
+.reference-id {
+  font-size: 26px; font-weight: 700; color: var(--primary);
+  background: var(--gray-100); padding: var(--space-3) var(--space-5);
+  border-radius: var(--radius-md); display: inline-block;
+  margin: var(--space-4) 0; letter-spacing: 3px; border: 2px dashed var(--gray-300);
+}
+.submission-success .actions { display: flex; gap: var(--space-3); justify-content: center; margin-top: var(--space-6); flex-wrap: wrap; }
+
+/* ===== BUILDER ===== */
 .builder-layout { display: grid; grid-template-columns: 300px minmax(0, 1fr) 340px; gap: var(--space-6); min-height: calc(100vh - 240px); }
 .builder-sidebar {
   background: #fff; border: 1px solid var(--gray-200); border-radius: var(--radius-lg);
@@ -304,6 +325,8 @@ input::placeholder, textarea::placeholder { color: var(--gray-400); }
 .logo-preview-box img { max-width: 100%; max-height: 100%; object-fit: contain; }
 .logo-placeholder { font-size: 96px; color: var(--gray-400); }
 .logo-actions { display: flex; flex-direction: column; gap: var(--space-3); }
+
+/* ===== A4 CANVAS ===== */
 .zoom-box { margin: 0 auto; flex-shrink: 0; position: relative; }
 .zoom-box > .a4-canvas { margin: 0; transform-origin: 0 0; }
 .a4-canvas {
@@ -356,11 +379,6 @@ input::placeholder, textarea::placeholder { color: var(--gray-400); }
 .modal-header h3 { font-size: 18px; font-weight: 700; color: var(--primary); }
 .modal-header .modal-actions { display: flex; gap: var(--space-2); }
 .modal-body { background: var(--gray-50); padding: var(--space-5); border-radius: var(--radius-lg); overflow: auto; max-height: 70vh; display: block; }
-.submission-success { text-align: center; padding: var(--space-8); }
-.submission-success .success-icon { font-size: 64px; margin-bottom: var(--space-4); }
-.submission-success h2 { color: var(--success); margin-bottom: var(--space-4); }
-.submission-success .reference-id { font-size: 24px; font-weight: 700; color: var(--primary); background: var(--gray-100); padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); display: inline-block; margin: var(--space-4) 0; letter-spacing: 2px; }
-.submission-success .actions { display: flex; gap: var(--space-3); justify-content: center; margin-top: var(--space-6); flex-wrap: wrap; }
 @media (max-width: 1200px) {
   .builder-layout { grid-template-columns: 1fr; grid-template-rows: auto auto auto; }
   .builder-sidebar, .builder-properties { max-height: none; }
@@ -373,12 +391,13 @@ input::placeholder, textarea::placeholder { color: var(--gray-400); }
   .cards { grid-template-columns: 1fr; }
   .app-container { padding: var(--space-4); }
   .login-card { margin: var(--space-6) auto; padding: var(--space-6); }
+  .submitter-grid { grid-template-columns: 1fr; }
 }
 @media print {
   @page { size: A4 portrait; margin: 0; }
   * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   body { background: #fff !important; }
-  .topbar, .tabs, .btn, .login-card, #toast, .session-badge, .section-heading, .loading-overlay, .modal, .builder-sidebar, .builder-properties, .builder-toolbar, .renderer-actions, .staff-controls { display: none !important; }
+  .topbar, .tabs, .btn, .login-card, #toast, .session-badge, .section-heading, .loading-overlay, .modal, .builder-sidebar, .builder-properties, .builder-toolbar, .renderer-actions, .staff-controls, .submitter-box, .form-thumb { display: none !important; }
   .view { display: block !important; background: transparent; border: 0; box-shadow: none; padding: 0; }
   .view:not(.active) { display: none !important; }
   .zoom-box { width: auto !important; height: auto !important; }
@@ -400,30 +419,33 @@ input::placeholder, textarea::placeholder { color: var(--gray-400); }
     </div>
   </div>
   <div class="topbar-right">
-    <button class="btn ghost" id="mySubmissionsBtn" style="display:none">📋 คำขอของฉัน</button>
+    <button class="btn ghost" id="mySubmissionsBtn">📋 คำขอของฉัน</button>
+    <button class="btn ghost" id="adminPanelBtn" hidden>🛠️ แผงจัดการ</button>
     <button class="btn ghost" id="loginBtn">🔐 เข้าสู่ระบบ</button>
-    <div id="sessionBadge" class="session-badge" hidden>ยังไม่ได้เข้าสู่ระบบ</div>
+    <div id="sessionBadge" class="session-badge" hidden></div>
     <button class="btn ghost" id="logoutBtn" hidden>ออกจากระบบ</button>
   </div>
 </header>
+
 <main class="app-container">
 <div id="loadingOverlay" class="loading-overlay"><div class="loading-spinner"></div><p class="loading-text">กำลังโหลด...</p></div>
 
-<!-- PUBLIC: รายการฟอร์ม -->
+<!-- ===== PUBLIC: รายการฟอร์ม ===== -->
 <section id="publicFormListView" class="view active">
-  <div class="section-heading"><span>01</span><div><h2>ฟอร์มทั้งหมด</h2><p>เลือกฟอร์มที่ต้องการกรอก หรือดูตัวอย่าง</p></div></div>
+  <div class="section-heading"><span>01</span><div><h2>ฟอร์มทั้งหมด</h2><p>เลือกฟอร์มที่ต้องการกรอก หรือดูตัวอย่างก่อนกรอก</p></div></div>
   <div id="publicFormList" class="cards"></div>
 </section>
 
-<!-- PUBLIC: หน้ากรอกฟอร์ม -->
+<!-- ===== PUBLIC: กรอกฟอร์ม ===== -->
 <section id="publicFormRendererView" class="view">
   <div class="section-heading"><span>02</span><div><h2 id="publicRendererTitle">กรอกฟอร์ม</h2><button class="btn ghost" id="backToPublicFormList">← กลับ</button></div></div>
-  <div class="card" style="margin-bottom: var(--space-6); background: var(--info-light); border-color: var(--info);">
-    <h3 style="color: var(--info); margin-bottom: var(--space-3);">📝 ข้อมูลผู้กรอก</h3>
-    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: var(--space-4);">
-      <label>ชื่อ-นามสกุล<input id="submitterFullName" type="text" placeholder="กรอกชื่อ-นามสกุลเต็ม" required></label>
-      <label>เลขบัตรประชาชน<input id="submitterCitizenId" type="text" inputmode="numeric" maxlength="13" placeholder="13 หลัก" required></label>
+  <div class="submitter-box">
+    <h3>📝 ข้อมูลผู้กรอก (บังคับ)</h3>
+    <div class="submitter-grid">
+      <label>ชื่อ-นามสกุล<input id="submitterFullName" type="text" placeholder="กรอกชื่อ-นามสกุลเต็ม" autocomplete="name"></label>
+      <label>เลขบัตรประชาชน (13 หลัก)<input id="submitterCitizenId" type="text" inputmode="numeric" maxlength="13" placeholder="เช่น 1234567890123" autocomplete="off"></label>
     </div>
+    <p class="submitter-note">🔒 ข้อมูลจะถูกเข้ารหัส (hash) ก่อนจัดเก็บ ใช้สำหรับตรวจสอบคำขอของท่านภายหลัง</p>
   </div>
   <div class="renderer-wrapper" id="publicRendererWrapper">
     <div class="zoom-box"><div id="publicRendererCanvas" class="a4-canvas"></div></div>
@@ -434,15 +456,13 @@ input::placeholder, textarea::placeholder { color: var(--gray-400); }
   </div>
 </section>
 
-<!-- PUBLIC: ผลลัพธ์หลังส่ง -->
+<!-- ===== PUBLIC: ส่งสำเร็จ ===== -->
 <section id="submissionSuccessView" class="view">
   <div class="submission-success">
     <div class="success-icon">✅</div>
     <h2>ส่งฟอร์มสำเร็จ</h2>
-    <p style="color: var(--gray-600); margin-bottom: var(--space-4);">บันทึกข้อมูลเรียบร้อยแล้ว</p>
-    <div>เลขอ้างอิงของคุณ</div>
+    <p style="color: var(--gray-600);">บันทึกข้อมูลเรียบร้อยแล้ว กรุณาเก็บเลขอ้างอิงไว้ตรวจสอบสถานะ</p>
     <div class="reference-id" id="referenceIdDisplay">-</div>
-    <p style="color: var(--gray-600); font-size: 13px;">กรุณาบันทึกเลขอ้างอิงนี้ไว้ เพื่อใช้ตรวจสอบสถานะคำขอ</p>
     <div class="actions">
       <button class="btn primary" id="printSuccessBtn">🖨️ พิมพ์เอกสาร</button>
       <button class="btn secondary" id="viewMySubmissionsBtn">📋 ดูคำขอของฉัน</button>
@@ -451,9 +471,9 @@ input::placeholder, textarea::placeholder { color: var(--gray-400); }
   </div>
 </section>
 
-<!-- PUBLIC: คำขอของฉัน (ใช้เลขบัตร) -->
+<!-- ===== PUBLIC: คำขอของฉัน ===== -->
 <section id="publicMySubmissionsView" class="view">
-  <div class="section-heading"><span>03</span><div><h2>คำขอของฉัน</h2><p>กรอกเลขบัตรประชาชนเพื่อดูคำขอที่คุณเคยส่ง</p></div></div>
+  <div class="section-heading"><span>03</span><div><h2>คำขอของฉัน</h2><p>กรอกเลขบัตรประชาชน 13 หลัก เพื่อค้นหาคำขอที่ท่านเคยส่ง</p></div></div>
   <div class="card" style="margin-bottom: var(--space-6);">
     <label>เลขบัตรประชาชน<input id="lookupCitizenId" type="text" inputmode="numeric" maxlength="13" placeholder="กรอกเลขบัตร 13 หลัก"></label>
     <button class="btn primary btn-block" id="lookupSubmissionsBtn" style="margin-top: var(--space-3);">🔍 ค้นหาคำขอ</button>
@@ -461,18 +481,28 @@ input::placeholder, textarea::placeholder { color: var(--gray-400); }
   <div id="publicMySubmissionsList" class="cards"></div>
 </section>
 
-<!-- LOGIN: สำหรับ Admin -->
+<!-- ===== LOGIN (Admin) ===== -->
 <section id="loginView" class="login-card" hidden>
   <h2>เข้าสู่ระบบ (Admin)</h2>
   <form id="adminLoginForm" class="login-form">
     <label>อีเมล<input id="adminEmail" type="email" required></label>
     <label>รหัสผ่าน<input id="adminPassword" type="password" required></label>
     <button class="btn primary" type="submit">เข้าสู่ระบบ</button>
-    <button class="btn ghost" type="button" id="cancelLoginBtn" style="margin-top: var(--space-2);">← กลับหน้าแรก</button>
+    <button class="btn ghost" type="button" id="cancelLoginBtn">← กลับหน้าแรก</button>
   </form>
 </section>
 
-<!-- ADMIN: Dashboard -->
+<!-- ===== CHANGE PASSWORD ===== -->
+<section id="changePasswordView" class="login-card" hidden>
+  <h2>เปลี่ยนรหัสผ่านครั้งแรก</h2>
+  <form id="changePasswordForm" class="login-form">
+    <label>รหัสผ่านใหม่<input id="newPassword" type="password" minlength="10" required></label>
+    <label>ยืนยันรหัสผ่าน<input id="confirmPassword" type="password" minlength="10" required></label>
+    <button class="btn primary" type="submit">บันทึก</button>
+  </form>
+</section>
+
+<!-- ===== ADMIN DASHBOARD ===== -->
 <section id="adminDashboardView" class="view">
   <nav class="tabs">
     <button class="tab active" data-admin-view="adminFormListView">ฟอร์มทั้งหมด</button>
@@ -481,10 +511,11 @@ input::placeholder, textarea::placeholder { color: var(--gray-400); }
     <button class="tab" data-admin-view="adminSubmissionsView">จัดการคำขอ</button>
     <button class="tab" data-admin-view="staffDirectoryView">บุคลากร</button>
     <button class="tab" data-admin-view="headerLogoView">โลโก้ Header</button>
+    <button class="tab" id="backToPublicBtn" style="margin-left:auto;color:var(--accent)">🏠 หน้าสาธารณะ</button>
   </nav>
 
   <section id="adminFormListView" class="view active">
-    <div class="section-heading"><span>01</span><div><h2>ฟอร์มทั้งหมด (Admin)</h2><p>เลือกฟอร์มที่ต้องการกรอก</p></div></div>
+    <div class="section-heading"><span>01</span><div><h2>ฟอร์มทั้งหมด (Admin)</h2><p>กรอกฟอร์มในนามตนเอง</p></div></div>
     <div id="adminFormList" class="cards"></div>
   </section>
 
@@ -565,7 +596,7 @@ input::placeholder, textarea::placeholder { color: var(--gray-400); }
   </section>
 
   <section id="staffDirectoryView" class="view">
-    <div class="section-heading"><span>05</span><div><h2>รายชื่อบุคลากร</h2><p>ข้อมูลส่วนตัว — เห็นเฉพาะผู้ดูแลระบบ</p></div></div>
+    <div class="section-heading"><span>05</span><div><h2>รายชื่อบุคลากร</h2><p>ข้อมูลภายใน — เห็นเฉพาะผู้ดูแลระบบ</p></div></div>
     <div class="staff-controls">
       <input type="text" id="staffSearchInput" placeholder="🔍 ค้นหาจากชื่อ-นามสกุล..." class="search-input">
       <button class="btn ghost" id="refreshStaffBtn">🔄 รีเฟรช</button>
@@ -574,7 +605,7 @@ input::placeholder, textarea::placeholder { color: var(--gray-400); }
   </section>
 
   <section id="headerLogoView" class="view">
-    <div class="section-heading"><span>06</span><div><h2>จัดการโลโก้ Header</h2><p>อัปโหลดโลโก้ของโรงพยาบาลเพื่อแสดงด้านบนสุดของเว็บ</p></div></div>
+    <div class="section-heading"><span>06</span><div><h2>จัดการโลโก้ Header</h2><p>อัปโหลดโลโก้โรงพยาบาลแสดงด้านบนสุดของเว็บ</p></div></div>
     <div class="logo-manager">
       <div class="logo-preview-box">
         <img id="currentHeaderLogo" src="" alt="โลโก้ปัจจุบัน" style="display:none">
@@ -585,13 +616,13 @@ input::placeholder, textarea::placeholder { color: var(--gray-400); }
         <button class="btn primary" id="uploadHeaderLogoBtn">📤 อัปโหลดโลโก้ใหม่</button>
         <button class="btn ghost danger" id="deleteHeaderLogoBtn" hidden>🗑️ ลบโลโก้</button>
       </div>
-      <p class="logo-hint">รองรับ PNG/JPG/GIF/SVG/WebP ขนาดสูงสุด ~37 KB<br>โลโก้จะแสดงที่ header ด้านบนสุดของเว็บ (สูง 56px)</p>
+      <p class="logo-hint">รองรับ PNG/JPG/GIF/SVG/WebP สูงสุด ~37 KB</p>
     </div>
   </section>
 </section>
 </main>
 
-<!-- Modal: ดูตัวอย่างฟอร์ม -->
+<!-- ===== MODALS ===== -->
 <div id="previewModal" class="modal" hidden>
   <div class="modal-content modal-large">
     <div class="modal-header">
@@ -602,7 +633,6 @@ input::placeholder, textarea::placeholder { color: var(--gray-400); }
   </div>
 </div>
 
-<!-- Modal: ดูคำขอ -->
 <div id="submissionModal" class="modal" hidden>
   <div class="modal-content modal-large">
     <div class="modal-header">
@@ -616,7 +646,6 @@ input::placeholder, textarea::placeholder { color: var(--gray-400); }
   </div>
 </div>
 
-<!-- Modal: สร้างฟอร์มใหม่ -->
 <div id="newTemplateModal" class="modal" hidden>
   <div class="modal-content">
     <h3>สร้างฟอร์มใหม่</h3>
@@ -637,7 +666,7 @@ input::placeholder, textarea::placeholder { color: var(--gray-400); }
 'use strict';
 
 // ============================================================
-// API CONFIG
+// ⚠️ API URL — เปลี่ยนเป็น Web App URL ของคุณ
 // ============================================================
 const API_URL = 'https://script.google.com/macros/s/AKfycbwlBmF7UCDh1b-DlGy6uzT_Vot2J0Z02EoLoCRm5XFjtra1nDzCBD-cBHJ_8Yl6hX6oig/exec';
 
@@ -645,6 +674,7 @@ const $ = s => document.querySelector(s), $$ = s => Array.from(document.querySel
 const PAGE_W = 210, PAGE_H = 297;
 const PX_PER_MM = 96 / 25.4;
 const SNAP = 0.5;
+const PUBLIC_ACTIONS = ['getPublicFormTemplates', 'getPublicFormTemplate', 'submitFormAnonymous', 'lookupSubmissionsByCitizenId', 'getPublicFormSubmission', 'getHeaderLogo'];
 const TYPE_LABEL = {
   label: 'ข้อความ', title: 'หัวข้อ', logo: 'โลโก้', text_input: 'ช่องข้อความ', textarea: 'ข้อความยาว', date: 'วันที่',
   radio: 'ตัวเลือกเดียว', checkbox: 'หลายตัวเลือก', select: 'Dropdown', signature: 'ลายเซ็น',
@@ -655,40 +685,45 @@ const OPTION_TYPES = ['radio', 'checkbox', 'select'];
 const STATUS_TH = { SUBMITTED: 'รอตรวจสอบ', APPROVED: 'อนุมัติแล้ว', REJECTED: 'ไม่อนุมัติ' };
 
 let accessToken = null;
-try { accessToken = localStorage.getItem('access_token'); } catch (e) { /* ignore */ }
+try { accessToken = localStorage.getItem('access_token'); } catch (e) {}
 const state = { templateId: null, meta: { name: '', description: '', is_active: false }, fields: [], deleted: [], selectedId: null, dirty: false, zoom: 1 };
 let undoStack = [], panelFieldId = null, propUndoArmed = false, lastNudgeAt = 0, renderSeq = 0;
 let rendererState = { templateId: null, fields: [] };
-let viewingSubmissionId = null, toastTimer = null;
+let viewingSubmissionId = null, viewingSubmissionCitizenId = null, toastTimer = null;
 let lastSubmittedId = null, lastSubmittedCitizenId = null;
 
 // ============================================================
-// API CALL — text/plain + redirect: 'follow'
+// API CALL
 // ============================================================
 async function apiCall(action, payload = {}) {
+  if (!accessToken && PUBLIC_ACTIONS.indexOf(action) === -1) throw new Error('กรุณาเข้าสู่ระบบก่อน');
   const url = new URL(API_URL);
   url.searchParams.set('action', action);
-  
   const body = { ...payload };
   if (accessToken) body.token = accessToken;
-  
   const response = await fetch(url.toString(), {
     method: 'POST',
     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
     body: JSON.stringify(body),
     redirect: 'follow'
   });
-  
   if (!response.ok) throw new Error('HTTP error ' + response.status);
   const result = await response.json();
   if (!result.ok) throw new Error(result.error || 'เกิดข้อผิดพลาด');
   return result.data;
 }
 
-function toast(message) { const el = $('#toast'); el.textContent = message; el.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('show'), 3500); }
+function toast(message) { const el = $('#toast'); el.textContent = message; el.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('show'), 4000); }
 function err(e) { return e && e.message ? e.message : 'เกิดข้อผิดพลาด'; }
 function isAuthError(e) { const m = err(e); return m.includes('เข้าสู่ระบบ') || m.includes('เซสชัน') || m.includes('ADMIN'); }
-function handleError(e) { toast(err(e)); if (isAuthError(e)) { accessToken = null; try { localStorage.removeItem('access_token'); } catch (x) {} updateAuthUI(); } }
+function handleError(e) {
+  toast(err(e));
+  if (isAuthError(e) && accessToken) {
+    accessToken = null;
+    try { localStorage.removeItem('access_token'); } catch (x) {}
+    updateAuthUI();
+  }
+}
 function esc(v) { return String(v == null ? '' : v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
 function uid() { return Math.random().toString(36).slice(2, 9); }
 function newTmpId() { return 'tmp_' + uid() + uid(); }
@@ -704,7 +739,7 @@ function formatThaiDate(iso) {
   return new Date(+m[1], +m[2] - 1, +m[3]).toLocaleDateString('th-TH', { day: 'numeric', month: 'long', year: 'numeric' });
 }
 function showView(viewId) {
-  $$('.view').forEach(x => x.classList.remove('active'));
+  $$('.app-container > .view, main > .view').forEach(x => x.classList.remove('active'));
   const el = $('#' + viewId);
   if (el) el.classList.add('active');
 }
@@ -713,44 +748,19 @@ function showLoading() { $('#loadingOverlay').classList.add('active'); }
 function hideLoading() { $('#loadingOverlay').classList.remove('active'); }
 
 function updateAuthUI() {
-  if (accessToken) {
-    $('#loginBtn').hidden = true;
-    $('#sessionBadge').hidden = false;
-    $('#logoutBtn').hidden = false;
-    $('#mySubmissionsBtn').style.display = 'inline-flex';
-  } else {
-    $('#loginBtn').hidden = false;
-    $('#sessionBadge').hidden = true;
-    $('#logoutBtn').hidden = true;
-    $('#mySubmissionsBtn').style.display = 'none';
-  }
-}
-
-async function enterAdminApp() {
-  showLoading();
-  try {
-    const session = await apiCall('getSession', {});
-    hideLoading();
-    $('#sessionBadge').textContent = session.fullName + ' · ' + session.role;
-    showView('adminDashboardView');
-    showAdminView('adminFormListView');
-    loadAdminFormList();
-  } catch (e) {
-    hideLoading();
-    accessToken = null;
-    try { localStorage.removeItem('access_token'); } catch (x) {}
-    updateAuthUI();
-    showView('publicFormListView');
-    toast('เซสชันหมดอายุ');
-  }
+  const logged = !!accessToken;
+  $('#loginBtn').hidden = logged;
+  $('#adminPanelBtn').hidden = !logged;
+  $('#sessionBadge').hidden = !logged;
+  $('#logoutBtn').hidden = !logged;
 }
 
 function showAdminView(viewId) {
-  $$('#adminDashboardView .view').forEach(x => x.classList.remove('active'));
-  $$('#adminDashboardView .tab').forEach(x => x.classList.remove('active'));
+  $$('#adminDashboardView > .view').forEach(x => x.classList.remove('active'));
+  $$('#adminDashboardView .tab[data-admin-view]').forEach(x => x.classList.remove('active'));
   const el = $('#' + viewId);
   if (el) el.classList.add('active');
-  const tab = $(`[data-admin-view="${viewId}"]`);
+  const tab = $('[data-admin-view="' + viewId + '"]');
   if (tab) tab.classList.add('active');
 }
 
@@ -771,25 +781,26 @@ async function loadHeaderLogo() {
       $('#currentHeaderLogo').style.display = 'none'; $('#currentHeaderLogoPlaceholder').style.display = 'flex';
       $('#deleteHeaderLogoBtn').hidden = true;
     }
-  } catch (e) { /* ignore */ }
+  } catch (e) {}
 }
 
-$('#uploadHeaderLogoBtn').addEventListener('click', () => { $('#headerLogoFileInput').click(); });
-$('#headerLogoFileInput').addEventListener('change', async (e) => {
+$('#uploadHeaderLogoBtn').addEventListener('click', () => $('#headerLogoFileInput').click());
+$('#headerLogoFileInput').addEventListener('change', async e => {
   const file = e.target.files && e.target.files[0];
   if (!file) return;
   const allowed = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/svg+xml', 'image/webp'];
   if (allowed.indexOf(file.type) === -1) return toast('รูปแบบไฟล์ไม่ถูกต้อง');
   if (file.size > 50000) return toast('ไฟล์ใหญ่เกินไป (สูงสุด ~37 KB)');
   const reader = new FileReader();
-  reader.onload = async (ev) => {
+  reader.onload = async ev => {
     showLoading();
     try {
       await apiCall('uploadHeaderLogo', { base64Data: ev.target.result });
       hideLoading(); toast('อัปโหลดโลโก้สำเร็จ'); await loadHeaderLogo();
     } catch (x) { hideLoading(); toast(err(x)); }
   };
-  reader.readAsDataURL(file); e.target.value = '';
+  reader.readAsDataURL(file);
+  e.target.value = '';
 });
 $('#deleteHeaderLogoBtn').addEventListener('click', async () => {
   if (!confirm('ลบโลโก้ header?')) return;
@@ -799,214 +810,7 @@ $('#deleteHeaderLogoBtn').addEventListener('click', async () => {
 });
 
 // ============================================================
-// PUBLIC: รายการฟอร์ม
-// ============================================================
-async function loadPublicFormList() {
-  try {
-    const templates = await apiCall('getPublicFormTemplates', {});
-    $('#publicFormList').innerHTML = templates && templates.length
-      ? templates.map(t => `
-        <article class="card">
-          <h3>${esc(t.name)}</h3>
-          <p class="meta">${esc(t.description || '')}</p>
-          <div class="card-actions">
-            <button class="btn secondary" data-preview="${esc(t.id)}">👁️ ดูตัวอย่าง</button>
-            <button class="btn primary" data-fill="${esc(t.id)}">✏️ กรอกเลย</button>
-          </div>
-        </article>
-      `).join('')
-      : '<div class="empty">ยังไม่มีฟอร์มที่เปิดใช้งาน</div>';
-  } catch (e) { handleError(e); }
-}
-
-$('#publicFormList').addEventListener('click', async e => {
-  const previewBtn = e.target.closest('[data-preview]');
-  const fillBtn = e.target.closest('[data-fill]');
-  if (previewBtn) { await openPublicPreview(previewBtn.dataset.preview); return; }
-  if (fillBtn) { await openPublicFormRenderer(fillBtn.dataset.fill); return; }
-});
-
-async function openPublicPreview(templateId) {
-  showLoading();
-  try {
-    const template = await apiCall('getPublicFormTemplate', { id: templateId });
-    hideLoading();
-    $('#previewModalTitle').textContent = 'ดูตัวอย่าง: ' + template.name;
-    const canvas = renderFormOnCanvas('#previewCanvas', (template.fields || []).map(normalizeField), 'print', {});
-    $('#previewModal').hidden = false;
-    applyZoom(canvas, fitZoom($('#previewModal .modal-body')));
-  } catch (e) { hideLoading(); toast(err(e)); }
-}
-
-$('#closePreviewBtn').addEventListener('click', () => { $('#previewModal').hidden = true; });
-
-async function openPublicFormRenderer(templateId) {
-  showLoading();
-  try {
-    const template = await apiCall('getPublicFormTemplate', { id: templateId });
-    hideLoading();
-    rendererState = { templateId: templateId, fields: (template.fields || []).map(normalizeField) };
-    $('#publicRendererTitle').textContent = 'กรอกฟอร์ม: ' + template.name;
-    $('#submitterFullName').value = '';
-    $('#submitterCitizenId').value = '';
-    showView('publicFormRendererView');
-    const canvas = renderFormOnCanvas('#publicRendererCanvas', rendererState.fields, 'fill');
-    applyZoom(canvas, fitZoom($('#publicRendererWrapper')));
-    $('#publicRendererWrapper').scrollTop = 0;
-  } catch (e) { hideLoading(); toast(err(e)); }
-}
-
-$('#backToPublicFormList').addEventListener('click', () => showView('publicFormListView'));
-$('#cancelPublicFormBtn').addEventListener('click', () => showView('publicFormListView'));
-
-$('#submitPublicFormBtn').addEventListener('click', async () => {
-  if (!rendererState.templateId) return;
-  const fullName = $('#submitterFullName').value.trim();
-  const citizenId = $('#submitterCitizenId').value.trim();
-  if (!fullName) { toast('กรุณากรอกชื่อ-นามสกุล'); $('#submitterFullName').focus(); return; }
-  if (!/^\d{13}$/.test(citizenId)) { toast('กรุณากรอกเลขบัตรประชาชน 13 หลัก'); $('#submitterCitizenId').focus(); return; }
-  
-  const result = collectFormData($('#publicRendererCanvas'), rendererState.fields);
-  if (result.missing.length) {
-    const first = result.missing[0];
-    toast('กรุณากรอก: ' + (first.label || first.name));
-    return;
-  }
-  
-  showLoading();
-  try {
-    const res = await apiCall('submitFormAnonymous', {
-      templateId: rendererState.templateId,
-      formData: result.data,
-      citizenId: citizenId,
-      fullName: fullName
-    });
-    hideLoading();
-    lastSubmittedId = res.id;
-    lastSubmittedCitizenId = citizenId;
-    $('#referenceIdDisplay').textContent = res.referenceId;
-    showView('submissionSuccessView');
-  } catch (x) { hideLoading(); toast(err(x)); }
-});
-
-$('#printSuccessBtn').addEventListener('click', async () => {
-  if (!lastSubmittedId || !lastSubmittedCitizenId) return;
-  await printPublicSubmission(lastSubmittedId, lastSubmittedCitizenId);
-});
-
-$('#viewMySubmissionsBtn').addEventListener('click', () => {
-  $('#lookupCitizenId').value = lastSubmittedCitizenId || '';
-  showView('publicMySubmissionsView');
-});
-
-$('#backToHomeBtn').addEventListener('click', () => showView('publicFormListView'));
-
-async function printPublicSubmission(id, citizenId) {
-  const win = window.open('', '_blank');
-  if (!win) return toast('เบราว์เซอร์บล็อกหน้าต่างพิมพ์');
-  showLoading();
-  try {
-    const r = await apiCall('getPublicFormSubmission', { id: id, citizenId: citizenId });
-    hideLoading();
-    if (!r || !r.fields) return toast('ไม่พบข้อมูลคำขอ');
-    const holder = document.createElement('div'); holder.className = 'a4-canvas';
-    const ctx = { mode: 'print', data: r.data || {}, prefix: '' };
-    (r.fields || []).map(normalizeField).forEach(f => holder.appendChild(buildFieldElement(f, ctx)));
-    const css = document.querySelector('style').textContent;
-    win.document.write('<!doctype html><html lang="th"><head><meta charset="utf-8"><title>พิมพ์คำขอ #' + esc(r.referenceId) + '</title><style>' + css + '</style><style>@page{size:A4 portrait;margin:0}html,body{background:#fff;margin:0}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}.a4-canvas{box-shadow:none!important;margin:0!important;transform:none!important}</style></head><body>' + holder.outerHTML + '<script>window.onload=function(){setTimeout(function(){window.print()},500)}<\/script></body></html>');
-    win.document.close();
-  } catch (x) { hideLoading(); try { win.close(); } catch (e2) {} toast(err(x)); }
-}
-
-// PUBLIC: คำขอของฉัน
-$('#lookupSubmissionsBtn').addEventListener('click', async () => {
-  const citizenId = $('#lookupCitizenId').value.trim();
-  if (!/^\d{13}$/.test(citizenId)) { toast('กรุณากรอกเลขบัตรประชาชน 13 หลัก'); return; }
-  showLoading();
-  try {
-    const submissions = await apiCall('lookupSubmissionsByCitizenId', { citizenId: citizenId });
-    hideLoading();
-    $('#publicMySubmissionsList').innerHTML = submissions && submissions.length
-      ? submissions.map(s => `
-        <article class="card">
-          <h3>${esc(s.template_name)}</h3>
-          <span class="status" data-status="${esc(s.status)}">${esc(STATUS_TH[s.status] || s.status)}</span>
-          <div class="meta">เลขอ้างอิง: <b>${esc(s.referenceId)}</b><br>ส่งเมื่อ ${esc(new Date(s.created_at).toLocaleString('th-TH'))}</div>
-          <div class="card-actions">
-            <button class="btn secondary" data-view-public-sub="${esc(s.id)}" data-citizen="${esc(citizenId)}">👁️ ดูรายละเอียด</button>
-            <button class="btn ghost" data-print-public-sub="${esc(s.id)}" data-citizen="${esc(citizenId)}">🖨️ พิมพ์</button>
-          </div>
-        </article>
-      `).join('')
-      : '<div class="empty">ไม่พบคำขอสำหรับเลขบัตรนี้</div>';
-  } catch (x) { hideLoading(); toast(err(x)); }
-});
-
-$('#publicMySubmissionsList').addEventListener('click', async e => {
-  const viewBtn = e.target.closest('[data-view-public-sub]');
-  const printBtn = e.target.closest('[data-print-public-sub]');
-  if (viewBtn) { await viewPublicSubmission(viewBtn.dataset.viewPublicSub, viewBtn.dataset.citizen); return; }
-  if (printBtn) { await printPublicSubmission(printBtn.dataset.printPublicSub, printBtn.dataset.citizen); return; }
-});
-
-async function viewPublicSubmission(id, citizenId) {
-  showLoading();
-  try {
-    const r = await apiCall('getPublicFormSubmission', { id: id, citizenId: citizenId });
-    hideLoading();
-    viewingSubmissionId = id;
-    viewingSubmissionCitizenId = citizenId;
-    $('#submissionModalTitle').textContent = (r.template && r.template.name ? r.template.name : 'คำขอ') + ' · #' + esc(r.referenceId);
-    const canvas = renderFormOnCanvas('#submissionCanvas', (r.fields || []).map(normalizeField), 'print', r.data || {});
-    $('#submissionModal').hidden = false;
-    applyZoom(canvas, fitZoom($('#submissionModal .modal-body')));
-  } catch (x) { hideLoading(); toast(err(x)); }
-}
-
-let viewingSubmissionCitizenId = null;
-$('#printSubmissionBtn').addEventListener('click', () => {
-  if (viewingSubmissionId && viewingSubmissionCitizenId) printPublicSubmission(viewingSubmissionId, viewingSubmissionCitizenId);
-  else if (viewingSubmissionId && accessToken) printSubmission(viewingSubmissionId);
-});
-$('#closeSubmissionBtn').addEventListener('click', () => { $('#submissionModal').hidden = true; });
-
-// ============================================================
-// LOGIN / LOGOUT
-// ============================================================
-$('#loginBtn').addEventListener('click', () => { showView('loginView'); });
-$('#cancelLoginBtn').addEventListener('click', () => { showView('publicFormListView'); });
-
-$('#adminLoginForm').addEventListener('submit', async e => {
-  e.preventDefault(); showLoading();
-  try {
-    const result = await apiCall('loginWithPassword', { email: $('#adminEmail').value.trim(), password: $('#adminPassword').value });
-    accessToken = result.accessToken;
-    try { localStorage.setItem('access_token', accessToken); } catch (x) {}
-    $('#adminPassword').value = '';
-    hideLoading();
-    updateAuthUI();
-    await enterAdminApp();
-  } catch (x) { hideLoading(); toast(err(x)); }
-});
-
-$('#logoutBtn').addEventListener('click', () => {
-  if (!confirm('ออกจากระบบ?')) return;
-  accessToken = null;
-  try { localStorage.removeItem('access_token'); } catch (e) {}
-  updateAuthUI();
-  showView('publicFormListView');
-  toast('ออกจากระบบแล้ว');
-});
-
-$('#mySubmissionsBtn').addEventListener('click', () => {
-  if (!accessToken) { showView('loginView'); return; }
-  showView('adminDashboardView');
-  showAdminView('adminMySubmissionsView');
-  loadAdminMySubmissions();
-});
-
-// ============================================================
-// FIELD MODEL & RENDER ENGINE
+// RENDER ENGINE
 // ============================================================
 function normalizeField(f) {
   const num = (v, d) => { const n = Number(v); return isFinite(n) ? n : d; };
@@ -1106,7 +910,6 @@ function buildContent(f, ctx) {
     } else if (mode === 'design') { fc.appendChild(placeholder('🖼️ โลโก้')); }
     return fc;
   }
-
   if (ft === 'label' || ft === 'title') {
     const t = f.value || f.label || '';
     if (t) fc.textContent = t; else if (mode === 'design') fc.appendChild(placeholder('ข้อความ'));
@@ -1191,8 +994,273 @@ function collectFormData(canvasEl, fields) {
   return { data: data, missing: missing };
 }
 
+function openPrintWindow(r, titleExtra) {
+  const win = window.open('', '_blank');
+  if (!win) { toast('เบราว์เซอร์บล็อกหน้าต่างพิมพ์ กรุณาอนุญาต Pop-up'); return null; }
+  const holder = document.createElement('div'); holder.className = 'a4-canvas';
+  const ctx = { mode: 'print', data: r.data || {}, prefix: '' };
+  (r.fields || []).map(normalizeField).forEach(f => holder.appendChild(buildFieldElement(f, ctx)));
+  const css = document.querySelector('style').textContent;
+  win.document.write('<!doctype html><html lang="th"><head><meta charset="utf-8"><title>' + esc(titleExtra || 'พิมพ์คำขอ') + '</title><style>' + css + '</style><style>@page{size:A4 portrait;margin:0}html,body{background:#fff;margin:0}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}.a4-canvas{box-shadow:none!important;margin:0!important;transform:none!important;border:0!important}</style></head><body>' + holder.outerHTML + '<script>window.onload=function(){setTimeout(function(){window.print()},500)}<\/script></body></html>');
+  win.document.close();
+  return win;
+}
+
 // ============================================================
-// ADMIN: Form List
+// PUBLIC: รายการฟอร์ม + thumbnail
+// ============================================================
+async function loadPublicFormList() {
+  try {
+    const templates = await apiCall('getPublicFormTemplates', {});
+    const list = $('#publicFormList');
+    if (!templates || !templates.length) {
+      list.innerHTML = '<div class="empty">ยังไม่มีฟอร์มที่เปิดใช้งาน</div>';
+      return;
+    }
+    list.innerHTML = templates.map(t => `
+      <article class="card">
+        <h3>${esc(t.name)}</h3>
+        <p class="meta">${esc(t.description || '')}</p>
+        <div class="form-thumb" data-thumb="${esc(t.id)}">
+          <span class="form-thumb-badge">ตัวอย่าง</span>
+          <div class="a4-canvas form-thumb-canvas"></div>
+        </div>
+        <div class="card-actions">
+          <button class="btn secondary" data-preview="${esc(t.id)}">👁️ ดูตัวอย่าง</button>
+          <button class="btn primary" data-fill="${esc(t.id)}">✏️ กรอกเลย</button>
+        </div>
+      </article>
+    `).join('');
+    // render thumbnails
+    templates.forEach(t => {
+      const wrap = list.querySelector('[data-thumb="' + t.id + '"] .form-thumb-canvas');
+      if (!wrap) return;
+      const ctx = { mode: 'print', data: {}, prefix: 'th' + (++renderSeq) + '_' };
+      (t.fields || []).map(normalizeField).forEach(f => wrap.appendChild(buildFieldElement(f, ctx)));
+    });
+    scaleThumbs();
+  } catch (e) { handleError(e); }
+}
+
+function scaleThumbs() {
+  $$('.form-thumb').forEach(w => {
+    const c = w.querySelector('.form-thumb-canvas');
+    if (!c) return;
+    const wPx = w.clientWidth;
+    if (wPx > 0) c.style.transform = 'scale(' + (wPx / (PAGE_W * PX_PER_MM)) + ')';
+  });
+}
+window.addEventListener('resize', scaleThumbs);
+
+$('#publicFormList').addEventListener('click', async e => {
+  const previewBtn = e.target.closest('[data-preview]');
+  const fillBtn = e.target.closest('[data-fill]');
+  if (previewBtn) { await openPublicPreview(previewBtn.dataset.preview); return; }
+  if (fillBtn) { await openPublicFormRenderer(fillBtn.dataset.fill); return; }
+});
+
+async function openPublicPreview(templateId) {
+  showLoading();
+  try {
+    const template = await apiCall('getPublicFormTemplate', { id: templateId });
+    hideLoading();
+    $('#previewModalTitle').textContent = 'ดูตัวอย่าง: ' + template.name;
+    const canvas = renderFormOnCanvas('#previewCanvas', (template.fields || []).map(normalizeField), 'print', {});
+    $('#previewModal').hidden = false;
+    applyZoom(canvas, fitZoom($('#previewModal .modal-body')));
+  } catch (e) { hideLoading(); toast(err(e)); }
+}
+$('#closePreviewBtn').addEventListener('click', () => { $('#previewModal').hidden = true; });
+
+async function openPublicFormRenderer(templateId) {
+  showLoading();
+  try {
+    const template = await apiCall('getPublicFormTemplate', { id: templateId });
+    hideLoading();
+    rendererState = { templateId: templateId, fields: (template.fields || []).map(normalizeField) };
+    $('#publicRendererTitle').textContent = 'กรอกฟอร์ม: ' + template.name;
+    $('#submitterFullName').value = '';
+    $('#submitterCitizenId').value = '';
+    showView('publicFormRendererView');
+    const canvas = renderFormOnCanvas('#publicRendererCanvas', rendererState.fields, 'fill');
+    applyZoom(canvas, fitZoom($('#publicRendererWrapper')));
+    $('#publicRendererWrapper').scrollTop = 0;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  } catch (e) { hideLoading(); toast(err(e)); }
+}
+
+$('#backToPublicFormList').addEventListener('click', () => showView('publicFormListView'));
+$('#cancelPublicFormBtn').addEventListener('click', () => showView('publicFormListView'));
+
+$('#submitPublicFormBtn').addEventListener('click', async () => {
+  if (!rendererState.templateId) return;
+  const fullName = $('#submitterFullName').value.trim();
+  const citizenId = $('#submitterCitizenId').value.trim();
+  if (!fullName) { toast('กรุณากรอกชื่อ-นามสกุล'); $('#submitterFullName').focus(); return; }
+  if (!/^\d{13}$/.test(citizenId)) { toast('กรุณากรอกเลขบัตรประชาชนให้ครบ 13 หลัก'); $('#submitterCitizenId').focus(); return; }
+  const result = collectFormData($('#publicRendererCanvas'), rendererState.fields);
+  if (result.missing.length) {
+    const first = result.missing[0];
+    const el = $('#publicRendererCanvas').querySelector('[data-field-id="' + first.id + '"]');
+    if (el && el.scrollIntoView) el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    toast('กรุณากรอก: ' + (first.label || first.name) + (result.missing.length > 1 ? ' (และอีก ' + (result.missing.length - 1) + ' ช่อง)' : ''));
+    return;
+  }
+  showLoading();
+  try {
+    const res = await apiCall('submitFormAnonymous', {
+      templateId: rendererState.templateId,
+      formData: result.data,
+      citizenId: citizenId,
+      fullName: fullName
+    });
+    hideLoading();
+    lastSubmittedId = res.id;
+    lastSubmittedCitizenId = citizenId;
+    $('#referenceIdDisplay').textContent = res.referenceId;
+    showView('submissionSuccessView');
+    window.scrollTo({ top: 0 });
+  } catch (x) { hideLoading(); toast(err(x)); }
+});
+
+$('#printSuccessBtn').addEventListener('click', async () => {
+  if (!lastSubmittedId || !lastSubmittedCitizenId) return;
+  await printPublicSubmission(lastSubmittedId, lastSubmittedCitizenId);
+});
+$('#viewMySubmissionsBtn').addEventListener('click', () => {
+  $('#lookupCitizenId').value = lastSubmittedCitizenId || '';
+  showView('publicMySubmissionsView');
+});
+$('#backToHomeBtn').addEventListener('click', () => { showView('publicFormListView'); loadPublicFormList(); });
+
+async function printPublicSubmission(id, citizenId) {
+  showLoading();
+  try {
+    const r = await apiCall('getPublicFormSubmission', { id: id, citizenId: citizenId });
+    hideLoading();
+    openPrintWindow(r, 'พิมพ์คำขอ #' + r.referenceId);
+  } catch (x) { hideLoading(); toast(err(x)); }
+}
+
+// PUBLIC: ค้นหาคำขอ
+$('#lookupSubmissionsBtn').addEventListener('click', async () => {
+  const citizenId = $('#lookupCitizenId').value.trim();
+  if (!/^\d{13}$/.test(citizenId)) { toast('กรุณากรอกเลขบัตรประชาชนให้ครบ 13 หลัก'); return; }
+  showLoading();
+  try {
+    const submissions = await apiCall('lookupSubmissionsByCitizenId', { citizenId: citizenId });
+    hideLoading();
+    $('#publicMySubmissionsList').innerHTML = submissions && submissions.length
+      ? submissions.map(s => `
+        <article class="card">
+          <h3>${esc(s.template_name)}</h3>
+          <div><span class="status" data-status="${esc(s.status)}">${esc(STATUS_TH[s.status] || s.status)}</span></div>
+          <div class="meta">เลขอ้างอิง: <b>${esc(s.referenceId)}</b><br>ส่งเมื่อ ${esc(new Date(s.created_at).toLocaleString('th-TH'))}</div>
+          <div class="card-actions">
+            <button class="btn secondary" data-view-public-sub="${esc(s.id)}" data-citizen="${esc(citizenId)}">👁️ ดู</button>
+            <button class="btn ghost" data-print-public-sub="${esc(s.id)}" data-citizen="${esc(citizenId)}">🖨️ พิมพ์</button>
+          </div>
+        </article>
+      `).join('')
+      : '<div class="empty">ไม่พบคำขอสำหรับเลขบัตรนี้</div>';
+  } catch (x) { hideLoading(); toast(err(x)); }
+});
+
+$('#publicMySubmissionsList').addEventListener('click', async e => {
+  const viewBtn = e.target.closest('[data-view-public-sub]');
+  const printBtn = e.target.closest('[data-print-public-sub]');
+  if (viewBtn) { await viewPublicSubmission(viewBtn.dataset.viewPublicSub, viewBtn.dataset.citizen); return; }
+  if (printBtn) { await printPublicSubmission(printBtn.dataset.printPublicSub, printBtn.dataset.citizen); return; }
+});
+
+async function viewPublicSubmission(id, citizenId) {
+  showLoading();
+  try {
+    const r = await apiCall('getPublicFormSubmission', { id: id, citizenId: citizenId });
+    hideLoading();
+    viewingSubmissionId = id;
+    viewingSubmissionCitizenId = citizenId;
+    $('#submissionModalTitle').textContent = (r.template && r.template.name ? r.template.name : 'คำขอ') + ' · #' + esc(r.referenceId);
+    const canvas = renderFormOnCanvas('#submissionCanvas', (r.fields || []).map(normalizeField), 'print', r.data || {});
+    $('#submissionModal').hidden = false;
+    applyZoom(canvas, fitZoom($('#submissionModal .modal-body')));
+  } catch (x) { hideLoading(); toast(err(x)); }
+}
+
+$('#printSubmissionBtn').addEventListener('click', async () => {
+  if (!viewingSubmissionId) return;
+  if (viewingSubmissionCitizenId) { await printPublicSubmission(viewingSubmissionId, viewingSubmissionCitizenId); return; }
+  if (accessToken) {
+    showLoading();
+    try {
+      const r = await apiCall('printFormSubmission', { id: viewingSubmissionId });
+      hideLoading();
+      openPrintWindow(r, 'พิมพ์คำขอ');
+    } catch (x) { hideLoading(); handleError(x); }
+  }
+});
+$('#closeSubmissionBtn').addEventListener('click', () => { $('#submissionModal').hidden = true; });
+
+// ============================================================
+// NAV: topbar
+// ============================================================
+$('#mySubmissionsBtn').addEventListener('click', () => { showView('publicMySubmissionsView'); window.scrollTo({ top: 0 }); });
+$('#loginBtn').addEventListener('click', () => { showView('loginView'); });
+$('#cancelLoginBtn').addEventListener('click', () => { showView('publicFormListView'); });
+$('#adminPanelBtn').addEventListener('click', async () => {
+  showView('adminDashboardView');
+  showAdminView('adminFormListView');
+  loadAdminFormList();
+});
+$('#backToPublicBtn').addEventListener('click', () => { showView('publicFormListView'); loadPublicFormList(); });
+$('#logoutBtn').addEventListener('click', () => {
+  if (!confirm('ออกจากระบบ?')) return;
+  accessToken = null;
+  try { localStorage.removeItem('access_token'); } catch (e) {}
+  updateAuthUI();
+  showView('publicFormListView');
+  toast('ออกจากระบบแล้ว');
+});
+
+// ============================================================
+// LOGIN
+// ============================================================
+$('#adminLoginForm').addEventListener('submit', async e => {
+  e.preventDefault(); showLoading();
+  try {
+    const result = await apiCall('loginWithPassword', { email: $('#adminEmail').value.trim(), password: $('#adminPassword').value });
+    accessToken = result.accessToken;
+    try { localStorage.setItem('access_token', accessToken); } catch (x) {}
+    $('#adminPassword').value = '';
+    hideLoading();
+    if (result.mustChangePassword) { showView('changePasswordView'); return; }
+    $('#sessionBadge').textContent = result.fullName + ' · ' + result.role;
+    updateAuthUI();
+    showView('adminDashboardView');
+    showAdminView('adminFormListView');
+    loadAdminFormList();
+  } catch (x) { hideLoading(); toast(err(x)); }
+});
+
+$('#changePasswordForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const a = $('#newPassword').value, b = $('#confirmPassword').value;
+  if (a !== b) return toast('รหัสไม่ตรงกัน');
+  showLoading();
+  try {
+    await apiCall('changeInitialPassword', { newPassword: a });
+    hideLoading(); toast('เปลี่ยนรหัสผ่านสำเร็จ');
+    const session = await apiCall('getSession', {});
+    $('#sessionBadge').textContent = session.fullName + ' · ' + session.role;
+    updateAuthUI();
+    showView('adminDashboardView');
+    showAdminView('adminFormListView');
+    loadAdminFormList();
+  } catch (x) { hideLoading(); toast(err(x)); }
+});
+
+// ============================================================
+// ADMIN: form list + my submissions
 // ============================================================
 async function loadAdminFormList() {
   try {
@@ -1203,7 +1271,10 @@ async function loadAdminFormList() {
   } catch (e) { handleError(e); }
 }
 
-$('#adminFormList').addEventListener('click', e => { const btn = e.target.closest('[data-template]'); if (btn) openAdminFormRenderer(btn.dataset.template); });
+$('#adminFormList').addEventListener('click', e => {
+  const btn = e.target.closest('[data-template]');
+  if (btn) openAdminFormRenderer(btn.dataset.template);
+});
 
 async function openAdminFormRenderer(templateId) {
   showLoading();
@@ -1211,7 +1282,8 @@ async function openAdminFormRenderer(templateId) {
     const template = await apiCall('getActiveFormTemplate', { id: templateId });
     hideLoading();
     rendererState = { templateId: templateId, fields: (template.fields || []).map(normalizeField) };
-    showView('adminFormListView');
+    $('#publicRendererTitle').textContent = 'กรอกฟอร์ม: ' + template.name;
+    showView('publicFormRendererView');
     const canvas = renderFormOnCanvas('#publicRendererCanvas', rendererState.fields, 'fill');
     applyZoom(canvas, fitZoom($('#publicRendererWrapper')));
   } catch (e) { hideLoading(); handleError(e); }
@@ -1221,29 +1293,24 @@ async function loadAdminMySubmissions() {
   try {
     const submissions = await apiCall('getMySubmissions', {});
     $('#adminMySubmissionsList').innerHTML = submissions && submissions.length
-      ? submissions.map(s => '<article class="card"><h3>' + esc(s.template_name) + '</h3><span class="status" data-status="' + esc(s.status) + '">' + esc(STATUS_TH[s.status] || s.status) + '</span><div class="meta">ส่งเมื่อ ' + esc(new Date(s.created_at).toLocaleString('th-TH')) + '</div><button class="btn ghost print-my-btn" data-id="' + esc(s.id) + '">🖨️ พิมพ์ A4</button></article>').join('')
+      ? submissions.map(s => '<article class="card"><h3>' + esc(s.template_name) + '</h3><span class="status" data-status="' + esc(s.status) + '">' + esc(STATUS_TH[s.status] || s.status) + '</span><div class="meta">เลขอ้างอิง: <b>' + esc(s.referenceId) + '</b><br>ส่งเมื่อ ' + esc(new Date(s.created_at).toLocaleString('th-TH')) + '</div><button class="btn ghost print-my-btn" data-id="' + esc(s.id) + '">🖨️ พิมพ์ A4</button></article>').join('')
       : '<div class="empty">ยังไม่มีคำขอ</div>';
   } catch (e) { handleError(e); }
 }
 
-async function printSubmission(id) {
-  const win = window.open('', '_blank');
-  if (!win) return toast('เบราว์เซอร์บล็อกหน้าต่างพิมพ์');
+$('#adminMySubmissionsList').addEventListener('click', async e => {
+  const btn = e.target.closest('.print-my-btn');
+  if (!btn) return;
   showLoading();
   try {
-    const r = await apiCall('printFormSubmission', { id: id });
+    const r = await apiCall('printFormSubmission', { id: btn.dataset.id });
     hideLoading();
-    const holder = document.createElement('div'); holder.className = 'a4-canvas';
-    const ctx = { mode: 'print', data: r.data || {}, prefix: '' };
-    (r.fields || []).map(normalizeField).forEach(f => holder.appendChild(buildFieldElement(f, ctx)));
-    const css = document.querySelector('style').textContent;
-    win.document.write('<!doctype html><html lang="th"><head><meta charset="utf-8"><title>พิมพ์คำขอ</title><style>' + css + '</style><style>@page{size:A4 portrait;margin:0}html,body{background:#fff;margin:0}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}.a4-canvas{box-shadow:none!important;margin:0!important;transform:none!important}</style></head><body>' + holder.outerHTML + '<script>window.onload=function(){setTimeout(function(){window.print()},500)}<\/script></body></html>');
-    win.document.close();
-  } catch (x) { hideLoading(); try { win.close(); } catch (e2) {} handleError(x); }
-}
+    openPrintWindow(r, 'พิมพ์คำขอ');
+  } catch (x) { hideLoading(); handleError(x); }
+});
 
 // ============================================================
-// ADMIN: Form Builder
+// ADMIN: BUILDER
 // ============================================================
 async function loadTemplateList() {
   try {
@@ -1254,7 +1321,10 @@ async function loadTemplateList() {
   } catch (e) { handleError(e); }
 }
 
-$('#templateList').addEventListener('click', async e => { const item = e.target.closest('[data-template-id]'); if (!item) return; await openTemplateEditor(item.dataset.templateId); });
+$('#templateList').addEventListener('click', async e => {
+  const item = e.target.closest('[data-template-id]');
+  if (item) await openTemplateEditor(item.dataset.templateId);
+});
 
 $('#newTemplateBtn').addEventListener('click', () => {
   closeAllModals(); $('#newTemplateModal').hidden = false;
@@ -1321,6 +1391,10 @@ $('#deleteTemplateBtn').addEventListener('click', async () => {
 $('#builderTemplateName').addEventListener('input', () => { if (state.templateId) markDirty(); });
 $('#builderPublishToggle').addEventListener('change', () => { if (state.templateId) markDirty(); });
 
+function markDirty() { state.dirty = true; $('#dirtyBadge').hidden = false; }
+function clearDirty() { state.dirty = false; $('#dirtyBadge').hidden = true; }
+function confirmDiscard() { return !state.dirty || confirm('มีการแก้ไขที่ยังไม่ได้บันทึก ต้องการทิ้งการแก้ไขหรือไม่?'); }
+
 function renderBuilderCanvas() {
   const canvas = $('#builderCanvas'); canvas.innerHTML = ''; canvas.classList.remove('fill-mode');
   state.fields.forEach(f => canvas.appendChild(createBuilderFieldElement(f)));
@@ -1386,7 +1460,7 @@ function clearSelection() {
 }
 
 let drag = null;
-function capture(el, e) { try { if (el.setPointerCapture) el.setPointerCapture(e.pointerId); } catch (x) { /* ignore */ } }
+function capture(el, e) { try { if (el.setPointerCapture) el.setPointerCapture(e.pointerId); } catch (x) {} }
 
 function onFieldPointerDown(e) {
   if (e.button !== undefined && e.button !== 0) return;
@@ -1398,7 +1472,6 @@ function onFieldPointerDown(e) {
   capture(el, e);
   el.addEventListener('pointermove', onDragMove); el.addEventListener('pointerup', onDragEnd); el.addEventListener('pointercancel', onDragEnd);
 }
-
 function onDragMove(e) {
   if (!drag || drag.mode !== 'move') return;
   const dx = (e.clientX - drag.sx) * drag.scale, dy = (e.clientY - drag.sy) * drag.scale;
@@ -1415,7 +1488,6 @@ function onDragEnd() {
   el.removeEventListener('pointermove', onDragMove); el.removeEventListener('pointerup', onDragEnd); el.removeEventListener('pointercancel', onDragEnd);
   if (drag.moved) markDirty(); drag = null;
 }
-
 function onHandlePointerDown(e) {
   if (e.button !== undefined && e.button !== 0) return;
   e.stopPropagation();
@@ -1533,11 +1605,11 @@ document.addEventListener('keydown', e => {
     syncGeometryInputs(f); markDirty();
   }
 });
+window.addEventListener('beforeunload', e => { if (state.dirty) { e.preventDefault(); e.returnValue = ''; } });
 
-function markDirty() { state.dirty = true; $('#dirtyBadge').hidden = false; }
-function clearDirty() { state.dirty = false; $('#dirtyBadge').hidden = true; }
-function confirmDiscard() { return !state.dirty || confirm('มีการแก้ไขที่ยังไม่ได้บันทึก ต้องการทิ้งการแก้ไขหรือไม่?'); }
-
+// ============================================================
+// PROPERTIES PANEL
+// ============================================================
 function group(label, html, note) { return '<div class="prop-group"><label>' + esc(label) + '</label>' + html + (note ? '<div class="prop-note">' + esc(note) + '</div>' : '') + '</div>'; }
 function numInput(key, v, min, max, step) { return '<input type="number" data-prop="' + key + '" value="' + esc(v) + '" min="' + min + '" max="' + max + '" step="' + step + '">'; }
 function selectInput(key, v, pairs) { return '<select data-prop="' + key + '">' + pairs.map(p => '<option value="' + p[0] + '"' + (v === p[0] ? ' selected' : '') + '>' + p[1] + '</option>').join('') + '</select>'; }
@@ -1591,13 +1663,13 @@ function showProperties(id) {
     const fileInput = $('#logoFileInput'), uploadBtn = $('#logoUploadBtn'), removeBtn = $('#logoRemoveBtn');
     if (uploadBtn) uploadBtn.addEventListener('click', () => { if (fileInput) fileInput.click(); });
     if (fileInput) {
-      fileInput.addEventListener('change', async (e) => {
+      fileInput.addEventListener('change', async e => {
         const file = e.target.files && e.target.files[0]; if (!file) return;
         const allowed = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/svg+xml', 'image/webp'];
         if (allowed.indexOf(file.type) === -1) return toast('รูปแบบไฟล์ไม่ถูกต้อง');
         if (file.size > 50000) return toast('ไฟล์ใหญ่เกินไป (สูงสุด ~37 KB)');
         const reader = new FileReader();
-        reader.onload = async (ev) => {
+        reader.onload = async ev => {
           showLoading();
           try {
             const result = await apiCall('uploadLogo', { base64Data: ev.target.result });
@@ -1687,16 +1759,18 @@ async function saveForm() {
     renderBuilderCanvas(); toast('บันทึกสำเร็จ'); loadTemplateList();
   } catch (x) { hideLoading(); handleError(x); }
 }
-
 $('#saveFormBtn').addEventListener('click', saveForm);
+
 $('#previewFormBtn').addEventListener('click', () => {
   closeAllModals();
   const canvas = renderFormOnCanvas('#previewCanvas', state.fields, 'fill');
-  $('#previewModal').hidden = false; applyZoom(canvas, fitZoom($('#previewModal .modal-body')));
+  $('#previewModalTitle').textContent = 'Preview: ' + (state.meta.name || '');
+  $('#previewModal').hidden = false;
+  applyZoom(canvas, fitZoom($('#previewModal .modal-body')));
 });
 
 // ============================================================
-// ADMIN: Submissions
+// ADMIN: SUBMISSIONS
 // ============================================================
 async function loadAdminTemplateSelect() {
   try {
@@ -1712,7 +1786,7 @@ $('#adminTemplateSelect').addEventListener('change', async e => {
   try {
     const submissions = await apiCall('getFormSubmissions', { templateId: templateId });
     $('#adminSubmissionsList').innerHTML = submissions && submissions.length
-      ? submissions.map(s => '<article class="card"><h3>คำขอ #' + esc(String(s.id).slice(0, 8)) + ' <span class="status" data-status="' + esc(s.status) + '">' + esc(STATUS_TH[s.status] || s.status) + '</span></h3><p class="meta">ส่งเมื่อ: ' + esc(new Date(s.created_at).toLocaleString('th-TH')) + '</p><div class="card-actions"><button class="btn secondary" data-view-sub="' + esc(s.id) + '">👁️ ดู</button><button class="btn primary" data-approve="' + esc(s.id) + '">อนุมัติ</button><button class="btn ghost" data-reject="' + esc(s.id) + '">ปฏิเสธ</button><button class="btn ghost" data-print="' + esc(s.id) + '">พิมพ์ A4</button></div></article>').join('')
+      ? submissions.map(s => '<article class="card"><h3>คำขอ #' + esc(s.referenceId) + ' <span class="status" data-status="' + esc(s.status) + '">' + esc(STATUS_TH[s.status] || s.status) + '</span></h3><p class="meta">' + esc(s.submitted_by_name || '-') + '<br>ส่งเมื่อ: ' + esc(new Date(s.created_at).toLocaleString('th-TH')) + '</p><div class="card-actions"><button class="btn secondary" data-view-sub="' + esc(s.id) + '">👁️ ดู</button><button class="btn primary" data-approve="' + esc(s.id) + '">อนุมัติ</button><button class="btn ghost" data-reject="' + esc(s.id) + '">ปฏิเสธ</button><button class="btn ghost" data-print="' + esc(s.id) + '">พิมพ์</button></div></article>').join('')
       : '<div class="empty">ไม่พบคำขอ</div>';
     hideLoading();
   } catch (x) { hideLoading(); handleError(x); }
@@ -1729,25 +1803,29 @@ async function viewSubmission(id) {
   try {
     const r = await apiCall('printFormSubmission', { id: id });
     hideLoading();
-    viewingSubmissionId = id;
-    viewingSubmissionCitizenId = null;
-    $('#submissionModalTitle').textContent = (r.template && r.template.name ? r.template.name : 'คำขอ') + ' · #' + String(id).slice(0, 8);
+    viewingSubmissionId = id; viewingSubmissionCitizenId = null;
+    $('#submissionModalTitle').textContent = (r.template && r.template.name ? r.template.name : 'คำขอ') + ' · #' + String(id).slice(0, 8).toUpperCase();
     const canvas = renderFormOnCanvas('#submissionCanvas', (r.fields || []).map(normalizeField), 'print', r.data || {});
-    $('#submissionModal').hidden = false; applyZoom(canvas, fitZoom($('#submissionModal .modal-body')));
+    $('#submissionModal').hidden = false;
+    applyZoom(canvas, fitZoom($('#submissionModal .modal-body')));
   } catch (x) { hideLoading(); handleError(x); }
 }
 
-$('#adminSubmissionsList').addEventListener('click', e => {
+$('#adminSubmissionsList').addEventListener('click', async e => {
   const approve = e.target.closest('[data-approve]'), reject = e.target.closest('[data-reject]');
   const print = e.target.closest('[data-print]'), view = e.target.closest('[data-view-sub]');
   if (approve) setSubmissionStatus(approve.dataset.approve, 'APPROVED', 'อนุมัติแล้ว');
   else if (reject) setSubmissionStatus(reject.dataset.reject, 'REJECTED', 'ปฏิเสธแล้ว');
-  else if (print) printSubmission(print.dataset.print);
+  else if (print) {
+    showLoading();
+    try { const r = await apiCall('printFormSubmission', { id: print.dataset.print }); hideLoading(); openPrintWindow(r, 'พิมพ์คำขอ'); }
+    catch (x) { hideLoading(); handleError(x); }
+  }
   else if (view) viewSubmission(view.dataset.viewSub);
 });
 
 // ============================================================
-// ADMIN: Staff Directory
+// ADMIN: STAFF
 // ============================================================
 async function loadStaffDirectory() {
   try {
@@ -1775,7 +1853,7 @@ function renderStaffList(staff) {
 }
 
 let staffSearchTimer = null;
-$('#staffSearchInput').addEventListener('input', (e) => {
+$('#staffSearchInput').addEventListener('input', e => {
   clearTimeout(staffSearchTimer);
   staffSearchTimer = setTimeout(async () => {
     const query = e.target.value.trim();
@@ -1784,7 +1862,6 @@ $('#staffSearchInput').addEventListener('input', (e) => {
     catch (x) { handleError(x); }
   }, 300);
 });
-
 $('#refreshStaffBtn').addEventListener('click', loadStaffDirectory);
 
 $('#staffDirectoryList').addEventListener('click', async e => {
@@ -1821,6 +1898,18 @@ document.addEventListener('DOMContentLoaded', async () => {
   await loadHeaderLogo();
   await loadPublicFormList();
   showView('publicFormListView');
+  // ถ้ามี token ค้างไว้ ให้ validate เงียบๆ
+  if (accessToken) {
+    try {
+      const session = await apiCall('getSession', {});
+      $('#sessionBadge').textContent = session.fullName + ' · ' + session.role;
+      updateAuthUI();
+    } catch (e) {
+      accessToken = null;
+      try { localStorage.removeItem('access_token'); } catch (x) {}
+      updateAuthUI();
+    }
+  }
 });
 </script>
 </body>
