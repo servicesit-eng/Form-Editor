@@ -656,7 +656,17 @@ const $ = s => document.querySelector(s), $$ = s => Array.from(document.querySel
 const PAGE_W = 210, PAGE_H = 297;
 const PX_PER_MM = 96 / 25.4;
 const SNAP = 0.5;
-const PUBLIC_ACTIONS = ['getPublicFormTemplates', 'getPublicFormTemplate', 'submitFormAnonymous', 'lookupSubmissionsByCitizenId', 'getPublicFormSubmission', 'getHeaderLogo'];
+const PUBLIC_ACTIONS = [
+  'getPublicFormTemplates',
+  'getPublicFormTemplate',
+  'submitFormAnonymous',
+  'lookupSubmissionsByCitizenId',
+  'getPublicFormSubmission',
+  'getHeaderLogo',
+  'loginWithPassword',        // ✅ เพิ่ม
+  'loginWithCitizenId',       // ✅ เพิ่ม
+  'changeInitialPassword'     // ✅ เพิ่ม (เผื่อเปลี่ยนรหัสครั้งแรก)
+];
 const TYPE_LABEL = {
   label: 'ข้อความ', title: 'หัวข้อ', logo: 'โลโก้', text_input: 'ช่องข้อความ', textarea: 'ข้อความยาว', date: 'วันที่',
   radio: 'ตัวเลือกเดียว', checkbox: 'หลายตัวเลือก', select: 'Dropdown', signature: 'ลายเซ็น',
