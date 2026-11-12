@@ -184,8 +184,6 @@ input::placeholder, textarea::placeholder { color: var(--gray-400); }
 }
 .login-card .btn { margin-top: var(--space-3); width: 100%; padding: var(--space-3) var(--space-4); font-size: 15px; font-weight: 600; }
 .login-form label { display: block; margin-bottom: var(--space-4); }
-
-/* ===== FORM THUMBNAIL (mini preview) ===== */
 .form-thumb {
   position: relative; width: 100%; aspect-ratio: 210 / 297;
   overflow: hidden; background: #fff;
@@ -201,8 +199,6 @@ input::placeholder, textarea::placeholder { color: var(--gray-400); }
   background: rgba(30, 58, 95, 0.85); color: #fff; font-size: 10px;
   padding: 2px 8px; border-radius: var(--radius-sm); z-index: 2;
 }
-
-/* ===== SUBMITTER BOX ===== */
 .submitter-box {
   background: var(--info-light); border: 1px solid var(--info);
   border-radius: var(--radius-lg); padding: var(--space-5);
@@ -211,8 +207,6 @@ input::placeholder, textarea::placeholder { color: var(--gray-400); }
 .submitter-box h3 { color: var(--info); margin-bottom: var(--space-3); font-size: 15px; }
 .submitter-grid { display: grid; grid-template-columns: 2fr 1fr; gap: var(--space-4); }
 .submitter-note { font-size: 12px; color: var(--gray-600); margin-top: var(--space-2); }
-
-/* ===== SUBMISSION SUCCESS ===== */
 .submission-success { text-align: center; padding: var(--space-8); }
 .submission-success .success-icon { font-size: 64px; margin-bottom: var(--space-4); }
 .submission-success h2 { color: var(--success); margin-bottom: var(--space-4); }
@@ -223,8 +217,6 @@ input::placeholder, textarea::placeholder { color: var(--gray-400); }
   margin: var(--space-4) 0; letter-spacing: 3px; border: 2px dashed var(--gray-300);
 }
 .submission-success .actions { display: flex; gap: var(--space-3); justify-content: center; margin-top: var(--space-6); flex-wrap: wrap; }
-
-/* ===== BUILDER ===== */
 .builder-layout { display: grid; grid-template-columns: 300px minmax(0, 1fr) 340px; gap: var(--space-6); min-height: calc(100vh - 240px); }
 .builder-sidebar {
   background: #fff; border: 1px solid var(--gray-200); border-radius: var(--radius-lg);
@@ -325,8 +317,6 @@ input::placeholder, textarea::placeholder { color: var(--gray-400); }
 .logo-preview-box img { max-width: 100%; max-height: 100%; object-fit: contain; }
 .logo-placeholder { font-size: 96px; color: var(--gray-400); }
 .logo-actions { display: flex; flex-direction: column; gap: var(--space-3); }
-
-/* ===== A4 CANVAS ===== */
 .zoom-box { margin: 0 auto; flex-shrink: 0; position: relative; }
 .zoom-box > .a4-canvas { margin: 0; transform-origin: 0 0; }
 .a4-canvas {
@@ -413,7 +403,7 @@ input::placeholder, textarea::placeholder { color: var(--gray-400); }
     <img id="headerLogo" class="header-logo" src="" alt="โลโก้" style="display:none">
     <div id="headerLogoPlaceholder" class="header-logo-placeholder">⚕</div>
     <div class="topbar-content">
-      <span class="eyebrow">DONTUM HOSPITAL · DONTUM eFORM SYSTEM</span>
+      <span class="eyebrow">DONTUM HOSPITAL · DONTUM e-FORM SYSTEM</span>
       <h1>ระบบกรอกแบบฟอร์มออนไลน์</h1>
       <p class="topbar-subtitle">โรงพยาบาลดอนตูม</p>
     </div>
@@ -430,13 +420,11 @@ input::placeholder, textarea::placeholder { color: var(--gray-400); }
 <main class="app-container">
 <div id="loadingOverlay" class="loading-overlay"><div class="loading-spinner"></div><p class="loading-text">กำลังโหลด...</p></div>
 
-<!-- ===== PUBLIC: รายการฟอร์ม ===== -->
 <section id="publicFormListView" class="view active">
   <div class="section-heading"><span>01</span><div><h2>ฟอร์มทั้งหมด</h2><p>เลือกฟอร์มที่ต้องการกรอก หรือดูตัวอย่างก่อนกรอก</p></div></div>
   <div id="publicFormList" class="cards"></div>
 </section>
 
-<!-- ===== PUBLIC: กรอกฟอร์ม ===== -->
 <section id="publicFormRendererView" class="view">
   <div class="section-heading"><span>02</span><div><h2 id="publicRendererTitle">กรอกฟอร์ม</h2><button class="btn ghost" id="backToPublicFormList">← กลับ</button></div></div>
   <div class="submitter-box">
@@ -456,7 +444,6 @@ input::placeholder, textarea::placeholder { color: var(--gray-400); }
   </div>
 </section>
 
-<!-- ===== PUBLIC: ส่งสำเร็จ ===== -->
 <section id="submissionSuccessView" class="view">
   <div class="submission-success">
     <div class="success-icon">✅</div>
@@ -471,7 +458,6 @@ input::placeholder, textarea::placeholder { color: var(--gray-400); }
   </div>
 </section>
 
-<!-- ===== PUBLIC: คำขอของฉัน ===== -->
 <section id="publicMySubmissionsView" class="view">
   <div class="section-heading"><span>03</span><div><h2>คำขอของฉัน</h2><p>กรอกเลขบัตรประชาชน 13 หลัก เพื่อค้นหาคำขอที่ท่านเคยส่ง</p></div></div>
   <div class="card" style="margin-bottom: var(--space-6);">
@@ -481,7 +467,6 @@ input::placeholder, textarea::placeholder { color: var(--gray-400); }
   <div id="publicMySubmissionsList" class="cards"></div>
 </section>
 
-<!-- ===== LOGIN (Admin) ===== -->
 <section id="loginView" class="login-card" hidden>
   <h2>เข้าสู่ระบบ (Admin)</h2>
   <form id="adminLoginForm" class="login-form">
@@ -492,7 +477,6 @@ input::placeholder, textarea::placeholder { color: var(--gray-400); }
   </form>
 </section>
 
-<!-- ===== CHANGE PASSWORD ===== -->
 <section id="changePasswordView" class="login-card" hidden>
   <h2>เปลี่ยนรหัสผ่านครั้งแรก</h2>
   <form id="changePasswordForm" class="login-form">
@@ -502,7 +486,6 @@ input::placeholder, textarea::placeholder { color: var(--gray-400); }
   </form>
 </section>
 
-<!-- ===== ADMIN DASHBOARD ===== -->
 <section id="adminDashboardView" class="view">
   <nav class="tabs">
     <button class="tab active" data-admin-view="adminFormListView">ฟอร์มทั้งหมด</button>
@@ -622,7 +605,6 @@ input::placeholder, textarea::placeholder { color: var(--gray-400); }
 </section>
 </main>
 
-<!-- ===== MODALS ===== -->
 <div id="previewModal" class="modal" hidden>
   <div class="modal-content modal-large">
     <div class="modal-header">
@@ -738,11 +720,31 @@ function formatThaiDate(iso) {
   if (!m) return String(iso || '');
   return new Date(+m[1], +m[2] - 1, +m[3]).toLocaleDateString('th-TH', { day: 'numeric', month: 'long', year: 'numeric' });
 }
+
+// ============================================================
+// ✅ SHOW VIEW — เวอร์ชันแก้แล้ว (จัดการ hidden attribute)
+// ============================================================
+const TOP_VIEWS = [
+  'publicFormListView',
+  'publicFormRendererView',
+  'submissionSuccessView',
+  'publicMySubmissionsView',
+  'loginView',
+  'changePasswordView',
+  'adminDashboardView'
+];
+
 function showView(viewId) {
-  $$('.app-container > .view, main > .view').forEach(x => x.classList.remove('active'));
-  const el = $('#' + viewId);
-  if (el) el.classList.add('active');
+  TOP_VIEWS.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const isActive = (id === viewId);
+    el.hidden = !isActive;
+    el.classList.toggle('active', isActive);
+  });
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
+
 function closeAllModals() { $$('.modal').forEach(m => { m.hidden = true; }); }
 function showLoading() { $('#loadingOverlay').classList.add('active'); }
 function hideLoading() { $('#loadingOverlay').classList.remove('active'); }
@@ -1031,7 +1033,6 @@ async function loadPublicFormList() {
         </div>
       </article>
     `).join('');
-    // render thumbnails
     templates.forEach(t => {
       const wrap = list.querySelector('[data-thumb="' + t.id + '"] .form-thumb-canvas');
       if (!wrap) return;
@@ -1085,7 +1086,6 @@ async function openPublicFormRenderer(templateId) {
     const canvas = renderFormOnCanvas('#publicRendererCanvas', rendererState.fields, 'fill');
     applyZoom(canvas, fitZoom($('#publicRendererWrapper')));
     $('#publicRendererWrapper').scrollTop = 0;
-    window.scrollTo({ top: 0, behavior: 'smooth' });
   } catch (e) { hideLoading(); toast(err(e)); }
 }
 
@@ -1119,7 +1119,6 @@ $('#submitPublicFormBtn').addEventListener('click', async () => {
     lastSubmittedCitizenId = citizenId;
     $('#referenceIdDisplay').textContent = res.referenceId;
     showView('submissionSuccessView');
-    window.scrollTo({ top: 0 });
   } catch (x) { hideLoading(); toast(err(x)); }
 });
 
@@ -1142,7 +1141,6 @@ async function printPublicSubmission(id, citizenId) {
   } catch (x) { hideLoading(); toast(err(x)); }
 }
 
-// PUBLIC: ค้นหาคำขอ
 $('#lookupSubmissionsBtn').addEventListener('click', async () => {
   const citizenId = $('#lookupCitizenId').value.trim();
   if (!/^\d{13}$/.test(citizenId)) { toast('กรุณากรอกเลขบัตรประชาชนให้ครบ 13 หลัก'); return; }
@@ -1204,10 +1202,10 @@ $('#closeSubmissionBtn').addEventListener('click', () => { $('#submissionModal')
 // ============================================================
 // NAV: topbar
 // ============================================================
-$('#mySubmissionsBtn').addEventListener('click', () => { showView('publicMySubmissionsView'); window.scrollTo({ top: 0 }); });
-$('#loginBtn').addEventListener('click', () => { showView('loginView'); });
-$('#cancelLoginBtn').addEventListener('click', () => { showView('publicFormListView'); });
-$('#adminPanelBtn').addEventListener('click', async () => {
+$('#mySubmissionsBtn').addEventListener('click', () => showView('publicMySubmissionsView'));
+$('#loginBtn').addEventListener('click', () => showView('loginView'));
+$('#cancelLoginBtn').addEventListener('click', () => showView('publicFormListView'));
+$('#adminPanelBtn').addEventListener('click', () => {
   showView('adminDashboardView');
   showAdminView('adminFormListView');
   loadAdminFormList();
@@ -1898,7 +1896,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   await loadHeaderLogo();
   await loadPublicFormList();
   showView('publicFormListView');
-  // ถ้ามี token ค้างไว้ ให้ validate เงียบๆ
   if (accessToken) {
     try {
       const session = await apiCall('getSession', {});
