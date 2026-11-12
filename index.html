@@ -617,36 +617,34 @@ let undoStack = [], panelFieldId = null, propUndoArmed = false, lastNudgeAt = 0,
 let rendererState = { templateId: null, fields: [] };
 let viewingSubmissionId = null, toastTimer = null;
 
-// ============================================================
-// API CALL — ใช้ text/plain เพื่อเลี่ยง CORS preflight
-// ============================================================
+// ✅ แก้ apiCall — เพิ่ม redirect: 'follow'
 async function apiCall(action, payload = {}) {
   if (!accessToken && !['loginWithCitizenId', 'loginWithPassword', 'getHeaderLogo'].includes(action)) {
     throw new Error('กรุณาเข้าสู่ระบบก่อน');
   }
-  
+
   const url = new URL(API_URL);
   url.searchParams.set('action', action);
-  
+
   const body = { ...payload };
   if (accessToken) body.token = accessToken;
-  
-  // ✅ สำคัญ: ใช้ text/plain เพื่อเลี่ยง CORS preflight
+
+  // ✅ สำคัญ: ใช้ text/plain + redirect: 'follow'
   const response = await fetch(url.toString(), {
     method: 'POST',
-    headers: { 
+    headers: {
       'Content-Type': 'text/plain;charset=utf-8'
     },
     body: JSON.stringify(body),
-    redirect: 'follow'  // ✅ Apps Script redirect URL
+    redirect: 'follow'  // ✅ เพิ่มบรรทัดนี้ — Apps Script redirect URL
   });
-  
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status);
   }
-  
+
   const result = await response.json();
-  
+
   if (!result.ok) throw new Error(result.error || 'เกิดข้อผิดพลาด');
   return result.data;
 }
