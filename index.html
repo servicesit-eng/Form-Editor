@@ -52,6 +52,7 @@ body {
 .eyebrow { font-size: 11px; letter-spacing: 2px; opacity: 0.9; text-transform: uppercase; font-weight: 600; color: rgba(255,255,255,0.85); }
 .topbar-content h1 { font-size: 22px; font-weight: 700; margin: 0; letter-spacing: 0.5px; text-shadow: 0 2px 4px rgba(0,0,0,0.2); line-height: 1.2; }
 .topbar-subtitle { font-size: 13px; color: rgba(255,255,255,0.9); margin: 0; font-weight: 400; }
+.topbar-right { display: flex; gap: var(--space-3); align-items: center; }
 .session-badge {
   background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3);
   padding: var(--space-2) var(--space-4); border-radius: var(--radius-xl);
@@ -116,7 +117,9 @@ body {
 .card:hover { box-shadow: var(--shadow-lg); border-color: var(--accent-light); transform: translateY(-3px); }
 .card h3 { margin: 0 0 var(--space-2) 0; font-size: 17px; font-weight: 600; color: var(--primary); line-height: 1.4; }
 .card .meta { color: var(--gray-600); font-size: 12px; margin-top: var(--space-2); line-height: 1.6; }
-.card .btn { margin-top: var(--space-4); width: 100%; }
+.card .btn { margin-top: var(--space-3); }
+.card-actions { display: flex; gap: var(--space-2); margin-top: var(--space-4); flex-wrap: wrap; }
+.card-actions .btn { flex: 1; min-width: 120px; margin-top: 0; }
 .status {
   display: inline-flex; align-items: center; gap: var(--space-1);
   padding: var(--space-1) var(--space-3); border-radius: var(--radius-md);
@@ -150,6 +153,8 @@ body {
 .ghost:hover { background: var(--gray-200); border-color: var(--gray-400); }
 .danger { background: linear-gradient(135deg, var(--danger) 0%, #b91c1c 100%); color: #fff; }
 .danger:hover { background: linear-gradient(135deg, #b91c1c 0%, var(--danger) 100%); }
+.success-btn { background: linear-gradient(135deg, var(--success) 0%, #047857 100%); color: #fff; }
+.success-btn:hover { background: linear-gradient(135deg, #047857 0%, var(--success) 100%); }
 label { display: block; font-weight: 600; font-size: 13px; color: var(--gray-700); margin-bottom: var(--space-2); }
 input, select, textarea {
   width: 100%; padding: var(--space-3) var(--space-4);
@@ -351,6 +356,11 @@ input::placeholder, textarea::placeholder { color: var(--gray-400); }
 .modal-header h3 { font-size: 18px; font-weight: 700; color: var(--primary); }
 .modal-header .modal-actions { display: flex; gap: var(--space-2); }
 .modal-body { background: var(--gray-50); padding: var(--space-5); border-radius: var(--radius-lg); overflow: auto; max-height: 70vh; display: block; }
+.submission-success { text-align: center; padding: var(--space-8); }
+.submission-success .success-icon { font-size: 64px; margin-bottom: var(--space-4); }
+.submission-success h2 { color: var(--success); margin-bottom: var(--space-4); }
+.submission-success .reference-id { font-size: 24px; font-weight: 700; color: var(--primary); background: var(--gray-100); padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); display: inline-block; margin: var(--space-4) 0; letter-spacing: 2px; }
+.submission-success .actions { display: flex; gap: var(--space-3); justify-content: center; margin-top: var(--space-6); flex-wrap: wrap; }
 @media (max-width: 1200px) {
   .builder-layout { grid-template-columns: 1fr; grid-template-rows: auto auto auto; }
   .builder-sidebar, .builder-properties { max-height: none; }
@@ -358,6 +368,7 @@ input::placeholder, textarea::placeholder { color: var(--gray-400); }
 @media (max-width: 768px) {
   .topbar { padding: var(--space-4); flex-direction: column; gap: var(--space-3); }
   .topbar-left { width: 100%; justify-content: center; }
+  .topbar-right { width: 100%; justify-content: center; }
   .tabs { overflow-x: auto; }
   .cards { grid-template-columns: 1fr; }
   .app-container { padding: var(--space-4); }
@@ -383,73 +394,103 @@ input::placeholder, textarea::placeholder { color: var(--gray-400); }
     <img id="headerLogo" class="header-logo" src="" alt="โลโก้" style="display:none">
     <div id="headerLogoPlaceholder" class="header-logo-placeholder">⚕</div>
     <div class="topbar-content">
-      <span class="eyebrow">DONTUM HOSPITAL · Dontum e-Form System</span>
+      <span class="eyebrow">DON TUM HOSPITAL · OFFICIAL FORM SYSTEM</span>
       <h1>ระบบกรอกแบบฟอร์มออนไลน์</h1>
       <p class="topbar-subtitle">โรงพยาบาลดอนตูม</p>
     </div>
   </div>
-  <div id="sessionBadge" class="session-badge">ยังไม่ได้เข้าสู่ระบบ</div>
+  <div class="topbar-right">
+    <button class="btn ghost" id="mySubmissionsBtn" style="display:none">📋 คำขอของฉัน</button>
+    <button class="btn ghost" id="loginBtn">🔐 เข้าสู่ระบบ</button>
+    <div id="sessionBadge" class="session-badge" hidden>ยังไม่ได้เข้าสู่ระบบ</div>
+    <button class="btn ghost" id="logoutBtn" hidden>ออกจากระบบ</button>
+  </div>
 </header>
 <main class="app-container">
 <div id="loadingOverlay" class="loading-overlay"><div class="loading-spinner"></div><p class="loading-text">กำลังโหลด...</p></div>
 
-<section id="loginView" class="login-card" hidden>
-  <h2>เข้าสู่ระบบ</h2>
-  <div class="login-tabs">
-    <button class="login-tab active" data-mode="citizen">บุคลากร</button>
-    <button class="login-tab" data-mode="admin">Admin</button>
+<!-- PUBLIC: รายการฟอร์ม -->
+<section id="publicFormListView" class="view active">
+  <div class="section-heading"><span>01</span><div><h2>ฟอร์มทั้งหมด</h2><p>เลือกฟอร์มที่ต้องการกรอก หรือดูตัวอย่าง</p></div></div>
+  <div id="publicFormList" class="cards"></div>
+</section>
+
+<!-- PUBLIC: หน้ากรอกฟอร์ม -->
+<section id="publicFormRendererView" class="view">
+  <div class="section-heading"><span>02</span><div><h2 id="publicRendererTitle">กรอกฟอร์ม</h2><button class="btn ghost" id="backToPublicFormList">← กลับ</button></div></div>
+  <div class="card" style="margin-bottom: var(--space-6); background: var(--info-light); border-color: var(--info);">
+    <h3 style="color: var(--info); margin-bottom: var(--space-3);">📝 ข้อมูลผู้กรอก</h3>
+    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: var(--space-4);">
+      <label>ชื่อ-นามสกุล<input id="submitterFullName" type="text" placeholder="กรอกชื่อ-นามสกุลเต็ม" required></label>
+      <label>เลขบัตรประชาชน<input id="submitterCitizenId" type="text" inputmode="numeric" maxlength="13" placeholder="13 หลัก" required></label>
+    </div>
   </div>
-  <form id="passwordLoginForm" class="login-form active">
-    <label>เลขบัตรประชาชน<input id="loginCitizenId" inputmode="numeric" maxlength="13" required></label>
-    <label>รหัสผ่าน<input id="loginPassword" type="password" required></label>
-    <button class="btn primary" type="submit">เข้าสู่ระบบ</button>
-  </form>
-  <form id="adminLoginForm" class="login-form" hidden>
+  <div class="renderer-wrapper" id="publicRendererWrapper">
+    <div class="zoom-box"><div id="publicRendererCanvas" class="a4-canvas"></div></div>
+  </div>
+  <div class="renderer-actions">
+    <button class="btn primary" id="submitPublicFormBtn">📤 ส่งฟอร์ม</button>
+    <button class="btn ghost" id="cancelPublicFormBtn">ยกเลิก</button>
+  </div>
+</section>
+
+<!-- PUBLIC: ผลลัพธ์หลังส่ง -->
+<section id="submissionSuccessView" class="view">
+  <div class="submission-success">
+    <div class="success-icon">✅</div>
+    <h2>ส่งฟอร์มสำเร็จ</h2>
+    <p style="color: var(--gray-600); margin-bottom: var(--space-4);">บันทึกข้อมูลเรียบร้อยแล้ว</p>
+    <div>เลขอ้างอิงของคุณ</div>
+    <div class="reference-id" id="referenceIdDisplay">-</div>
+    <p style="color: var(--gray-600); font-size: 13px;">กรุณาบันทึกเลขอ้างอิงนี้ไว้ เพื่อใช้ตรวจสอบสถานะคำขอ</p>
+    <div class="actions">
+      <button class="btn primary" id="printSuccessBtn">🖨️ พิมพ์เอกสาร</button>
+      <button class="btn secondary" id="viewMySubmissionsBtn">📋 ดูคำขอของฉัน</button>
+      <button class="btn ghost" id="backToHomeBtn">🏠 กลับหน้าแรก</button>
+    </div>
+  </div>
+</section>
+
+<!-- PUBLIC: คำขอของฉัน (ใช้เลขบัตร) -->
+<section id="publicMySubmissionsView" class="view">
+  <div class="section-heading"><span>03</span><div><h2>คำขอของฉัน</h2><p>กรอกเลขบัตรประชาชนเพื่อดูคำขอที่คุณเคยส่ง</p></div></div>
+  <div class="card" style="margin-bottom: var(--space-6);">
+    <label>เลขบัตรประชาชน<input id="lookupCitizenId" type="text" inputmode="numeric" maxlength="13" placeholder="กรอกเลขบัตร 13 หลัก"></label>
+    <button class="btn primary btn-block" id="lookupSubmissionsBtn" style="margin-top: var(--space-3);">🔍 ค้นหาคำขอ</button>
+  </div>
+  <div id="publicMySubmissionsList" class="cards"></div>
+</section>
+
+<!-- LOGIN: สำหรับ Admin -->
+<section id="loginView" class="login-card" hidden>
+  <h2>เข้าสู่ระบบ (Admin)</h2>
+  <form id="adminLoginForm" class="login-form">
     <label>อีเมล<input id="adminEmail" type="email" required></label>
     <label>รหัสผ่าน<input id="adminPassword" type="password" required></label>
-    <button class="btn primary" type="submit">เข้าสู่ระบบ (Admin)</button>
+    <button class="btn primary" type="submit">เข้าสู่ระบบ</button>
+    <button class="btn ghost" type="button" id="cancelLoginBtn" style="margin-top: var(--space-2);">← กลับหน้าแรก</button>
   </form>
 </section>
 
-<section id="changePasswordView" class="login-card" hidden>
-  <h2>เปลี่ยนรหัสผ่านครั้งแรก</h2>
-  <form id="changePasswordForm">
-    <label>รหัสผ่านใหม่<input id="newPassword" type="password" minlength="10" required></label>
-    <label>ยืนยันรหัสผ่าน<input id="confirmPassword" type="password" minlength="10" required></label>
-    <button class="btn primary" type="submit">บันทึก</button>
-  </form>
-</section>
-
-<section id="appView" hidden>
+<!-- ADMIN: Dashboard -->
+<section id="adminDashboardView" class="view">
   <nav class="tabs">
-    <button class="tab active" data-view="formListView">ฟอร์มทั้งหมด</button>
-    <button class="tab" data-view="mySubmissionsView">คำขอของฉัน</button>
-    <button class="tab" id="formBuilderTab" data-view="formBuilderView" hidden>สร้างฟอร์ม (Admin)</button>
-    <button class="tab" id="adminSubmissionsTab" data-view="adminSubmissionsView" hidden>จัดการคำขอ (Admin)</button>
-    <button class="tab" id="staffDirectoryTab" data-view="staffDirectoryView" hidden>บุคลากร (Admin)</button>
-    <button class="tab" id="headerLogoTab" data-view="headerLogoView" hidden>โลโก้ (Admin)</button>
-    <button class="tab logout" id="logoutButton">ออกจากระบบ</button>
+    <button class="tab active" data-admin-view="adminFormListView">ฟอร์มทั้งหมด</button>
+    <button class="tab" data-admin-view="adminMySubmissionsView">คำขอของฉัน</button>
+    <button class="tab" data-admin-view="formBuilderView">สร้างฟอร์ม</button>
+    <button class="tab" data-admin-view="adminSubmissionsView">จัดการคำขอ</button>
+    <button class="tab" data-admin-view="staffDirectoryView">บุคลากร</button>
+    <button class="tab" data-admin-view="headerLogoView">โลโก้ Header</button>
   </nav>
 
-  <section id="formListView" class="view active">
-    <div class="section-heading"><span>01</span><div><h2>ฟอร์มทั้งหมด</h2><p>เลือกฟอร์มที่ต้องการกรอก</p></div></div>
-    <div id="formList" class="cards"></div>
+  <section id="adminFormListView" class="view active">
+    <div class="section-heading"><span>01</span><div><h2>ฟอร์มทั้งหมด (Admin)</h2><p>เลือกฟอร์มที่ต้องการกรอก</p></div></div>
+    <div id="adminFormList" class="cards"></div>
   </section>
 
-  <section id="formRendererView" class="view">
-    <div class="section-heading"><span>02</span><div><h2 id="rendererTitle">กรอกฟอร์ม</h2><button class="btn ghost" id="backToFormList">← กลับ</button></div></div>
-    <div class="renderer-wrapper" id="rendererWrapper">
-      <div class="zoom-box"><div id="rendererCanvas" class="a4-canvas"></div></div>
-    </div>
-    <div class="renderer-actions">
-      <button class="btn primary" id="submitFormBtn">ส่งฟอร์ม</button>
-      <button class="btn ghost" id="cancelFormBtn">ยกเลิก</button>
-    </div>
-  </section>
-
-  <section id="mySubmissionsView" class="view">
-    <div class="section-heading"><span>03</span><div><h2>คำขอของฉัน</h2></div></div>
-    <div id="mySubmissionsList" class="cards"></div>
+  <section id="adminMySubmissionsView" class="view">
+    <div class="section-heading"><span>02</span><div><h2>คำขอของฉัน</h2></div></div>
+    <div id="adminMySubmissionsList" class="cards"></div>
   </section>
 
   <section id="formBuilderView" class="view">
@@ -550,29 +591,32 @@ input::placeholder, textarea::placeholder { color: var(--gray-400); }
 </section>
 </main>
 
+<!-- Modal: ดูตัวอย่างฟอร์ม -->
 <div id="previewModal" class="modal" hidden>
   <div class="modal-content modal-large">
     <div class="modal-header">
-      <h3>Preview ฟอร์ม</h3>
-      <button class="btn ghost" id="closePreviewBtn">✕</button>
+      <h3 id="previewModalTitle">ดูตัวอย่างฟอร์ม</h3>
+      <button class="btn ghost" id="closePreviewBtn">✕ ปิด</button>
     </div>
     <div class="modal-body"><div class="zoom-box"><div id="previewCanvas" class="a4-canvas"></div></div></div>
   </div>
 </div>
 
+<!-- Modal: ดูคำขอ -->
 <div id="submissionModal" class="modal" hidden>
   <div class="modal-content modal-large">
     <div class="modal-header">
       <h3 id="submissionModalTitle">คำขอ</h3>
       <div class="modal-actions">
         <button class="btn secondary" id="printSubmissionBtn">🖨️ พิมพ์ A4</button>
-        <button class="btn ghost" id="closeSubmissionBtn">✕</button>
+        <button class="btn ghost" id="closeSubmissionBtn">✕ ปิด</button>
       </div>
     </div>
     <div class="modal-body"><div class="zoom-box"><div id="submissionCanvas" class="a4-canvas"></div></div></div>
   </div>
 </div>
 
+<!-- Modal: สร้างฟอร์มใหม่ -->
 <div id="newTemplateModal" class="modal" hidden>
   <div class="modal-content">
     <h3>สร้างฟอร์มใหม่</h3>
@@ -593,7 +637,7 @@ input::placeholder, textarea::placeholder { color: var(--gray-400); }
 'use strict';
 
 // ============================================================
-// ⚠️ สำคัญ: เปลี่ยน API_URL เป็น URL ของ Apps Script Web App ของคุณ
+// API CONFIG
 // ============================================================
 const API_URL = 'https://script.google.com/macros/s/AKfycbwlBmF7UCDh1b-DlGy6uzT_Vot2J0Z02EoLoCRm5XFjtra1nDzCBD-cBHJ_8Yl6hX6oig/exec';
 
@@ -616,43 +660,35 @@ const state = { templateId: null, meta: { name: '', description: '', is_active: 
 let undoStack = [], panelFieldId = null, propUndoArmed = false, lastNudgeAt = 0, renderSeq = 0;
 let rendererState = { templateId: null, fields: [] };
 let viewingSubmissionId = null, toastTimer = null;
+let lastSubmittedId = null, lastSubmittedCitizenId = null;
 
-// ✅ แก้ apiCall — เพิ่ม redirect: 'follow'
+// ============================================================
+// API CALL — text/plain + redirect: 'follow'
+// ============================================================
 async function apiCall(action, payload = {}) {
-  if (!accessToken && !['loginWithCitizenId', 'loginWithPassword', 'getHeaderLogo'].includes(action)) {
-    throw new Error('กรุณาเข้าสู่ระบบก่อน');
-  }
-
   const url = new URL(API_URL);
   url.searchParams.set('action', action);
-
+  
   const body = { ...payload };
   if (accessToken) body.token = accessToken;
-
-  // ✅ สำคัญ: ใช้ text/plain + redirect: 'follow'
+  
   const response = await fetch(url.toString(), {
     method: 'POST',
-    headers: {
-      'Content-Type': 'text/plain;charset=utf-8'
-    },
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
     body: JSON.stringify(body),
-    redirect: 'follow'  // ✅ เพิ่มบรรทัดนี้ — Apps Script redirect URL
+    redirect: 'follow'
   });
-
-  if (!response.ok) {
-    throw new Error('HTTP error ' + response.status);
-  }
-
+  
+  if (!response.ok) throw new Error('HTTP error ' + response.status);
   const result = await response.json();
-
   if (!result.ok) throw new Error(result.error || 'เกิดข้อผิดพลาด');
   return result.data;
 }
 
 function toast(message) { const el = $('#toast'); el.textContent = message; el.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('show'), 3500); }
 function err(e) { return e && e.message ? e.message : 'เกิดข้อผิดพลาด'; }
-function isAuthError(e) { const m = err(e); return m.includes('เข้าสู่ระบบ') || m.includes('เซสชัน'); }
-function handleError(e) { toast(err(e)); if (isAuthError(e)) doLogout(err(e)); }
+function isAuthError(e) { const m = err(e); return m.includes('เข้าสู่ระบบ') || m.includes('เซสชัน') || m.includes('ADMIN'); }
+function handleError(e) { toast(err(e)); if (isAuthError(e)) { accessToken = null; try { localStorage.removeItem('access_token'); } catch (x) {} updateAuthUI(); } }
 function esc(v) { return String(v == null ? '' : v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
 function uid() { return Math.random().toString(36).slice(2, 9); }
 function newTmpId() { return 'tmp_' + uid() + uid(); }
@@ -667,34 +703,311 @@ function formatThaiDate(iso) {
   if (!m) return String(iso || '');
   return new Date(+m[1], +m[2] - 1, +m[3]).toLocaleDateString('th-TH', { day: 'numeric', month: 'long', year: 'numeric' });
 }
-function show(view) { $$('.view').forEach(x => x.classList.toggle('active', x.id === view)); $$('.tab').forEach(x => x.classList.toggle('active', x.dataset.view === view)); }
-function showSection(sectionId) { ['loginView', 'changePasswordView', 'appView'].forEach(id => { const el = $('#' + id); if (el) el.hidden = (id !== sectionId); }); }
+function showView(viewId) {
+  $$('.view').forEach(x => x.classList.remove('active'));
+  const el = $('#' + viewId);
+  if (el) el.classList.add('active');
+}
 function closeAllModals() { $$('.modal').forEach(m => { m.hidden = true; }); }
 function showLoading() { $('#loadingOverlay').classList.add('active'); }
 function hideLoading() { $('#loadingOverlay').classList.remove('active'); }
-function doLogout(message) {
-  try { localStorage.removeItem('access_token'); } catch (e) { /* ignore */ }
-  accessToken = null; hideLoading(); closeAllModals(); showSection('loginView');
-  $('#sessionBadge').textContent = 'ยังไม่ได้เข้าสู่ระบบ'; resetBuilder();
-  rendererState = { templateId: null, fields: [] };
-  if (message) toast(message);
+
+function updateAuthUI() {
+  if (accessToken) {
+    $('#loginBtn').hidden = true;
+    $('#sessionBadge').hidden = false;
+    $('#logoutBtn').hidden = false;
+    $('#mySubmissionsBtn').style.display = 'inline-flex';
+  } else {
+    $('#loginBtn').hidden = false;
+    $('#sessionBadge').hidden = true;
+    $('#logoutBtn').hidden = true;
+    $('#mySubmissionsBtn').style.display = 'none';
+  }
 }
 
-async function enterApp() {
+async function enterAdminApp() {
   showLoading();
   try {
     const session = await apiCall('getSession', {});
-    hideLoading(); showSection('appView'); closeAllModals();
+    hideLoading();
     $('#sessionBadge').textContent = session.fullName + ' · ' + session.role;
-    const isAdmin = session.role === 'ADMIN';
-    $('#formBuilderTab').hidden = !isAdmin;
-    $('#adminSubmissionsTab').hidden = !isAdmin;
-    $('#staffDirectoryTab').hidden = !isAdmin;
-    $('#headerLogoTab').hidden = !isAdmin;
-    show('formListView'); loadFormList();
-  } catch (e) { doLogout('เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่'); }
+    showView('adminDashboardView');
+    showAdminView('adminFormListView');
+    loadAdminFormList();
+  } catch (e) {
+    hideLoading();
+    accessToken = null;
+    try { localStorage.removeItem('access_token'); } catch (x) {}
+    updateAuthUI();
+    showView('publicFormListView');
+    toast('เซสชันหมดอายุ');
+  }
 }
 
+function showAdminView(viewId) {
+  $$('#adminDashboardView .view').forEach(x => x.classList.remove('active'));
+  $$('#adminDashboardView .tab').forEach(x => x.classList.remove('active'));
+  const el = $('#' + viewId);
+  if (el) el.classList.add('active');
+  const tab = $(`[data-admin-view="${viewId}"]`);
+  if (tab) tab.classList.add('active');
+}
+
+// ============================================================
+// HEADER LOGO
+// ============================================================
+async function loadHeaderLogo() {
+  try {
+    const result = await apiCall('getHeaderLogo', {});
+    if (result && result.logo) {
+      $('#headerLogo').src = result.logo; $('#headerLogo').style.display = 'block';
+      $('#headerLogoPlaceholder').style.display = 'none';
+      $('#currentHeaderLogo').src = result.logo; $('#currentHeaderLogo').style.display = 'block';
+      $('#currentHeaderLogoPlaceholder').style.display = 'none';
+      $('#deleteHeaderLogoBtn').hidden = false;
+    } else {
+      $('#headerLogo').style.display = 'none'; $('#headerLogoPlaceholder').style.display = 'flex';
+      $('#currentHeaderLogo').style.display = 'none'; $('#currentHeaderLogoPlaceholder').style.display = 'flex';
+      $('#deleteHeaderLogoBtn').hidden = true;
+    }
+  } catch (e) { /* ignore */ }
+}
+
+$('#uploadHeaderLogoBtn').addEventListener('click', () => { $('#headerLogoFileInput').click(); });
+$('#headerLogoFileInput').addEventListener('change', async (e) => {
+  const file = e.target.files && e.target.files[0];
+  if (!file) return;
+  const allowed = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/svg+xml', 'image/webp'];
+  if (allowed.indexOf(file.type) === -1) return toast('รูปแบบไฟล์ไม่ถูกต้อง');
+  if (file.size > 50000) return toast('ไฟล์ใหญ่เกินไป (สูงสุด ~37 KB)');
+  const reader = new FileReader();
+  reader.onload = async (ev) => {
+    showLoading();
+    try {
+      await apiCall('uploadHeaderLogo', { base64Data: ev.target.result });
+      hideLoading(); toast('อัปโหลดโลโก้สำเร็จ'); await loadHeaderLogo();
+    } catch (x) { hideLoading(); toast(err(x)); }
+  };
+  reader.readAsDataURL(file); e.target.value = '';
+});
+$('#deleteHeaderLogoBtn').addEventListener('click', async () => {
+  if (!confirm('ลบโลโก้ header?')) return;
+  showLoading();
+  try { await apiCall('deleteHeaderLogo', {}); hideLoading(); toast('ลบโลโก้แล้ว'); await loadHeaderLogo(); }
+  catch (x) { hideLoading(); toast(err(x)); }
+});
+
+// ============================================================
+// PUBLIC: รายการฟอร์ม
+// ============================================================
+async function loadPublicFormList() {
+  try {
+    const templates = await apiCall('getPublicFormTemplates', {});
+    $('#publicFormList').innerHTML = templates && templates.length
+      ? templates.map(t => `
+        <article class="card">
+          <h3>${esc(t.name)}</h3>
+          <p class="meta">${esc(t.description || '')}</p>
+          <div class="card-actions">
+            <button class="btn secondary" data-preview="${esc(t.id)}">👁️ ดูตัวอย่าง</button>
+            <button class="btn primary" data-fill="${esc(t.id)}">✏️ กรอกเลย</button>
+          </div>
+        </article>
+      `).join('')
+      : '<div class="empty">ยังไม่มีฟอร์มที่เปิดใช้งาน</div>';
+  } catch (e) { handleError(e); }
+}
+
+$('#publicFormList').addEventListener('click', async e => {
+  const previewBtn = e.target.closest('[data-preview]');
+  const fillBtn = e.target.closest('[data-fill]');
+  if (previewBtn) { await openPublicPreview(previewBtn.dataset.preview); return; }
+  if (fillBtn) { await openPublicFormRenderer(fillBtn.dataset.fill); return; }
+});
+
+async function openPublicPreview(templateId) {
+  showLoading();
+  try {
+    const template = await apiCall('getPublicFormTemplate', { id: templateId });
+    hideLoading();
+    $('#previewModalTitle').textContent = 'ดูตัวอย่าง: ' + template.name;
+    const canvas = renderFormOnCanvas('#previewCanvas', (template.fields || []).map(normalizeField), 'print', {});
+    $('#previewModal').hidden = false;
+    applyZoom(canvas, fitZoom($('#previewModal .modal-body')));
+  } catch (e) { hideLoading(); toast(err(e)); }
+}
+
+$('#closePreviewBtn').addEventListener('click', () => { $('#previewModal').hidden = true; });
+
+async function openPublicFormRenderer(templateId) {
+  showLoading();
+  try {
+    const template = await apiCall('getPublicFormTemplate', { id: templateId });
+    hideLoading();
+    rendererState = { templateId: templateId, fields: (template.fields || []).map(normalizeField) };
+    $('#publicRendererTitle').textContent = 'กรอกฟอร์ม: ' + template.name;
+    $('#submitterFullName').value = '';
+    $('#submitterCitizenId').value = '';
+    showView('publicFormRendererView');
+    const canvas = renderFormOnCanvas('#publicRendererCanvas', rendererState.fields, 'fill');
+    applyZoom(canvas, fitZoom($('#publicRendererWrapper')));
+    $('#publicRendererWrapper').scrollTop = 0;
+  } catch (e) { hideLoading(); toast(err(e)); }
+}
+
+$('#backToPublicFormList').addEventListener('click', () => showView('publicFormListView'));
+$('#cancelPublicFormBtn').addEventListener('click', () => showView('publicFormListView'));
+
+$('#submitPublicFormBtn').addEventListener('click', async () => {
+  if (!rendererState.templateId) return;
+  const fullName = $('#submitterFullName').value.trim();
+  const citizenId = $('#submitterCitizenId').value.trim();
+  if (!fullName) { toast('กรุณากรอกชื่อ-นามสกุล'); $('#submitterFullName').focus(); return; }
+  if (!/^\d{13}$/.test(citizenId)) { toast('กรุณากรอกเลขบัตรประชาชน 13 หลัก'); $('#submitterCitizenId').focus(); return; }
+  
+  const result = collectFormData($('#publicRendererCanvas'), rendererState.fields);
+  if (result.missing.length) {
+    const first = result.missing[0];
+    toast('กรุณากรอก: ' + (first.label || first.name));
+    return;
+  }
+  
+  showLoading();
+  try {
+    const res = await apiCall('submitFormAnonymous', {
+      templateId: rendererState.templateId,
+      formData: result.data,
+      citizenId: citizenId,
+      fullName: fullName
+    });
+    hideLoading();
+    lastSubmittedId = res.id;
+    lastSubmittedCitizenId = citizenId;
+    $('#referenceIdDisplay').textContent = res.referenceId;
+    showView('submissionSuccessView');
+  } catch (x) { hideLoading(); toast(err(x)); }
+});
+
+$('#printSuccessBtn').addEventListener('click', async () => {
+  if (!lastSubmittedId || !lastSubmittedCitizenId) return;
+  await printPublicSubmission(lastSubmittedId, lastSubmittedCitizenId);
+});
+
+$('#viewMySubmissionsBtn').addEventListener('click', () => {
+  $('#lookupCitizenId').value = lastSubmittedCitizenId || '';
+  showView('publicMySubmissionsView');
+});
+
+$('#backToHomeBtn').addEventListener('click', () => showView('publicFormListView'));
+
+async function printPublicSubmission(id, citizenId) {
+  const win = window.open('', '_blank');
+  if (!win) return toast('เบราว์เซอร์บล็อกหน้าต่างพิมพ์');
+  showLoading();
+  try {
+    const r = await apiCall('getPublicFormSubmission', { id: id, citizenId: citizenId });
+    hideLoading();
+    if (!r || !r.fields) return toast('ไม่พบข้อมูลคำขอ');
+    const holder = document.createElement('div'); holder.className = 'a4-canvas';
+    const ctx = { mode: 'print', data: r.data || {}, prefix: '' };
+    (r.fields || []).map(normalizeField).forEach(f => holder.appendChild(buildFieldElement(f, ctx)));
+    const css = document.querySelector('style').textContent;
+    win.document.write('<!doctype html><html lang="th"><head><meta charset="utf-8"><title>พิมพ์คำขอ #' + esc(r.referenceId) + '</title><style>' + css + '</style><style>@page{size:A4 portrait;margin:0}html,body{background:#fff;margin:0}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}.a4-canvas{box-shadow:none!important;margin:0!important;transform:none!important}</style></head><body>' + holder.outerHTML + '<script>window.onload=function(){setTimeout(function(){window.print()},500)}<\/script></body></html>');
+    win.document.close();
+  } catch (x) { hideLoading(); try { win.close(); } catch (e2) {} toast(err(x)); }
+}
+
+// PUBLIC: คำขอของฉัน
+$('#lookupSubmissionsBtn').addEventListener('click', async () => {
+  const citizenId = $('#lookupCitizenId').value.trim();
+  if (!/^\d{13}$/.test(citizenId)) { toast('กรุณากรอกเลขบัตรประชาชน 13 หลัก'); return; }
+  showLoading();
+  try {
+    const submissions = await apiCall('lookupSubmissionsByCitizenId', { citizenId: citizenId });
+    hideLoading();
+    $('#publicMySubmissionsList').innerHTML = submissions && submissions.length
+      ? submissions.map(s => `
+        <article class="card">
+          <h3>${esc(s.template_name)}</h3>
+          <span class="status" data-status="${esc(s.status)}">${esc(STATUS_TH[s.status] || s.status)}</span>
+          <div class="meta">เลขอ้างอิง: <b>${esc(s.referenceId)}</b><br>ส่งเมื่อ ${esc(new Date(s.created_at).toLocaleString('th-TH'))}</div>
+          <div class="card-actions">
+            <button class="btn secondary" data-view-public-sub="${esc(s.id)}" data-citizen="${esc(citizenId)}">👁️ ดูรายละเอียด</button>
+            <button class="btn ghost" data-print-public-sub="${esc(s.id)}" data-citizen="${esc(citizenId)}">🖨️ พิมพ์</button>
+          </div>
+        </article>
+      `).join('')
+      : '<div class="empty">ไม่พบคำขอสำหรับเลขบัตรนี้</div>';
+  } catch (x) { hideLoading(); toast(err(x)); }
+});
+
+$('#publicMySubmissionsList').addEventListener('click', async e => {
+  const viewBtn = e.target.closest('[data-view-public-sub]');
+  const printBtn = e.target.closest('[data-print-public-sub]');
+  if (viewBtn) { await viewPublicSubmission(viewBtn.dataset.viewPublicSub, viewBtn.dataset.citizen); return; }
+  if (printBtn) { await printPublicSubmission(printBtn.dataset.printPublicSub, printBtn.dataset.citizen); return; }
+});
+
+async function viewPublicSubmission(id, citizenId) {
+  showLoading();
+  try {
+    const r = await apiCall('getPublicFormSubmission', { id: id, citizenId: citizenId });
+    hideLoading();
+    viewingSubmissionId = id;
+    viewingSubmissionCitizenId = citizenId;
+    $('#submissionModalTitle').textContent = (r.template && r.template.name ? r.template.name : 'คำขอ') + ' · #' + esc(r.referenceId);
+    const canvas = renderFormOnCanvas('#submissionCanvas', (r.fields || []).map(normalizeField), 'print', r.data || {});
+    $('#submissionModal').hidden = false;
+    applyZoom(canvas, fitZoom($('#submissionModal .modal-body')));
+  } catch (x) { hideLoading(); toast(err(x)); }
+}
+
+let viewingSubmissionCitizenId = null;
+$('#printSubmissionBtn').addEventListener('click', () => {
+  if (viewingSubmissionId && viewingSubmissionCitizenId) printPublicSubmission(viewingSubmissionId, viewingSubmissionCitizenId);
+  else if (viewingSubmissionId && accessToken) printSubmission(viewingSubmissionId);
+});
+$('#closeSubmissionBtn').addEventListener('click', () => { $('#submissionModal').hidden = true; });
+
+// ============================================================
+// LOGIN / LOGOUT
+// ============================================================
+$('#loginBtn').addEventListener('click', () => { showView('loginView'); });
+$('#cancelLoginBtn').addEventListener('click', () => { showView('publicFormListView'); });
+
+$('#adminLoginForm').addEventListener('submit', async e => {
+  e.preventDefault(); showLoading();
+  try {
+    const result = await apiCall('loginWithPassword', { email: $('#adminEmail').value.trim(), password: $('#adminPassword').value });
+    accessToken = result.accessToken;
+    try { localStorage.setItem('access_token', accessToken); } catch (x) {}
+    $('#adminPassword').value = '';
+    hideLoading();
+    updateAuthUI();
+    await enterAdminApp();
+  } catch (x) { hideLoading(); toast(err(x)); }
+});
+
+$('#logoutBtn').addEventListener('click', () => {
+  if (!confirm('ออกจากระบบ?')) return;
+  accessToken = null;
+  try { localStorage.removeItem('access_token'); } catch (e) {}
+  updateAuthUI();
+  showView('publicFormListView');
+  toast('ออกจากระบบแล้ว');
+});
+
+$('#mySubmissionsBtn').addEventListener('click', () => {
+  if (!accessToken) { showView('loginView'); return; }
+  showView('adminDashboardView');
+  showAdminView('adminMySubmissionsView');
+  loadAdminMySubmissions();
+});
+
+// ============================================================
+// FIELD MODEL & RENDER ENGINE
+// ============================================================
 function normalizeField(f) {
   const num = (v, d) => { const n = Number(v); return isFinite(n) ? n : d; };
   let options = f.options;
@@ -862,29 +1175,6 @@ function fitZoom(wrapper) { const w = wrapper.clientWidth - 40; if (!(w > 0)) re
 function setBuilderZoom(z) { state.zoom = clamp(round2(z), 0.3, 1.5); applyZoom($('#builderCanvas'), state.zoom); $('#zoomLabel').textContent = Math.round(state.zoom * 100) + '%'; }
 function mmPerPx(canvas) { const w = canvas.getBoundingClientRect().width; return w > 0 ? PAGE_W / w : 1 / PX_PER_MM; }
 
-async function loadFormList() {
-  try {
-    const templates = await apiCall('getActiveFormTemplates', {});
-    $('#formList').innerHTML = templates && templates.length
-      ? templates.map(t => '<article class="card"><h3>' + esc(t.name) + '</h3><p class="meta">' + esc(t.description || '') + '</p><button class="btn primary" data-template="' + esc(t.id) + '">กรอกฟอร์ม</button></article>').join('')
-      : '<div class="empty">ยังไม่มีฟอร์มที่เปิดใช้งาน</div>';
-  } catch (e) { handleError(e); }
-}
-
-async function openFormRenderer(templateId) {
-  showLoading();
-  try {
-    const template = await apiCall('getActiveFormTemplate', { id: templateId });
-    hideLoading();
-    rendererState = { templateId: templateId, fields: (template.fields || []).map(normalizeField) };
-    $('#rendererTitle').textContent = template.name;
-    show('formRendererView');
-    const canvas = renderFormOnCanvas('#rendererCanvas', rendererState.fields, 'fill');
-    applyZoom(canvas, fitZoom($('#rendererWrapper')));
-    $('#rendererWrapper').scrollTop = 0;
-  } catch (e) { hideLoading(); handleError(e); }
-}
-
 function collectFormData(canvasEl, fields) {
   const data = {}, missing = [];
   fields.forEach(f => {
@@ -901,47 +1191,48 @@ function collectFormData(canvasEl, fields) {
   return { data: data, missing: missing };
 }
 
-$('#submitFormBtn').addEventListener('click', async () => {
-  if (!accessToken) { doLogout('กรุณาเข้าสู่ระบบก่อน'); return; }
-  if (!rendererState.templateId) return;
-  const result = collectFormData($('#rendererCanvas'), rendererState.fields);
-  if (result.missing.length) {
-    const first = result.missing[0];
-    const el = $('#rendererCanvas').querySelector('[data-field-id="' + first.id + '"]');
-    if (el && el.scrollIntoView) el.scrollIntoView({ block: 'center', behavior: 'smooth' });
-    toast('กรุณากรอก: ' + (first.label || first.name));
-    return;
-  }
+// ============================================================
+// ADMIN: Form List
+// ============================================================
+async function loadAdminFormList() {
+  try {
+    const templates = await apiCall('getActiveFormTemplates', {});
+    $('#adminFormList').innerHTML = templates && templates.length
+      ? templates.map(t => '<article class="card"><h3>' + esc(t.name) + '</h3><p class="meta">' + esc(t.description || '') + '</p><button class="btn primary" data-template="' + esc(t.id) + '">กรอกฟอร์ม</button></article>').join('')
+      : '<div class="empty">ยังไม่มีฟอร์มที่เปิดใช้งาน</div>';
+  } catch (e) { handleError(e); }
+}
+
+$('#adminFormList').addEventListener('click', e => { const btn = e.target.closest('[data-template]'); if (btn) openAdminFormRenderer(btn.dataset.template); });
+
+async function openAdminFormRenderer(templateId) {
   showLoading();
   try {
-    await apiCall('submitForm', { templateId: rendererState.templateId, formData: result.data });
-    hideLoading(); toast('ส่งฟอร์มสำเร็จ');
-    rendererState = { templateId: null, fields: [] }; $('#rendererCanvas').innerHTML = '';
-    show('mySubmissionsView'); loadMySubmissions();
-  } catch (x) { hideLoading(); handleError(x); }
-});
+    const template = await apiCall('getActiveFormTemplate', { id: templateId });
+    hideLoading();
+    rendererState = { templateId: templateId, fields: (template.fields || []).map(normalizeField) };
+    showView('adminFormListView');
+    const canvas = renderFormOnCanvas('#publicRendererCanvas', rendererState.fields, 'fill');
+    applyZoom(canvas, fitZoom($('#publicRendererWrapper')));
+  } catch (e) { hideLoading(); handleError(e); }
+}
 
-$('#cancelFormBtn').addEventListener('click', () => show('formListView'));
-$('#backToFormList').addEventListener('click', () => show('formListView'));
-$('#formList').addEventListener('click', e => { const btn = e.target.closest('[data-template]'); if (btn) openFormRenderer(btn.dataset.template); });
-
-async function loadMySubmissions() {
+async function loadAdminMySubmissions() {
   try {
     const submissions = await apiCall('getMySubmissions', {});
-    $('#mySubmissionsList').innerHTML = submissions && submissions.length
+    $('#adminMySubmissionsList').innerHTML = submissions && submissions.length
       ? submissions.map(s => '<article class="card"><h3>' + esc(s.template_name) + '</h3><span class="status" data-status="' + esc(s.status) + '">' + esc(STATUS_TH[s.status] || s.status) + '</span><div class="meta">ส่งเมื่อ ' + esc(new Date(s.created_at).toLocaleString('th-TH')) + '</div><button class="btn ghost print-my-btn" data-id="' + esc(s.id) + '">🖨️ พิมพ์ A4</button></article>').join('')
       : '<div class="empty">ยังไม่มีคำขอ</div>';
   } catch (e) { handleError(e); }
 }
 
-async function printMySubmission(id) {
+async function printSubmission(id) {
   const win = window.open('', '_blank');
   if (!win) return toast('เบราว์เซอร์บล็อกหน้าต่างพิมพ์');
   showLoading();
   try {
     const r = await apiCall('printFormSubmission', { id: id });
     hideLoading();
-    if (!r || !r.fields) return toast('ไม่พบข้อมูลคำขอ');
     const holder = document.createElement('div'); holder.className = 'a4-canvas';
     const ctx = { mode: 'print', data: r.data || {}, prefix: '' };
     (r.fields || []).map(normalizeField).forEach(f => holder.appendChild(buildFieldElement(f, ctx)));
@@ -951,10 +1242,9 @@ async function printMySubmission(id) {
   } catch (x) { hideLoading(); try { win.close(); } catch (e2) {} handleError(x); }
 }
 
-function markDirty() { state.dirty = true; $('#dirtyBadge').hidden = false; }
-function clearDirty() { state.dirty = false; $('#dirtyBadge').hidden = true; }
-function confirmDiscard() { return !state.dirty || confirm('มีการแก้ไขที่ยังไม่ได้บันทึก ต้องการทิ้งการแก้ไขหรือไม่?'); }
-
+// ============================================================
+// ADMIN: Form Builder
+// ============================================================
 async function loadTemplateList() {
   try {
     const templates = await apiCall('getFormTemplates', {});
@@ -967,14 +1257,12 @@ async function loadTemplateList() {
 $('#templateList').addEventListener('click', async e => { const item = e.target.closest('[data-template-id]'); if (!item) return; await openTemplateEditor(item.dataset.templateId); });
 
 $('#newTemplateBtn').addEventListener('click', () => {
-  if (!accessToken) { doLogout('กรุณาเข้าสู่ระบบก่อน'); return; }
   closeAllModals(); $('#newTemplateModal').hidden = false;
   $('#newTemplateName').value = ''; $('#newTemplateDesc').value = ''; $('#newTemplateName').focus();
 });
 $('#cancelNewTemplate').addEventListener('click', () => { $('#newTemplateModal').hidden = true; });
 $('#newTemplateForm').addEventListener('submit', async e => {
   e.preventDefault();
-  if (!accessToken) { doLogout('กรุณาเข้าสู่ระบบก่อน'); return; }
   const name = $('#newTemplateName').value.trim();
   if (!name) return toast('กรุณากรอกชื่อฟอร์ม');
   if (!confirmDiscard()) return;
@@ -1021,7 +1309,7 @@ function resetBuilder() {
   updateUndoBtn();
 }
 
-$('#backToTemplateList').addEventListener('click', () => { if (!confirmDiscard()) return; resetBuilder(); closeAllModals(); loadTemplateList(); });
+$('#backToTemplateList').addEventListener('click', () => { if (!confirmDiscard()) return; resetBuilder(); loadTemplateList(); });
 $('#deleteTemplateBtn').addEventListener('click', async () => {
   if (!state.templateId) return;
   if (!confirm('ลบฟอร์ม "' + (state.meta.name || '') + '" ถาวร?')) return;
@@ -1221,7 +1509,6 @@ $('#undoBtn').addEventListener('click', undo);
 $('#zoomInBtn').addEventListener('click', () => setBuilderZoom(state.zoom + 0.1));
 $('#zoomOutBtn').addEventListener('click', () => setBuilderZoom(state.zoom - 0.1));
 $('#zoomFitBtn').addEventListener('click', () => setBuilderZoom(fitZoom($('#builderCanvasWrapper'))));
-window.addEventListener('resize', () => { if ($('#formRendererView').classList.contains('active') && rendererState.templateId) applyZoom($('#rendererCanvas'), fitZoom($('#rendererWrapper'))); });
 
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape' && !$$('.modal').every(m => m.hidden)) { closeAllModals(); return; }
@@ -1246,7 +1533,10 @@ document.addEventListener('keydown', e => {
     syncGeometryInputs(f); markDirty();
   }
 });
-window.addEventListener('beforeunload', e => { if (state.dirty) { e.preventDefault(); e.returnValue = ''; } });
+
+function markDirty() { state.dirty = true; $('#dirtyBadge').hidden = false; }
+function clearDirty() { state.dirty = false; $('#dirtyBadge').hidden = true; }
+function confirmDiscard() { return !state.dirty || confirm('มีการแก้ไขที่ยังไม่ได้บันทึก ต้องการทิ้งการแก้ไขหรือไม่?'); }
 
 function group(label, html, note) { return '<div class="prop-group"><label>' + esc(label) + '</label>' + html + (note ? '<div class="prop-note">' + esc(note) + '</div>' : '') + '</div>'; }
 function numInput(key, v, min, max, step) { return '<input type="number" data-prop="' + key + '" value="' + esc(v) + '" min="' + min + '" max="' + max + '" step="' + step + '">'; }
@@ -1310,7 +1600,7 @@ function showProperties(id) {
         reader.onload = async (ev) => {
           showLoading();
           try {
-            const result = await apiCall('uploadHeaderLogo', { base64Data: ev.target.result });
+            const result = await apiCall('uploadLogo', { base64Data: ev.target.result });
             hideLoading();
             const ff = getField(panelFieldId);
             if (ff) { pushUndo(); ff.value = result.dataUrl; refreshFieldElement(ff); showProperties(ff.id); markDirty(); toast('อัปโหลดโลโก้สำเร็จ'); }
@@ -1384,7 +1674,6 @@ function validateBeforeSave() {
 
 async function saveForm() {
   if (!state.templateId) return;
-  if (!accessToken) { doLogout('กรุณาเข้าสู่ระบบก่อน'); return; }
   const problem = validateBeforeSave(); if (problem) return toast(problem);
   const meta = { name: $('#builderTemplateName').value.trim(), description: state.meta.description, is_active: $('#builderPublishToggle').checked };
   showLoading();
@@ -1405,8 +1694,10 @@ $('#previewFormBtn').addEventListener('click', () => {
   const canvas = renderFormOnCanvas('#previewCanvas', state.fields, 'fill');
   $('#previewModal').hidden = false; applyZoom(canvas, fitZoom($('#previewModal .modal-body')));
 });
-$('#closePreviewBtn').addEventListener('click', () => { $('#previewModal').hidden = true; });
 
+// ============================================================
+// ADMIN: Submissions
+// ============================================================
 async function loadAdminTemplateSelect() {
   try {
     const templates = await apiCall('getFormTemplates', {});
@@ -1421,7 +1712,7 @@ $('#adminTemplateSelect').addEventListener('change', async e => {
   try {
     const submissions = await apiCall('getFormSubmissions', { templateId: templateId });
     $('#adminSubmissionsList').innerHTML = submissions && submissions.length
-      ? submissions.map(s => '<article class="card"><h3>คำขอ #' + esc(String(s.id).slice(0, 8)) + ' <span class="status" data-status="' + esc(s.status) + '">' + esc(STATUS_TH[s.status] || s.status) + '</span></h3><p class="meta">ส่งเมื่อ: ' + esc(new Date(s.created_at).toLocaleString('th-TH')) + '</p><div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap"><button class="btn secondary" data-view-sub="' + esc(s.id) + '">👁️ ดู</button><button class="btn primary" data-approve="' + esc(s.id) + '">อนุมัติ</button><button class="btn ghost" data-reject="' + esc(s.id) + '">ปฏิเสธ</button><button class="btn ghost" data-print="' + esc(s.id) + '">พิมพ์ A4</button></div></article>').join('')
+      ? submissions.map(s => '<article class="card"><h3>คำขอ #' + esc(String(s.id).slice(0, 8)) + ' <span class="status" data-status="' + esc(s.status) + '">' + esc(STATUS_TH[s.status] || s.status) + '</span></h3><p class="meta">ส่งเมื่อ: ' + esc(new Date(s.created_at).toLocaleString('th-TH')) + '</p><div class="card-actions"><button class="btn secondary" data-view-sub="' + esc(s.id) + '">👁️ ดู</button><button class="btn primary" data-approve="' + esc(s.id) + '">อนุมัติ</button><button class="btn ghost" data-reject="' + esc(s.id) + '">ปฏิเสธ</button><button class="btn ghost" data-print="' + esc(s.id) + '">พิมพ์ A4</button></div></article>').join('')
       : '<div class="empty">ไม่พบคำขอ</div>';
     hideLoading();
   } catch (x) { hideLoading(); handleError(x); }
@@ -1437,27 +1728,13 @@ async function viewSubmission(id) {
   showLoading();
   try {
     const r = await apiCall('printFormSubmission', { id: id });
-    hideLoading(); closeAllModals(); viewingSubmissionId = id;
+    hideLoading();
+    viewingSubmissionId = id;
+    viewingSubmissionCitizenId = null;
     $('#submissionModalTitle').textContent = (r.template && r.template.name ? r.template.name : 'คำขอ') + ' · #' + String(id).slice(0, 8);
     const canvas = renderFormOnCanvas('#submissionCanvas', (r.fields || []).map(normalizeField), 'print', r.data || {});
     $('#submissionModal').hidden = false; applyZoom(canvas, fitZoom($('#submissionModal .modal-body')));
   } catch (x) { hideLoading(); handleError(x); }
-}
-
-async function printSubmission(id) {
-  const win = window.open('', '_blank');
-  if (!win) return toast('เบราว์เซอร์บล็อกหน้าต่างพิมพ์');
-  showLoading();
-  try {
-    const r = await apiCall('printFormSubmission', { id: id });
-    hideLoading();
-    const holder = document.createElement('div'); holder.className = 'a4-canvas';
-    const ctx = { mode: 'print', data: r.data || {}, prefix: '' };
-    (r.fields || []).map(normalizeField).forEach(f => holder.appendChild(buildFieldElement(f, ctx)));
-    const css = document.querySelector('style').textContent;
-    win.document.write('<!doctype html><html lang="th"><head><meta charset="utf-8"><title>พิมพ์คำขอ</title><style>' + css + '</style><style>@page{size:A4 portrait;margin:0}html,body{background:#fff;margin:0}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}.a4-canvas{box-shadow:none!important;margin:0!important;transform:none!important}</style></head><body>' + holder.outerHTML + '<script>window.onload=function(){setTimeout(function(){window.print()},500)}<\/script></body></html>');
-    win.document.close();
-  } catch (x) { hideLoading(); try { win.close(); } catch (e2) {} handleError(x); }
 }
 
 $('#adminSubmissionsList').addEventListener('click', e => {
@@ -1469,10 +1746,9 @@ $('#adminSubmissionsList').addEventListener('click', e => {
   else if (view) viewSubmission(view.dataset.viewSub);
 });
 
-$('#closeSubmissionBtn').addEventListener('click', () => { $('#submissionModal').hidden = true; });
-$('#printSubmissionBtn').addEventListener('click', () => { if (viewingSubmissionId) printSubmission(viewingSubmissionId); });
-
-// STAFF DIRECTORY
+// ============================================================
+// ADMIN: Staff Directory
+// ============================================================
 async function loadStaffDirectory() {
   try {
     const staff = await apiCall('getStaffDirectory', {});
@@ -1524,104 +1800,27 @@ $('#staffDirectoryList').addEventListener('click', async e => {
   }
 });
 
-// HEADER LOGO
-async function loadHeaderLogo() {
-  try {
-    const result = await apiCall('getHeaderLogo', {});
-    if (result && result.logo) {
-      $('#headerLogo').src = result.logo; $('#headerLogo').style.display = 'block';
-      $('#headerLogoPlaceholder').style.display = 'none';
-      $('#currentHeaderLogo').src = result.logo; $('#currentHeaderLogo').style.display = 'block';
-      $('#currentHeaderLogoPlaceholder').style.display = 'none';
-      $('#deleteHeaderLogoBtn').hidden = false;
-    } else {
-      $('#headerLogo').style.display = 'none'; $('#headerLogoPlaceholder').style.display = 'flex';
-      $('#currentHeaderLogo').style.display = 'none'; $('#currentHeaderLogoPlaceholder').style.display = 'flex';
-      $('#deleteHeaderLogoBtn').hidden = true;
-    }
-  } catch (e) { /* ignore */ }
-}
+// ============================================================
+// ADMIN TABS
+// ============================================================
+$$('[data-admin-view]').forEach(t => t.addEventListener('click', () => {
+  showAdminView(t.dataset.adminView);
+  if (t.dataset.adminView === 'adminFormListView') loadAdminFormList();
+  if (t.dataset.adminView === 'adminMySubmissionsView') loadAdminMySubmissions();
+  if (t.dataset.adminView === 'formBuilderView') { loadTemplateList(); if (state.templateId) setBuilderZoom(state.zoom); }
+  if (t.dataset.adminView === 'adminSubmissionsView') loadAdminTemplateSelect();
+  if (t.dataset.adminView === 'staffDirectoryView') loadStaffDirectory();
+  if (t.dataset.adminView === 'headerLogoView') loadHeaderLogo();
+}));
 
-$('#uploadHeaderLogoBtn').addEventListener('click', () => { $('#headerLogoFileInput').click(); });
-$('#headerLogoFileInput').addEventListener('change', async (e) => {
-  const file = e.target.files && e.target.files[0];
-  if (!file) return;
-  const allowed = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/svg+xml', 'image/webp'];
-  if (allowed.indexOf(file.type) === -1) return toast('รูปแบบไฟล์ไม่ถูกต้อง');
-  if (file.size > 50000) return toast('ไฟล์ใหญ่เกินไป (สูงสุด ~37 KB)');
-  const reader = new FileReader();
-  reader.onload = async (ev) => {
-    showLoading();
-    try {
-      const result = await apiCall('uploadHeaderLogo', { base64Data: ev.target.result });
-      hideLoading(); toast('อัปโหลดโลโก้สำเร็จ'); await loadHeaderLogo();
-    } catch (x) { hideLoading(); toast(err(x)); }
-  };
-  reader.readAsDataURL(file); e.target.value = '';
-});
-$('#deleteHeaderLogoBtn').addEventListener('click', async () => {
-  if (!confirm('ลบโลโก้ header?')) return;
-  showLoading();
-  try { await apiCall('deleteHeaderLogo', {}); hideLoading(); toast('ลบโลโก้แล้ว'); await loadHeaderLogo(); }
-  catch (x) { hideLoading(); toast(err(x)); }
-});
-
-// LOGIN
-function switchLoginTab(mode) {
-  $$('.login-tab[data-mode]').forEach(t => t.classList.toggle('active', t.dataset.mode === mode));
-  $('#passwordLoginForm').hidden = mode !== 'citizen';
-  $('#adminLoginForm').hidden = mode !== 'admin';
-}
-
-function storeToken(t) { accessToken = t; try { localStorage.setItem('access_token', t); } catch (e) { /* ignore */ } }
-
+// ============================================================
+// INIT
+// ============================================================
 document.addEventListener('DOMContentLoaded', async () => {
-  if (!accessToken) { hideLoading(); showSection('loginView'); } else { await enterApp(); }
+  updateAuthUI();
   await loadHeaderLogo();
-
-  $$('.login-tab[data-mode]').forEach(t => t.addEventListener('click', () => switchLoginTab(t.dataset.mode)));
-
-  $('#passwordLoginForm').addEventListener('submit', async e => {
-    e.preventDefault(); showLoading();
-    try {
-      const result = await apiCall('loginWithCitizenId', { citizenId: $('#loginCitizenId').value.trim(), password: $('#loginPassword').value });
-      storeToken(result.accessToken); $('#loginPassword').value = ''; await enterApp();
-    } catch (x) { hideLoading(); showSection('loginView'); toast(err(x)); }
-  });
-
-  $('#adminLoginForm').addEventListener('submit', async e => {
-    e.preventDefault(); showLoading();
-    try {
-      const result = await apiCall('loginWithPassword', { email: $('#adminEmail').value.trim(), password: $('#adminPassword').value });
-      storeToken(result.accessToken); $('#adminPassword').value = ''; await enterApp();
-    } catch (x) { hideLoading(); showSection('loginView'); toast(err(x)); }
-  });
-
-  $('#changePasswordForm').addEventListener('submit', async e => {
-    e.preventDefault();
-    const a = $('#newPassword').value, b = $('#confirmPassword').value;
-    if (a !== b) return toast('รหัสไม่ตรงกัน');
-    showLoading();
-    try { await apiCall('changeInitialPassword', { newPassword: a }); await enterApp(); }
-    catch (x) { hideLoading(); toast(err(x)); }
-  });
-
-  $('#logoutButton').addEventListener('click', () => { if (confirm('ออกจากระบบ?')) doLogout('ออกแล้ว'); });
-
-  $$('.tab[data-view]').forEach(t => t.addEventListener('click', () => {
-    show(t.dataset.view);
-    if (t.dataset.view === 'formListView') loadFormList();
-    if (t.dataset.view === 'formBuilderView') { loadTemplateList(); if (state.templateId) setBuilderZoom(state.zoom); }
-    if (t.dataset.view === 'adminSubmissionsView') loadAdminTemplateSelect();
-    if (t.dataset.view === 'mySubmissionsView') loadMySubmissions();
-    if (t.dataset.view === 'staffDirectoryView') loadStaffDirectory();
-    if (t.dataset.view === 'headerLogoView') loadHeaderLogo();
-  }));
-
-  $('#mySubmissionsList').addEventListener('click', async e => {
-    const btn = e.target.closest('.print-my-btn');
-    if (btn) { await printMySubmission(btn.dataset.id); return; }
-  });
+  await loadPublicFormList();
+  showView('publicFormListView');
 });
 </script>
 </body>
