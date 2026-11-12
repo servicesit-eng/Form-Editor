@@ -362,6 +362,10 @@ input::placeholder, textarea::placeholder { color: var(--gray-400); }
 .resize-handle { position: absolute; right: 0; bottom: 0; width: 12px; height: 12px; cursor: se-resize; background: linear-gradient(135deg, transparent 50%, var(--accent) 50%); opacity: 0; touch-action: none; }
 .builder-field:hover .resize-handle, .builder-field.selected .resize-handle { opacity: 1; }
 .renderer-actions { display: flex; justify-content: center; gap: var(--space-4); margin-top: var(--space-6); }
+.subm-layout { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: var(--space-6); align-items: start; }
+.subm-main { display: flex; flex-direction: column; gap: var(--space-4); min-width: 0; }
+.subm-title { font-size: 16px; font-weight: 700; color: var(--primary); }
+.subm-count { font-size: 12px; color: var(--gray-600); }
 .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 2000; backdrop-filter: blur(4px); }
 .modal-content { background: #fff; border-radius: var(--radius-xl); padding: var(--space-6); max-width: 500px; width: 90%; max-height: 90vh; overflow-y: auto; box-shadow: var(--shadow-xl); }
 .modal-large { max-width: 900px; width: 95%; }
@@ -371,6 +375,7 @@ input::placeholder, textarea::placeholder { color: var(--gray-400); }
 .modal-body { background: var(--gray-50); padding: var(--space-5); border-radius: var(--radius-lg); overflow: auto; max-height: 70vh; display: block; }
 @media (max-width: 1200px) {
   .builder-layout { grid-template-columns: 1fr; grid-template-rows: auto auto auto; }
+  .subm-layout { grid-template-columns: 1fr; }
   .builder-sidebar, .builder-properties { max-height: none; }
 }
 @media (max-width: 768px) {
@@ -573,9 +578,27 @@ input::placeholder, textarea::placeholder { color: var(--gray-400); }
   </section>
 
   <section id="adminSubmissionsView" class="view">
-    <div class="section-heading"><span>04</span><div><h2>จัดการคำขอ</h2></div></div>
-    <label>เลือกฟอร์ม<select id="adminTemplateSelect"><option value="">-- เลือกฟอร์ม --</option></select></label>
-    <div id="adminSubmissionsList" class="cards"></div>
+    <div class="section-heading"><span>04</span><div><h2>จัดการคำขอ</h2><p>เลือกฟอร์มจากด้านซ้ายเพื่อดูและจัดการคำขอ</p></div></div>
+    <div class="subm-layout">
+      <aside class="builder-sidebar">
+        <div class="sidebar-section">
+          <h3>รายการฟอร์ม</h3>
+          <div id="adminTemplateList" class="sidebar-list"></div>
+        </div>
+      </aside>
+      <div class="subm-main">
+        <div id="adminSubmissionsToolbar" class="builder-toolbar" hidden>
+          <div class="toolbar-left">
+            <span id="adminSubmissionsTitle" class="subm-title"></span>
+            <span id="adminSubmissionsCount" class="subm-count"></span>
+          </div>
+          <div class="toolbar-right">
+            <button class="btn ghost" id="refreshAdminSubmissionsBtn">🔄 รีเฟรช</button>
+          </div>
+        </div>
+        <div id="adminSubmissionsList" class="cards"><div class="empty">เลือกฟอร์มจากด้านซ้ายเพื่อดูคำขอ</div></div>
+      </div>
+    </div>
   </section>
 
   <section id="staffDirectoryView" class="view">
@@ -1225,6 +1248,7 @@ $('#logoutBtn').addEventListener('click', () => {
   if (!confirm('ออกจากระบบ?')) return;
   accessToken = null;
   try { localStorage.removeItem('access_token'); } catch (e) {}
+  adminTemplates = []; resetAdminSubmissions();
   updateAuthUI();
   showView('publicFormListView');
   toast('ออกจากระบบแล้ว');
@@ -1780,29 +1804,62 @@ $('#previewFormBtn').addEventListener('click', () => {
 // ============================================================
 // ADMIN: SUBMISSIONS
 // ============================================================
-async function loadAdminTemplateSelect() {
+let adminSelectedTemplateId = null, adminTemplates = [], adminSubmissionsSeq = 0;
+
+function resetAdminSubmissions() {
+  adminSelectedTemplateId = null;
+  adminSubmissionsSeq++;
+  $('#adminSubmissionsToolbar').hidden = true;
+  $('#adminSubmissionsList').innerHTML = '<div class="empty">เลือกฟอร์มจากด้านซ้ายเพื่อดูคำขอ</div>';
+}
+
+function renderAdminTemplateList() {
+  $('#adminTemplateList').innerHTML = adminTemplates.length
+    ? adminTemplates.map(t => '<div class="sidebar-item ' + (t.id === adminSelectedTemplateId ? 'active' : '') + '" data-admin-template-id="' + esc(t.id) + '"><div class="sidebar-item-name">' + esc(t.name) + '</div><div class="sidebar-item-status ' + (t.is_active ? 'active' : 'inactive') + '">' + (t.is_active ? '● ใช้งาน' : '○ ปิด') + '</div></div>').join('')
+    : '<div class="empty" style="padding:10px;font-size:12px">ยังไม่มีฟอร์ม</div>';
+}
+
+async function loadAdminTemplateList() {
   try {
-    const templates = await apiCall('getFormTemplates', {});
-    $('#adminTemplateSelect').innerHTML = '<option value="">-- เลือกฟอร์ม --</option>' + (templates || []).map(t => '<option value="' + esc(t.id) + '">' + esc(t.name) + '</option>').join('');
+    adminTemplates = (await apiCall('getFormTemplates', {})) || [];
+    if (adminSelectedTemplateId && !adminTemplates.some(t => t.id === adminSelectedTemplateId)) resetAdminSubmissions();
+    renderAdminTemplateList();
+    if (adminSelectedTemplateId) loadAdminSubmissions(adminSelectedTemplateId);
   } catch (e) { handleError(e); }
 }
 
-$('#adminTemplateSelect').addEventListener('change', async e => {
-  const templateId = e.target.value;
-  if (!templateId) { $('#adminSubmissionsList').innerHTML = ''; return; }
+function selectAdminTemplate(templateId) {
+  adminSelectedTemplateId = templateId;
+  renderAdminTemplateList();
+  loadAdminSubmissions(templateId);
+}
+
+async function loadAdminSubmissions(templateId) {
+  const seq = ++adminSubmissionsSeq;
   showLoading();
   try {
     const submissions = await apiCall('getFormSubmissions', { templateId: templateId });
+    if (seq !== adminSubmissionsSeq) return;
+    const tpl = adminTemplates.find(x => x.id === templateId);
+    $('#adminSubmissionsTitle').textContent = tpl ? tpl.name : 'คำขอ';
+    $('#adminSubmissionsCount').textContent = 'ทั้งหมด ' + (submissions ? submissions.length : 0) + ' คำขอ';
+    $('#adminSubmissionsToolbar').hidden = false;
     $('#adminSubmissionsList').innerHTML = submissions && submissions.length
       ? submissions.map(s => '<article class="card"><h3>คำขอ #' + esc(s.referenceId) + ' <span class="status" data-status="' + esc(s.status) + '">' + esc(STATUS_TH[s.status] || s.status) + '</span></h3><p class="meta">' + esc(s.submitted_by_name || '-') + '<br>ส่งเมื่อ: ' + esc(new Date(s.created_at).toLocaleString('th-TH')) + '</p><div class="card-actions"><button class="btn secondary" data-view-sub="' + esc(s.id) + '">👁️ ดู</button><button class="btn primary" data-approve="' + esc(s.id) + '">อนุมัติ</button><button class="btn ghost" data-reject="' + esc(s.id) + '">ปฏิเสธ</button><button class="btn ghost" data-print="' + esc(s.id) + '">พิมพ์</button></div></article>').join('')
       : '<div class="empty">ไม่พบคำขอ</div>';
     hideLoading();
-  } catch (x) { hideLoading(); handleError(x); }
+  } catch (x) { if (seq === adminSubmissionsSeq) hideLoading(); handleError(x); }
+}
+
+$('#adminTemplateList').addEventListener('click', e => {
+  const item = e.target.closest('[data-admin-template-id]');
+  if (item) selectAdminTemplate(item.dataset.adminTemplateId);
 });
+$('#refreshAdminSubmissionsBtn').addEventListener('click', () => { if (adminSelectedTemplateId) loadAdminSubmissions(adminSelectedTemplateId); });
 
 async function setSubmissionStatus(id, status, doneMsg) {
   showLoading();
-  try { await apiCall('updateSubmissionStatus', { id: id, status: status }); hideLoading(); toast(doneMsg); $('#adminTemplateSelect').dispatchEvent(new Event('change')); }
+  try { await apiCall('updateSubmissionStatus', { id: id, status: status }); hideLoading(); toast(doneMsg); if (adminSelectedTemplateId) loadAdminSubmissions(adminSelectedTemplateId); }
   catch (x) { hideLoading(); handleError(x); }
 }
 
@@ -1893,7 +1950,7 @@ $$('[data-admin-view]').forEach(t => t.addEventListener('click', () => {
   if (t.dataset.adminView === 'adminFormListView') loadAdminFormList();
   if (t.dataset.adminView === 'adminMySubmissionsView') loadAdminMySubmissions();
   if (t.dataset.adminView === 'formBuilderView') { loadTemplateList(); if (state.templateId) setBuilderZoom(state.zoom); }
-  if (t.dataset.adminView === 'adminSubmissionsView') loadAdminTemplateSelect();
+  if (t.dataset.adminView === 'adminSubmissionsView') loadAdminTemplateList();
   if (t.dataset.adminView === 'staffDirectoryView') loadStaffDirectory();
   if (t.dataset.adminView === 'headerLogoView') loadHeaderLogo();
 }));
