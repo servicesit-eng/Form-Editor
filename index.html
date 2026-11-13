@@ -1862,7 +1862,7 @@ async function loadAdminSubmissions(templateId) {
     if (currentFilter === 'ARCHIVED') {
       submissions = await apiCall('getArchivedSubmissions', { templateId: templateId });
     } else {
-      const archived = (currentFilter === 'ALL') ? false : undefined;
+      const archived = false;
       submissions = await apiCall('getFormSubmissionsFiltered', {
         templateId: templateId,
         status: currentFilter,
