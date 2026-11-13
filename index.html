@@ -5,6 +5,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ระบบกรอกแบบฟอร์มออนไลน์ | โรงพยาบาลดอนตูม</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://script.google.com" crossorigin>
+<link rel="preload" href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;600;700&display=swap" as="style">
+<link rel="preload" href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" as="style">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap');
@@ -24,7 +29,7 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 [hidden] { display: none !important; }
 body {
-  font-family: 'Noto Sans Thai', 'Sarabun', sans-serif;
+  font-family: 'Noto Sans Thai', 'Sarabun', Arial, sans-serif;
   font-size: 14px; line-height: 1.6; color: var(--gray-800);
   background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
   background-attachment: fixed; min-height: 100vh;
@@ -699,9 +704,6 @@ input::placeholder, textarea::placeholder { color: var(--gray-400); }
 <script>
 'use strict';
 
-// ============================================================
-// ⚠️ API URL — เปลี่ยนเป็น Web App URL ของคุณ
-// ============================================================
 const API_URL = 'https://script.google.com/macros/s/AKfycbwlBmF7UCDh1b-DlGy6uzT_Vot2J0Z02EoLoCRm5XFjtra1nDzCBD-cBHJ_8Yl6hX6oig/exec';
 
 const $ = s => document.querySelector(s), $$ = s => Array.from(document.querySelectorAll(s));
@@ -729,6 +731,25 @@ let undoStack = [], panelFieldId = null, propUndoArmed = false, lastNudgeAt = 0,
 let rendererState = { templateId: null, fields: [] };
 let viewingSubmissionId = null, viewingSubmissionCitizenId = null, toastTimer = null;
 let lastSubmittedId = null, lastSubmittedCitizenId = null;
+let adminSelectedTemplateId = null, adminTemplates = [], adminSubmissionsSeq = 0;
+let currentFilter = 'ALL';
+
+// ============================================================
+// CACHE LAYER
+// ============================================================
+const CACHE_TTL = 5 * 60 * 1000;
+function cacheGet(key) {
+  try {
+    const raw = localStorage.getItem('cache_' + key);
+    if (!raw) return null;
+    const { value, ts } = JSON.parse(raw);
+    if (Date.now() - ts > CACHE_TTL) { localStorage.removeItem('cache_' + key); return null; }
+    return value;
+  } catch (e) { return null; }
+}
+function cacheSet(key, value) {
+  try { localStorage.setItem('cache_' + key, JSON.stringify({ value, ts: Date.now() })); } catch (e) {}
+}
 
 // ============================================================
 // API CALL
@@ -778,7 +799,7 @@ function formatThaiDate(iso) {
 }
 
 // ============================================================
-// SHOW VIEW (แก้บั๊ก hidden attribute)
+// SHOW VIEW
 // ============================================================
 const TOP_VIEWS = [
   'publicFormListView', 'publicFormRendererView', 'submissionSuccessView',
@@ -818,20 +839,26 @@ function showAdminView(viewId) {
 // ============================================================
 // HEADER LOGO
 // ============================================================
+function renderHeaderLogo(logo) {
+  if (logo) {
+    $('#headerLogo').src = logo; $('#headerLogo').style.display = 'block';
+    $('#headerLogoPlaceholder').style.display = 'none';
+    $('#currentHeaderLogo').src = logo; $('#currentHeaderLogo').style.display = 'block';
+    $('#currentHeaderLogoPlaceholder').style.display = 'none';
+    $('#deleteHeaderLogoBtn').hidden = false;
+  } else {
+    $('#headerLogo').style.display = 'none'; $('#headerLogoPlaceholder').style.display = 'flex';
+    $('#currentHeaderLogo').style.display = 'none'; $('#currentHeaderLogoPlaceholder').style.display = 'flex';
+    $('#deleteHeaderLogoBtn').hidden = true;
+  }
+}
+
 async function loadHeaderLogo() {
   try {
     const result = await apiCall('getHeaderLogo', {});
-    if (result && result.logo) {
-      $('#headerLogo').src = result.logo; $('#headerLogo').style.display = 'block';
-      $('#headerLogoPlaceholder').style.display = 'none';
-      $('#currentHeaderLogo').src = result.logo; $('#currentHeaderLogo').style.display = 'block';
-      $('#currentHeaderLogoPlaceholder').style.display = 'none';
-      $('#deleteHeaderLogoBtn').hidden = false;
-    } else {
-      $('#headerLogo').style.display = 'none'; $('#headerLogoPlaceholder').style.display = 'flex';
-      $('#currentHeaderLogo').style.display = 'none'; $('#currentHeaderLogoPlaceholder').style.display = 'flex';
-      $('#deleteHeaderLogoBtn').hidden = true;
-    }
+    const logo = (result && result.logo) || '';
+    cacheSet('headerLogo', logo);
+    renderHeaderLogo(logo);
   } catch (e) {}
 }
 
@@ -1059,41 +1086,72 @@ function openPrintWindow(r, titleExtra) {
 // PUBLIC: รายการฟอร์ม + thumbnail
 // ============================================================
 async function loadPublicFormList() {
+  const cached = cacheGet('publicForms');
+  if (cached) {
+    renderPublicFormList(cached);
+    refreshPublicFormList();
+    return;
+  }
+  await refreshPublicFormList();
+}
+
+async function refreshPublicFormList() {
   try {
     const templates = await apiCall('getPublicFormTemplates', {});
-    const list = $('#publicFormList');
-    if (!templates || !templates.length) {
-      list.innerHTML = '<div class="empty">ยังไม่มีฟอร์มที่เปิดใช้งาน</div>';
-      return;
-    }
-    list.innerHTML = templates.map(t => `
-      <article class="card">
-        <h3>${esc(t.name)}</h3>
-        <p class="meta">${esc(t.description || '')}</p>
-        <div class="form-thumb" data-thumb="${esc(t.id)}">
-          <span class="form-thumb-badge">ตัวอย่าง</span>
-          <div class="a4-canvas form-thumb-canvas"></div>
-        </div>
-        <div class="card-actions">
-          <button class="btn secondary" data-preview="${esc(t.id)}">👁️ ดูตัวอย่าง</button>
-          <button class="btn primary" data-fill="${esc(t.id)}">✏️ กรอกเลย</button>
-        </div>
-      </article>
-    `).join('');
-    templates.forEach(t => {
-      const wrap = list.querySelector('[data-thumb="' + t.id + '"] .form-thumb-canvas');
-      if (!wrap) return;
-      const ctx = { mode: 'print', data: {}, prefix: 'th' + (++renderSeq) + '_' };
-      (t.fields || []).map(normalizeField).forEach(f => wrap.appendChild(buildFieldElement(f, ctx)));
-    });
-    scaleThumbs();
+    cacheSet('publicForms', templates || []);
+    renderPublicFormList(templates);
   } catch (e) { handleError(e); }
+}
+
+function renderPublicFormList(templates) {
+  const list = $('#publicFormList');
+  if (!templates || !templates.length) {
+    list.innerHTML = '<div class="empty">ยังไม่มีฟอร์มที่เปิดใช้งาน</div>';
+    return;
+  }
+  list.innerHTML = templates.map(t => `
+    <article class="card">
+      <h3>${esc(t.name)}</h3>
+      <p class="meta">${esc(t.description || '')}</p>
+      <div class="form-thumb" data-thumb="${esc(t.id)}" data-fields='${JSON.stringify(t.fields || []).replace(/'/g, "&#39;")}'>
+        <span class="form-thumb-badge">ตัวอย่าง</span>
+        <div class="a4-canvas form-thumb-canvas" data-lazy="true"></div>
+      </div>
+      <div class="card-actions">
+        <button class="btn secondary" data-preview="${esc(t.id)}">👁️ ดูตัวอย่าง</button>
+        <button class="btn primary" data-fill="${esc(t.id)}">✏️ กรอกเลย</button>
+      </div>
+    </article>
+  `).join('');
+  lazyRenderThumbnails();
+}
+
+function lazyRenderThumbnails() {
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const thumb = entry.target;
+        const canvas = thumb.querySelector('.form-thumb-canvas');
+        if (!canvas || canvas.dataset.rendered) return;
+        try {
+          const fields = JSON.parse(thumb.dataset.fields || '[]');
+          const ctx = { mode: 'print', data: {}, prefix: 'th' + (++renderSeq) + '_' };
+          fields.map(normalizeField).forEach(f => canvas.appendChild(buildFieldElement(f, ctx)));
+          canvas.dataset.rendered = 'true';
+          const wPx = thumb.clientWidth;
+          if (wPx > 0) canvas.style.transform = 'scale(' + (wPx / (PAGE_W * PX_PER_MM)) + ')';
+        } catch (e) {}
+        observer.unobserve(thumb);
+      }
+    });
+  }, { rootMargin: '100px' });
+  $$('.form-thumb').forEach(t => observer.observe(t));
 }
 
 function scaleThumbs() {
   $$('.form-thumb').forEach(w => {
     const c = w.querySelector('.form-thumb-canvas');
-    if (!c) return;
+    if (!c || !c.dataset.rendered) return;
     const wPx = w.clientWidth;
     if (wPx > 0) c.style.transform = 'scale(' + (wPx / (PAGE_W * PX_PER_MM)) + ')';
   });
@@ -1150,7 +1208,7 @@ $('#submitPublicFormBtn').addEventListener('click', async () => {
     const first = result.missing[0];
     const el = $('#publicRendererCanvas').querySelector('[data-field-id="' + first.id + '"]');
     if (el && el.scrollIntoView) el.scrollIntoView({ block: 'center', behavior: 'smooth' });
-    toast('กรุณากรอก: ' + (first.label || first.name) + (result.missing.length > 1 ? ' (และอีก ' + (result.missing.length - 1) + ' ช่อง)' : ''));
+    toast('กรุณากรอก: ' + (first.label || first.name));
     return;
   }
   showLoading();
@@ -1818,9 +1876,6 @@ $('#previewFormBtn').addEventListener('click', () => {
 // ============================================================
 // ADMIN: SUBMISSIONS (with filter + archive)
 // ============================================================
-let adminSelectedTemplateId = null, adminTemplates = [], adminSubmissionsSeq = 0;
-let currentFilter = 'ALL';  // ALL | SUBMITTED | APPROVED | REJECTED | ARCHIVED
-
 function resetAdminSubmissions() {
   adminSelectedTemplateId = null;
   currentFilter = 'ALL';
@@ -1862,11 +1917,10 @@ async function loadAdminSubmissions(templateId) {
     if (currentFilter === 'ARCHIVED') {
       submissions = await apiCall('getArchivedSubmissions', { templateId: templateId });
     } else {
-      const archived = false;
       submissions = await apiCall('getFormSubmissionsFiltered', {
         templateId: templateId,
         status: currentFilter,
-        archived: archived
+        archived: false
       });
     }
     if (seq !== adminSubmissionsSeq) return;
@@ -1911,7 +1965,6 @@ $('#adminTemplateList').addEventListener('click', e => {
 
 $('#refreshAdminSubmissionsBtn').addEventListener('click', () => { if (adminSelectedTemplateId) loadAdminSubmissions(adminSelectedTemplateId); });
 
-// Filter tabs
 $('#submissionFilterTabs').addEventListener('click', e => {
   const tab = e.target.closest('[data-filter]');
   if (!tab || !adminSelectedTemplateId) return;
@@ -1921,7 +1974,6 @@ $('#submissionFilterTabs').addEventListener('click', e => {
   loadAdminSubmissions(adminSelectedTemplateId);
 });
 
-// Archive / Unarchive + other actions
 $('#adminSubmissionsList').addEventListener('click', async e => {
   const archiveBtn = e.target.closest('[data-archive]');
   const unarchiveBtn = e.target.closest('[data-unarchive]');
@@ -2047,9 +2099,22 @@ $$('[data-admin-view]').forEach(t => t.addEventListener('click', () => {
 // ============================================================
 document.addEventListener('DOMContentLoaded', async () => {
   updateAuthUI();
-  await loadHeaderLogo();
-  await loadPublicFormList();
+  
+  // ✅ โหลดจาก cache ทันที (ไม่ต้องรอ network)
+  const cachedLogo = cacheGet('headerLogo');
+  renderHeaderLogo(cachedLogo !== null ? cachedLogo : '');
+  const cachedForms = cacheGet('publicForms');
+  if (cachedForms) renderPublicFormList(cachedForms);
+  else $('#publicFormList').innerHTML = '<div class="empty">กำลังโหลด...</div>';
+  
   showView('publicFormListView');
+  
+  // ✅ โหลดใหม่เบื้องหลัง (stale-while-revalidate)
+  Promise.all([
+    loadHeaderLogo(),
+    refreshPublicFormList()
+  ]).catch(() => {});
+  
   if (accessToken) {
     try {
       const session = await apiCall('getSession', {});
