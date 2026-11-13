@@ -366,6 +366,28 @@ input::placeholder, textarea::placeholder { color: var(--gray-400); }
 .subm-main { display: flex; flex-direction: column; gap: var(--space-4); min-width: 0; }
 .subm-title { font-size: 16px; font-weight: 700; color: var(--primary); }
 .subm-count { font-size: 12px; color: var(--gray-600); }
+.subm-filter-tabs {
+  display: flex; gap: var(--space-1); background: var(--gray-50);
+  border: 1px solid var(--gray-200); border-radius: var(--radius-lg);
+  padding: var(--space-2); margin-bottom: var(--space-4);
+}
+.subm-filter-tabs .filter-tab {
+  border: 0; background: transparent; color: var(--gray-600);
+  padding: var(--space-2) var(--space-4); cursor: pointer; font-family: inherit;
+  font-size: 13px; font-weight: 500; border-radius: var(--radius-md);
+  transition: all 0.2s ease; white-space: nowrap;
+}
+.subm-filter-tabs .filter-tab:hover { background: var(--gray-100); color: var(--primary); }
+.subm-filter-tabs .filter-tab.active { background: var(--primary); color: #fff; }
+.archive-btn {
+  background: var(--gray-100); color: var(--gray-700);
+  border: 1px solid var(--gray-300); padding: var(--space-2) var(--space-3);
+  font-size: 12px; border-radius: var(--radius-md); cursor: pointer;
+  transition: all 0.2s ease;
+}
+.archive-btn:hover { background: var(--warning-light); border-color: var(--warning); color: var(--warning); }
+.unarchive-btn { background: var(--info-light); color: var(--info); border-color: var(--info); }
+.unarchive-btn:hover { background: var(--info); color: #fff; }
 .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 2000; backdrop-filter: blur(4px); }
 .modal-content { background: #fff; border-radius: var(--radius-xl); padding: var(--space-6); max-width: 500px; width: 90%; max-height: 90vh; overflow-y: auto; box-shadow: var(--shadow-xl); }
 .modal-large { max-width: 900px; width: 95%; }
@@ -387,12 +409,13 @@ input::placeholder, textarea::placeholder { color: var(--gray-400); }
   .app-container { padding: var(--space-4); }
   .login-card { margin: var(--space-6) auto; padding: var(--space-6); }
   .submitter-grid { grid-template-columns: 1fr; }
+  .subm-filter-tabs { flex-wrap: wrap; }
 }
 @media print {
   @page { size: A4 portrait; margin: 0; }
   * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   body { background: #fff !important; }
-  .topbar, .tabs, .btn, .login-card, #toast, .session-badge, .section-heading, .loading-overlay, .modal, .builder-sidebar, .builder-properties, .builder-toolbar, .renderer-actions, .staff-controls, .submitter-box, .form-thumb { display: none !important; }
+  .topbar, .tabs, .btn, .login-card, #toast, .session-badge, .section-heading, .loading-overlay, .modal, .builder-sidebar, .builder-properties, .builder-toolbar, .renderer-actions, .staff-controls, .submitter-box, .form-thumb, .subm-filter-tabs { display: none !important; }
   .view { display: block !important; background: transparent; border: 0; box-shadow: none; padding: 0; }
   .view:not(.active) { display: none !important; }
   .zoom-box { width: auto !important; height: auto !important; }
@@ -421,7 +444,6 @@ input::placeholder, textarea::placeholder { color: var(--gray-400); }
     <button class="btn ghost" id="logoutBtn" hidden>ออกจากระบบ</button>
   </div>
 </header>
-
 <main class="app-container">
 <div id="loadingOverlay" class="loading-overlay"><div class="loading-spinner"></div><p class="loading-text">กำลังโหลด...</p></div>
 
@@ -596,6 +618,13 @@ input::placeholder, textarea::placeholder { color: var(--gray-400); }
             <button class="btn ghost" id="refreshAdminSubmissionsBtn">🔄 รีเฟรช</button>
           </div>
         </div>
+        <div id="submissionFilterTabs" class="subm-filter-tabs" hidden>
+          <button class="filter-tab active" data-filter="ALL">ทั้งหมด</button>
+          <button class="filter-tab" data-filter="SUBMITTED">⏳ รอตรวจสอบ</button>
+          <button class="filter-tab" data-filter="APPROVED">✅ อนุมัติ</button>
+          <button class="filter-tab" data-filter="REJECTED">❌ ปฏิเสธ</button>
+          <button class="filter-tab" data-filter="ARCHIVED">🗄️ เก็บถาวร</button>
+        </div>
         <div id="adminSubmissionsList" class="cards"><div class="empty">เลือกฟอร์มจากด้านซ้ายเพื่อดูคำขอ</div></div>
       </div>
     </div>
@@ -680,15 +709,9 @@ const PAGE_W = 210, PAGE_H = 297;
 const PX_PER_MM = 96 / 25.4;
 const SNAP = 0.5;
 const PUBLIC_ACTIONS = [
-  'getPublicFormTemplates',
-  'getPublicFormTemplate',
-  'submitFormAnonymous',
-  'lookupSubmissionsByCitizenId',
-  'getPublicFormSubmission',
-  'getHeaderLogo',
-  'loginWithPassword',        // ✅ เพิ่ม
-  'loginWithCitizenId',       // ✅ เพิ่ม
-  'changeInitialPassword'     // ✅ เพิ่ม (เผื่อเปลี่ยนรหัสครั้งแรก)
+  'getPublicFormTemplates', 'getPublicFormTemplate', 'submitFormAnonymous',
+  'lookupSubmissionsByCitizenId', 'getPublicFormSubmission', 'getHeaderLogo',
+  'loginWithPassword', 'loginWithCitizenId', 'changeInitialPassword'
 ];
 const TYPE_LABEL = {
   label: 'ข้อความ', title: 'หัวข้อ', logo: 'โลโก้', text_input: 'ช่องข้อความ', textarea: 'ข้อความยาว', date: 'วันที่',
@@ -755,18 +778,12 @@ function formatThaiDate(iso) {
 }
 
 // ============================================================
-// ✅ SHOW VIEW — เวอร์ชันแก้แล้ว (จัดการ hidden attribute)
+// SHOW VIEW (แก้บั๊ก hidden attribute)
 // ============================================================
 const TOP_VIEWS = [
-  'publicFormListView',
-  'publicFormRendererView',
-  'submissionSuccessView',
-  'publicMySubmissionsView',
-  'loginView',
-  'changePasswordView',
-  'adminDashboardView'
+  'publicFormListView', 'publicFormRendererView', 'submissionSuccessView',
+  'publicMySubmissionsView', 'loginView', 'changePasswordView', 'adminDashboardView'
 ];
-
 function showView(viewId) {
   TOP_VIEWS.forEach(id => {
     const el = document.getElementById(id);
@@ -777,7 +794,6 @@ function showView(viewId) {
   });
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
-
 function closeAllModals() { $$('.modal').forEach(m => { m.hidden = true; }); }
 function showLoading() { $('#loadingOverlay').classList.add('active'); }
 function hideLoading() { $('#loadingOverlay').classList.remove('active'); }
@@ -888,7 +904,6 @@ function uniqueName(base) {
   return base + '_' + i;
 }
 function getField(id) { return state.fields.find(f => f.id === id); }
-
 function fontStack(f) { return (f.font_family ? f.font_family + ', ' : '') + 'Sarabun, "Noto Sans Thai", sans-serif'; }
 function applyBox(el, f) {
   const s = el.style;
@@ -936,7 +951,6 @@ function buildContent(f, ctx) {
   const ft = f.field_type, mode = ctx.mode;
   const fc = mk('div', 'fc');
   const printVal = mode === 'print' ? String(ctx.data[f.name] == null ? '' : ctx.data[f.name]) : '';
-
   if (ft === 'logo') {
     fc.classList.add('center-y');
     if (f.value && /^data:image\//.test(f.value)) {
@@ -1802,15 +1816,19 @@ $('#previewFormBtn').addEventListener('click', () => {
 });
 
 // ============================================================
-// ADMIN: SUBMISSIONS
+// ADMIN: SUBMISSIONS (with filter + archive)
 // ============================================================
 let adminSelectedTemplateId = null, adminTemplates = [], adminSubmissionsSeq = 0;
+let currentFilter = 'ALL';  // ALL | SUBMITTED | APPROVED | REJECTED | ARCHIVED
 
 function resetAdminSubmissions() {
   adminSelectedTemplateId = null;
+  currentFilter = 'ALL';
   adminSubmissionsSeq++;
   $('#adminSubmissionsToolbar').hidden = true;
+  $('#submissionFilterTabs').hidden = true;
   $('#adminSubmissionsList').innerHTML = '<div class="empty">เลือกฟอร์มจากด้านซ้ายเพื่อดูคำขอ</div>';
+  $$('#submissionFilterTabs .filter-tab').forEach(t => t.classList.toggle('active', t.dataset.filter === 'ALL'));
 }
 
 function renderAdminTemplateList() {
@@ -1830,7 +1848,9 @@ async function loadAdminTemplateList() {
 
 function selectAdminTemplate(templateId) {
   adminSelectedTemplateId = templateId;
+  currentFilter = 'ALL';
   renderAdminTemplateList();
+  $$('#submissionFilterTabs .filter-tab').forEach(t => t.classList.toggle('active', t.dataset.filter === 'ALL'));
   loadAdminSubmissions(templateId);
 }
 
@@ -1838,15 +1858,48 @@ async function loadAdminSubmissions(templateId) {
   const seq = ++adminSubmissionsSeq;
   showLoading();
   try {
-    const submissions = await apiCall('getFormSubmissions', { templateId: templateId });
+    let submissions;
+    if (currentFilter === 'ARCHIVED') {
+      submissions = await apiCall('getArchivedSubmissions', { templateId: templateId });
+    } else {
+      const archived = (currentFilter === 'ALL') ? false : undefined;
+      submissions = await apiCall('getFormSubmissionsFiltered', {
+        templateId: templateId,
+        status: currentFilter,
+        archived: archived
+      });
+    }
     if (seq !== adminSubmissionsSeq) return;
     const tpl = adminTemplates.find(x => x.id === templateId);
     $('#adminSubmissionsTitle').textContent = tpl ? tpl.name : 'คำขอ';
     $('#adminSubmissionsCount').textContent = 'ทั้งหมด ' + (submissions ? submissions.length : 0) + ' คำขอ';
     $('#adminSubmissionsToolbar').hidden = false;
-    $('#adminSubmissionsList').innerHTML = submissions && submissions.length
-      ? submissions.map(s => '<article class="card"><h3>คำขอ #' + esc(s.referenceId) + ' <span class="status" data-status="' + esc(s.status) + '">' + esc(STATUS_TH[s.status] || s.status) + '</span></h3><p class="meta">' + esc(s.submitted_by_name || '-') + '<br>ส่งเมื่อ: ' + esc(new Date(s.created_at).toLocaleString('th-TH')) + '</p><div class="card-actions"><button class="btn secondary" data-view-sub="' + esc(s.id) + '">👁️ ดู</button><button class="btn primary" data-approve="' + esc(s.id) + '">อนุมัติ</button><button class="btn ghost" data-reject="' + esc(s.id) + '">ปฏิเสธ</button><button class="btn ghost" data-print="' + esc(s.id) + '">พิมพ์</button></div></article>').join('')
-      : '<div class="empty">ไม่พบคำขอ</div>';
+    $('#submissionFilterTabs').hidden = false;
+
+    if (!submissions || !submissions.length) {
+      const emptyMsg = currentFilter === 'ARCHIVED' ? 'ไม่มีคำขอที่เก็บเข้าถาวร' : 'ไม่พบคำขอ';
+      $('#adminSubmissionsList').innerHTML = '<div class="empty">' + emptyMsg + '</div>';
+    } else {
+      $('#adminSubmissionsList').innerHTML = submissions.map(s => {
+        const isArchived = !!s.archived_at;
+        const archiveBtn = isArchived
+          ? '<button class="archive-btn unarchive-btn" data-unarchive="' + esc(s.id) + '">↩️ คืนจากถาวร</button>'
+          : '<button class="archive-btn" data-archive="' + esc(s.id) + '">🗄️ เก็บถาวร</button>';
+        const actionBtns = (s.status === 'SUBMITTED')
+          ? '<button class="btn primary" data-approve="' + esc(s.id) + '">อนุมัติ</button><button class="btn ghost" data-reject="' + esc(s.id) + '">ปฏิเสธ</button>'
+          : '';
+        return '<article class="card">' +
+          '<h3>คำขอ #' + esc(s.referenceId) + ' <span class="status" data-status="' + esc(s.status) + '">' + esc(STATUS_TH[s.status] || s.status) + (isArchived ? ' · 🗄️' : '') + '</span></h3>' +
+          '<p class="meta">' + esc(s.submitted_by_name || '-') + '<br>ส่งเมื่อ: ' + esc(new Date(s.created_at).toLocaleString('th-TH')) + (isArchived ? '<br>เก็บถาวร: ' + esc(new Date(s.archived_at).toLocaleString('th-TH')) : '') + '</p>' +
+          '<div class="card-actions">' +
+            '<button class="btn secondary" data-view-sub="' + esc(s.id) + '">👁️ ดู</button>' +
+            actionBtns +
+            '<button class="btn ghost" data-print="' + esc(s.id) + '">พิมพ์</button>' +
+            archiveBtn +
+          '</div>' +
+        '</article>';
+      }).join('');
+    }
     hideLoading();
   } catch (x) { if (seq === adminSubmissionsSeq) hideLoading(); handleError(x); }
 }
@@ -1855,7 +1908,54 @@ $('#adminTemplateList').addEventListener('click', e => {
   const item = e.target.closest('[data-admin-template-id]');
   if (item) selectAdminTemplate(item.dataset.adminTemplateId);
 });
+
 $('#refreshAdminSubmissionsBtn').addEventListener('click', () => { if (adminSelectedTemplateId) loadAdminSubmissions(adminSelectedTemplateId); });
+
+// Filter tabs
+$('#submissionFilterTabs').addEventListener('click', e => {
+  const tab = e.target.closest('[data-filter]');
+  if (!tab || !adminSelectedTemplateId) return;
+  $$('#submissionFilterTabs .filter-tab').forEach(t => t.classList.remove('active'));
+  tab.classList.add('active');
+  currentFilter = tab.dataset.filter;
+  loadAdminSubmissions(adminSelectedTemplateId);
+});
+
+// Archive / Unarchive + other actions
+$('#adminSubmissionsList').addEventListener('click', async e => {
+  const archiveBtn = e.target.closest('[data-archive]');
+  const unarchiveBtn = e.target.closest('[data-unarchive]');
+  if (archiveBtn) {
+    if (!confirm('เก็บคำขอนี้เข้าถาวร? (จะซ่อนจากรายการปกติ)')) return;
+    showLoading();
+    try {
+      await apiCall('archiveSubmission', { id: archiveBtn.dataset.archive });
+      hideLoading(); toast('เก็บเข้าถาวรแล้ว');
+      loadAdminSubmissions(adminSelectedTemplateId);
+    } catch (x) { hideLoading(); handleError(x); }
+    return;
+  }
+  if (unarchiveBtn) {
+    showLoading();
+    try {
+      await apiCall('unarchiveSubmission', { id: unarchiveBtn.dataset.unarchive });
+      hideLoading(); toast('คืนจากรายการถาวรแล้ว');
+      loadAdminSubmissions(adminSelectedTemplateId);
+    } catch (x) { hideLoading(); handleError(x); }
+    return;
+  }
+
+  const approve = e.target.closest('[data-approve]'), reject = e.target.closest('[data-reject]');
+  const print = e.target.closest('[data-print]'), view = e.target.closest('[data-view-sub]');
+  if (approve) setSubmissionStatus(approve.dataset.approve, 'APPROVED', 'อนุมัติแล้ว');
+  else if (reject) setSubmissionStatus(reject.dataset.reject, 'REJECTED', 'ปฏิเสธแล้ว');
+  else if (print) {
+    showLoading();
+    try { const r = await apiCall('printFormSubmission', { id: print.dataset.print }); hideLoading(); openPrintWindow(r, 'พิมพ์คำขอ'); }
+    catch (x) { hideLoading(); handleError(x); }
+  }
+  else if (view) viewSubmission(view.dataset.viewSub);
+});
 
 async function setSubmissionStatus(id, status, doneMsg) {
   showLoading();
@@ -1875,19 +1975,6 @@ async function viewSubmission(id) {
     applyZoom(canvas, fitZoom($('#submissionModal .modal-body')));
   } catch (x) { hideLoading(); handleError(x); }
 }
-
-$('#adminSubmissionsList').addEventListener('click', async e => {
-  const approve = e.target.closest('[data-approve]'), reject = e.target.closest('[data-reject]');
-  const print = e.target.closest('[data-print]'), view = e.target.closest('[data-view-sub]');
-  if (approve) setSubmissionStatus(approve.dataset.approve, 'APPROVED', 'อนุมัติแล้ว');
-  else if (reject) setSubmissionStatus(reject.dataset.reject, 'REJECTED', 'ปฏิเสธแล้ว');
-  else if (print) {
-    showLoading();
-    try { const r = await apiCall('printFormSubmission', { id: print.dataset.print }); hideLoading(); openPrintWindow(r, 'พิมพ์คำขอ'); }
-    catch (x) { hideLoading(); handleError(x); }
-  }
-  else if (view) viewSubmission(view.dataset.viewSub);
-});
 
 // ============================================================
 // ADMIN: STAFF
