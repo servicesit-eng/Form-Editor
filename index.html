@@ -572,7 +572,7 @@ input::placeholder, textarea::placeholder { color: var(--gray-400); }
             <div class="toolbox-item" draggable="true" data-field-type="checkbox_agree">✅ ยอมรับข้อตกลง</div>
             <div class="toolbox-item" draggable="true" data-field-type="divider">➖ เส้นคั่น</div>
           </div>
-          <p class="hint">• ลากไปวาง หรือ <b>คลิก</b> เพื่อเพิ่ม<br>• <b>ดับเบิลคลิก</b> เพื่อแก้ไขข้อความ<br>• Delete = ลบ, Ctrl+Z = ย้อนกลับ, Ctrl+S = บันทึก</p>
+          <p class="hint">• ลากไปวาง หรือ <b>คลิก</b> เพื่อเพิ่ม<br>• <b>ดับเบิลคลิก</b> เพื่อแก้ไขข้อความ<br>• Delete = ลบ, Ctrl+Z = ย้อนกลับ, Ctrl+S = บันทึก<br>• 📋 = คัดลอกฟอร์มเป็นฟอร์มใหม่</p>
         </div>
       </aside>
       <div class="builder-main">
@@ -747,7 +747,7 @@ let adminSelectedTemplateId = null, adminTemplates = [], adminSubmissionsSeq = 0
 let currentFilter = 'ALL';
 
 // ============================================================
-// CACHE LAYER (localStorage — ลดเวลาโหลด)
+// CACHE LAYER
 // ============================================================
 const CACHE_TTL = 5 * 60 * 1000;
 function cacheGet(key) {
@@ -764,7 +764,7 @@ function cacheSet(key, value) {
 }
 
 // ============================================================
-// API CALL (text/plain + redirect: follow — แก้ CORS)
+// API CALL
 // ============================================================
 async function apiCall(action, payload = {}) {
   if (!accessToken && PUBLIC_ACTIONS.indexOf(action) === -1) throw new Error('กรุณาเข้าสู่ระบบก่อน');
@@ -811,7 +811,7 @@ function formatThaiDate(iso) {
 }
 
 // ============================================================
-// SHOW VIEW (จัดการ hidden attribute ถูกต้อง)
+// SHOW VIEW
 // ============================================================
 const TOP_VIEWS = [
   'publicFormListView', 'publicFormRendererView', 'submissionSuccessView',
@@ -1095,7 +1095,7 @@ function openPrintWindow(r, titleExtra) {
 }
 
 // ============================================================
-// PUBLIC: รายการฟอร์ม + thumbnail (lazy + cache)
+// PUBLIC: รายการฟอร์ม + thumbnail
 // ============================================================
 async function loadPublicFormList() {
   const cached = cacheGet('publicForms');
@@ -1426,18 +1426,44 @@ $('#adminMySubmissionsList').addEventListener('click', async e => {
 });
 
 // ============================================================
-// ADMIN: BUILDER
+// ADMIN: BUILDER (ปุ่ม 📋 คัดลอกฟอร์มอยู่ที่นี่)
 // ============================================================
 async function loadTemplateList() {
   try {
     const templates = await apiCall('getFormTemplates', {});
     $('#templateList').innerHTML = templates && templates.length
-      ? templates.map(t => '<div class="sidebar-item ' + (t.id === state.templateId ? 'active' : '') + '" data-template-id="' + esc(t.id) + '"><div class="sidebar-item-name">' + esc(t.name) + '</div><div class="sidebar-item-status ' + (t.is_active ? 'active' : 'inactive') + '">' + (t.is_active ? '● ใช้งาน' : '○ ปิด') + '</div></div>').join('')
+      ? templates.map(t => `
+        <div class="sidebar-item ${t.id === state.templateId ? 'active' : ''}" data-template-id="${esc(t.id)}">
+          <div class="sidebar-item-name">${esc(t.name)}</div>
+          <div class="sidebar-item-status ${t.is_active ? 'active' : 'inactive'}">${t.is_active ? '● ใช้งาน' : '○ ปิด'}</div>
+          <div class="sidebar-item-actions">
+            <button class="btn-icon" data-duplicate="${esc(t.id)}" title="คัดลอกฟอร์มนี้">📋</button>
+          </div>
+        </div>
+      `).join('')
       : '<div class="empty" style="padding:10px;font-size:12px">ยังไม่มีฟอร์ม</div>';
   } catch (e) { handleError(e); }
 }
 
+// ✅ Event: รองรับทั้งปุ่ม 📋 คัดลอก + การเลือกฟอร์ม
 $('#templateList').addEventListener('click', async e => {
+  const dupBtn = e.target.closest('[data-duplicate]');
+  if (dupBtn) {
+    e.stopPropagation();
+    const templateId = dupBtn.dataset.duplicate;
+    const itemEl = dupBtn.closest('.sidebar-item');
+    const srcName = itemEl ? itemEl.querySelector('.sidebar-item-name').textContent : '';
+    const newName = prompt('ชื่อฟอร์มใหม่ (เว้นว่าง = ใช้ชื่ออัตโนมัติ):', srcName + ' (คัดลอก)');
+    if (newName === null) return;
+    showLoading();
+    try {
+      const result = await apiCall('duplicateFormTemplate', { id: templateId, newName: newName.trim() });
+      hideLoading();
+      toast('คัดลอกฟอร์มสำเร็จ: ' + result.name + ' (' + result.fieldsCount + ' ฟิลด์)');
+      await loadTemplateList();
+    } catch (x) { hideLoading(); handleError(x); }
+    return;
+  }
   const item = e.target.closest('[data-template-id]');
   if (item) await openTemplateEditor(item.dataset.templateId);
 });
@@ -1885,7 +1911,7 @@ $('#previewFormBtn').addEventListener('click', () => {
 });
 
 // ============================================================
-// ADMIN: SUBMISSIONS (filter + archive)
+// ADMIN: SUBMISSIONS (filter + archive — ไม่มีปุ่มคัดลอกที่นี่)
 // ============================================================
 function resetAdminSubmissions() {
   adminSelectedTemplateId = null;
@@ -1899,15 +1925,7 @@ function resetAdminSubmissions() {
 
 function renderAdminTemplateList() {
   $('#adminTemplateList').innerHTML = adminTemplates.length
-    ? adminTemplates.map(t => `
-      <div class="sidebar-item ${t.id === adminSelectedTemplateId ? 'active' : ''}" data-admin-template-id="${esc(t.id)}">
-        <div class="sidebar-item-name">${esc(t.name)}</div>
-        <div class="sidebar-item-status ${t.is_active ? 'active' : 'inactive'}">${t.is_active ? '● ใช้งาน' : '○ ปิด'}</div>
-        <div class="sidebar-item-actions">
-          <button class="btn-icon" data-duplicate="${esc(t.id)}" title="คัดลอกฟอร์ม">📋</button>
-        </div>
-      </div>
-    `).join('')
+    ? adminTemplates.map(t => '<div class="sidebar-item ' + (t.id === adminSelectedTemplateId ? 'active' : '') + '" data-admin-template-id="' + esc(t.id) + '"><div class="sidebar-item-name">' + esc(t.name) + '</div><div class="sidebar-item-status ' + (t.is_active ? 'active' : 'inactive') + '">' + (t.is_active ? '● ใช้งาน' : '○ ปิด') + '</div></div>').join('')
     : '<div class="empty" style="padding:10px;font-size:12px">ยังไม่มีฟอร์ม</div>';
 }
 
@@ -1977,34 +1995,7 @@ async function loadAdminSubmissions(templateId) {
   } catch (x) { if (seq === adminSubmissionsSeq) hideLoading(); handleError(x); }
 }
 
-// ✅ Event handler เดียว — รองรับทั้ง คัดลอกฟอร์ม + เลือกฟอร์ม
-$('#adminTemplateList').addEventListener('click', async e => {
-  const dupBtn = e.target.closest('[data-duplicate]');
-  if (dupBtn) {
-    e.stopPropagation();
-    const templateId = dupBtn.dataset.duplicate;
-    const tpl = adminTemplates.find(t => t.id === templateId);
-    if (!tpl) return;
-
-    const newName = prompt('ชื่อฟอร์มใหม่ (เว้นว่างเพื่อใช้ชื่ออัตโนมัติ):', tpl.name + ' (คัดลอก)');
-    if (newName === null) return;
-
-    showLoading();
-    try {
-      const result = await apiCall('duplicateFormTemplate', {
-        id: templateId,
-        newName: newName.trim()
-      });
-      hideLoading();
-      toast('คัดลอกฟอร์มสำเร็จ: ' + result.name + ' (' + result.fieldsCount + ' ฟิลด์)');
-      await loadAdminTemplateList();
-    } catch (x) {
-      hideLoading();
-      handleError(x);
-    }
-    return;
-  }
-
+$('#adminTemplateList').addEventListener('click', e => {
   const item = e.target.closest('[data-admin-template-id]');
   if (item) selectAdminTemplate(item.dataset.adminTemplateId);
 });
@@ -2146,7 +2137,6 @@ $$('[data-admin-view]').forEach(t => t.addEventListener('click', () => {
 document.addEventListener('DOMContentLoaded', async () => {
   updateAuthUI();
 
-  // โหลดจาก cache ทันที (เร็ว)
   const cachedLogo = cacheGet('headerLogo');
   renderHeaderLogo(cachedLogo !== null ? cachedLogo : '');
   const cachedForms = cacheGet('publicForms');
@@ -2155,7 +2145,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   showView('publicFormListView');
 
-  // โหลดใหม่เบื้องหลัง
   Promise.all([loadHeaderLogo(), refreshPublicFormList()]).catch(() => {});
 
   if (accessToken) {
