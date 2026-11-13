@@ -8,8 +8,6 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://script.google.com" crossorigin>
-<link rel="preload" href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;600;700&display=swap" as="style">
-<link rel="preload" href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" as="style">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap');
@@ -121,7 +119,7 @@ body {
 .card .meta { color: var(--gray-600); font-size: 12px; margin-top: var(--space-2); line-height: 1.6; }
 .card .btn { margin-top: var(--space-3); }
 .card-actions { display: flex; gap: var(--space-2); margin-top: var(--space-4); flex-wrap: wrap; }
-.card-actions .btn { flex: 1; min-width: 120px; margin-top: 0; }
+.card-actions .btn { flex: 1; min-width: 110px; margin-top: 0; }
 .status {
   display: inline-flex; align-items: center; gap: var(--space-1);
   padding: var(--space-1) var(--space-3); border-radius: var(--radius-md);
@@ -235,15 +233,27 @@ input::placeholder, textarea::placeholder { color: var(--gray-400); }
 }
 .sidebar-list { display: flex; flex-direction: column; gap: var(--space-2); margin-top: var(--space-3); }
 .sidebar-item {
-  padding: var(--space-3); border: 1px solid var(--gray-200); border-radius: var(--radius-md);
+  position: relative; padding: var(--space-3); padding-right: 44px;
+  border: 1px solid var(--gray-200); border-radius: var(--radius-md);
   cursor: pointer; font-size: 13px; transition: all 0.2s ease; background: #fff;
 }
 .sidebar-item:hover { background: var(--gray-50); border-color: var(--accent-light); }
 .sidebar-item.active { background: linear-gradient(135deg, #ebf8ff 0%, #e0f2fe 100%); border-color: var(--accent); border-left: 4px solid var(--accent); }
-.sidebar-item-name { font-weight: 600; margin-bottom: var(--space-1); color: var(--gray-800); }
+.sidebar-item-name { font-weight: 600; margin-bottom: var(--space-1); color: var(--gray-800); padding-right: 4px; }
 .sidebar-item-status { font-size: 11px; font-weight: 500; }
 .sidebar-item-status.active { color: var(--success); }
 .sidebar-item-status.inactive { color: var(--gray-500); }
+.sidebar-item-actions {
+  position: absolute; top: 50%; right: 8px; transform: translateY(-50%);
+  display: flex; gap: 4px;
+}
+.btn-icon {
+  background: transparent; border: 1px solid var(--gray-300);
+  border-radius: var(--radius-sm); padding: 4px 6px; cursor: pointer;
+  font-size: 14px; transition: all 0.2s ease; line-height: 1;
+}
+.btn-icon:hover { background: var(--accent-light); border-color: var(--accent); transform: scale(1.15); }
+.btn-icon:active { transform: scale(0.95); }
 .hint {
   font-size: 12px; color: var(--gray-600); line-height: 1.7; margin-top: var(--space-4);
   padding: var(--space-3); background: var(--gray-50); border-radius: var(--radius-md);
@@ -374,7 +384,7 @@ input::placeholder, textarea::placeholder { color: var(--gray-400); }
 .subm-filter-tabs {
   display: flex; gap: var(--space-1); background: var(--gray-50);
   border: 1px solid var(--gray-200); border-radius: var(--radius-lg);
-  padding: var(--space-2); margin-bottom: var(--space-4);
+  padding: var(--space-2); margin-bottom: var(--space-4); flex-wrap: wrap;
 }
 .subm-filter-tabs .filter-tab {
   border: 0; background: transparent; color: var(--gray-600);
@@ -414,7 +424,6 @@ input::placeholder, textarea::placeholder { color: var(--gray-400); }
   .app-container { padding: var(--space-4); }
   .login-card { margin: var(--space-6) auto; padding: var(--space-6); }
   .submitter-grid { grid-template-columns: 1fr; }
-  .subm-filter-tabs { flex-wrap: wrap; }
 }
 @media print {
   @page { size: A4 portrait; margin: 0; }
@@ -704,6 +713,9 @@ input::placeholder, textarea::placeholder { color: var(--gray-400); }
 <script>
 'use strict';
 
+// ============================================================
+// ⚠️ API URL — Web App ของ Apps Script
+// ============================================================
 const API_URL = 'https://script.google.com/macros/s/AKfycbwlBmF7UCDh1b-DlGy6uzT_Vot2J0Z02EoLoCRm5XFjtra1nDzCBD-cBHJ_8Yl6hX6oig/exec';
 
 const $ = s => document.querySelector(s), $$ = s => Array.from(document.querySelectorAll(s));
@@ -735,24 +747,24 @@ let adminSelectedTemplateId = null, adminTemplates = [], adminSubmissionsSeq = 0
 let currentFilter = 'ALL';
 
 // ============================================================
-// CACHE LAYER
+// CACHE LAYER (localStorage — ลดเวลาโหลด)
 // ============================================================
 const CACHE_TTL = 5 * 60 * 1000;
 function cacheGet(key) {
   try {
     const raw = localStorage.getItem('cache_' + key);
     if (!raw) return null;
-    const { value, ts } = JSON.parse(raw);
-    if (Date.now() - ts > CACHE_TTL) { localStorage.removeItem('cache_' + key); return null; }
-    return value;
+    const obj = JSON.parse(raw);
+    if (Date.now() - obj.ts > CACHE_TTL) { localStorage.removeItem('cache_' + key); return null; }
+    return obj.value;
   } catch (e) { return null; }
 }
 function cacheSet(key, value) {
-  try { localStorage.setItem('cache_' + key, JSON.stringify({ value, ts: Date.now() })); } catch (e) {}
+  try { localStorage.setItem('cache_' + key, JSON.stringify({ value: value, ts: Date.now() })); } catch (e) {}
 }
 
 // ============================================================
-// API CALL
+// API CALL (text/plain + redirect: follow — แก้ CORS)
 // ============================================================
 async function apiCall(action, payload = {}) {
   if (!accessToken && PUBLIC_ACTIONS.indexOf(action) === -1) throw new Error('กรุณาเข้าสู่ระบบก่อน');
@@ -799,7 +811,7 @@ function formatThaiDate(iso) {
 }
 
 // ============================================================
-// SHOW VIEW
+// SHOW VIEW (จัดการ hidden attribute ถูกต้อง)
 // ============================================================
 const TOP_VIEWS = [
   'publicFormListView', 'publicFormRendererView', 'submissionSuccessView',
@@ -1083,7 +1095,7 @@ function openPrintWindow(r, titleExtra) {
 }
 
 // ============================================================
-// PUBLIC: รายการฟอร์ม + thumbnail
+// PUBLIC: รายการฟอร์ม + thumbnail (lazy + cache)
 // ============================================================
 async function loadPublicFormList() {
   const cached = cacheGet('publicForms');
@@ -1115,7 +1127,7 @@ function renderPublicFormList(templates) {
       <p class="meta">${esc(t.description || '')}</p>
       <div class="form-thumb" data-thumb="${esc(t.id)}" data-fields='${JSON.stringify(t.fields || []).replace(/'/g, "&#39;")}'>
         <span class="form-thumb-badge">ตัวอย่าง</span>
-        <div class="a4-canvas form-thumb-canvas" data-lazy="true"></div>
+        <div class="a4-canvas form-thumb-canvas"></div>
       </div>
       <div class="card-actions">
         <button class="btn secondary" data-preview="${esc(t.id)}">👁️ ดูตัวอย่าง</button>
@@ -1825,8 +1837,7 @@ function onPropEvent(e) {
     case 'bg_color': { f.bg_color = t.value; const cb = $('#propertiesContent [data-prop="bg_transparent"]'); if (cb) cb.checked = false; break; }
     case 'pos_x': case 'pos_y': case 'width': case 'height': case 'font_size': {
       const n = parseFloat(t.value); if (!isFinite(n)) return;
-      f[key] = n; clampField(f); if (e.type === 'change') syncGeometryInputs(f); break;
-    }
+      f[key] = n; clampField(f); if (e.type === 'change') syncGeometryInputs(f); break; }
     default: f[key] = t.value;
   }
   refreshFieldElement(f); markDirty();
@@ -1874,7 +1885,7 @@ $('#previewFormBtn').addEventListener('click', () => {
 });
 
 // ============================================================
-// ADMIN: SUBMISSIONS (with filter + archive)
+// ADMIN: SUBMISSIONS (filter + archive)
 // ============================================================
 function resetAdminSubmissions() {
   adminSelectedTemplateId = null;
@@ -1888,7 +1899,15 @@ function resetAdminSubmissions() {
 
 function renderAdminTemplateList() {
   $('#adminTemplateList').innerHTML = adminTemplates.length
-    ? adminTemplates.map(t => '<div class="sidebar-item ' + (t.id === adminSelectedTemplateId ? 'active' : '') + '" data-admin-template-id="' + esc(t.id) + '"><div class="sidebar-item-name">' + esc(t.name) + '</div><div class="sidebar-item-status ' + (t.is_active ? 'active' : 'inactive') + '">' + (t.is_active ? '● ใช้งาน' : '○ ปิด') + '</div></div>').join('')
+    ? adminTemplates.map(t => `
+      <div class="sidebar-item ${t.id === adminSelectedTemplateId ? 'active' : ''}" data-admin-template-id="${esc(t.id)}">
+        <div class="sidebar-item-name">${esc(t.name)}</div>
+        <div class="sidebar-item-status ${t.is_active ? 'active' : 'inactive'}">${t.is_active ? '● ใช้งาน' : '○ ปิด'}</div>
+        <div class="sidebar-item-actions">
+          <button class="btn-icon" data-duplicate="${esc(t.id)}" title="คัดลอกฟอร์ม">📋</button>
+        </div>
+      </div>
+    `).join('')
     : '<div class="empty" style="padding:10px;font-size:12px">ยังไม่มีฟอร์ม</div>';
 }
 
@@ -1958,7 +1977,34 @@ async function loadAdminSubmissions(templateId) {
   } catch (x) { if (seq === adminSubmissionsSeq) hideLoading(); handleError(x); }
 }
 
-$('#adminTemplateList').addEventListener('click', e => {
+// ✅ Event handler เดียว — รองรับทั้ง คัดลอกฟอร์ม + เลือกฟอร์ม
+$('#adminTemplateList').addEventListener('click', async e => {
+  const dupBtn = e.target.closest('[data-duplicate]');
+  if (dupBtn) {
+    e.stopPropagation();
+    const templateId = dupBtn.dataset.duplicate;
+    const tpl = adminTemplates.find(t => t.id === templateId);
+    if (!tpl) return;
+
+    const newName = prompt('ชื่อฟอร์มใหม่ (เว้นว่างเพื่อใช้ชื่ออัตโนมัติ):', tpl.name + ' (คัดลอก)');
+    if (newName === null) return;
+
+    showLoading();
+    try {
+      const result = await apiCall('duplicateFormTemplate', {
+        id: templateId,
+        newName: newName.trim()
+      });
+      hideLoading();
+      toast('คัดลอกฟอร์มสำเร็จ: ' + result.name + ' (' + result.fieldsCount + ' ฟิลด์)');
+      await loadAdminTemplateList();
+    } catch (x) {
+      hideLoading();
+      handleError(x);
+    }
+    return;
+  }
+
   const item = e.target.closest('[data-admin-template-id]');
   if (item) selectAdminTemplate(item.dataset.adminTemplateId);
 });
@@ -2099,22 +2145,19 @@ $$('[data-admin-view]').forEach(t => t.addEventListener('click', () => {
 // ============================================================
 document.addEventListener('DOMContentLoaded', async () => {
   updateAuthUI();
-  
-  // ✅ โหลดจาก cache ทันที (ไม่ต้องรอ network)
+
+  // โหลดจาก cache ทันที (เร็ว)
   const cachedLogo = cacheGet('headerLogo');
   renderHeaderLogo(cachedLogo !== null ? cachedLogo : '');
   const cachedForms = cacheGet('publicForms');
   if (cachedForms) renderPublicFormList(cachedForms);
   else $('#publicFormList').innerHTML = '<div class="empty">กำลังโหลด...</div>';
-  
+
   showView('publicFormListView');
-  
-  // ✅ โหลดใหม่เบื้องหลัง (stale-while-revalidate)
-  Promise.all([
-    loadHeaderLogo(),
-    refreshPublicFormList()
-  ]).catch(() => {});
-  
+
+  // โหลดใหม่เบื้องหลัง
+  Promise.all([loadHeaderLogo(), refreshPublicFormList()]).catch(() => {});
+
   if (accessToken) {
     try {
       const session = await apiCall('getSession', {});
