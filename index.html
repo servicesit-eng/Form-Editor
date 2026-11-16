@@ -711,7 +711,6 @@ input::placeholder, textarea::placeholder { color: var(--gray-400); }
   </div>
 </div>
 
-<!-- ✅ Modal ดาวน์โหลดฟอร์ม (ใหม่) -->
 <div id="downloadModal" class="modal" hidden>
   <div class="modal-content">
     <div class="modal-header">
@@ -722,7 +721,7 @@ input::placeholder, textarea::placeholder { color: var(--gray-400); }
       <p class="dl-desc" id="downloadModalDesc"></p>
       <button class="btn primary" id="dlHtmlBtn">💾 ดาวน์โหลดไฟล์ HTML (เก็บลงเครื่อง)</button>
       <button class="btn secondary" id="dlPdfBtn">📄 บันทึกเป็น PDF (ผ่านหน้าพิมพ์)</button>
-      <p class="dl-desc" style="margin:0">ไฟล์ HTML เปิดได้ทันทีด้วยเบราว์เซอร์ ไม่ต้องใช้อินเทอร์เน็ต (ยกเว้นฟอนต์ออนไลน์) และสั่งพิมพ์เป็น A4 ได้เลย</p>
+      <p class="dl-desc" style="margin:0">ไฟล์ HTML เปิดได้ทันทีด้วยเบราว์เซอร์ ขนาดกระดาษ A4 (210×297 มม.) พร้อมสั่งพิมพ์ได้เลย</p>
     </div>
   </div>
 </div>
@@ -766,6 +765,47 @@ let adminSelectedTemplateId = null, adminTemplates = [], adminSubmissionsSeq = 0
 let currentFilter = 'ALL';
 let lastAdminSubmissions = [];
 let downloadCtx = null;
+
+// ============================================================
+// ✅ A4 PRINT CSS — บังคับกระดาษ 210mm x 297mm ทั้งหน้าพิมพ์และไฟล์ดาวน์โหลด
+// ============================================================
+const A4_PRINT_CSS = `
+@page { size: 210mm 297mm; margin: 0; }
+html, body {
+  width: 210mm; height: 297mm;
+  margin: 0 !important; padding: 0 !important;
+  background: #fff !important;
+  overflow: hidden !important;
+}
+body { display: block !important; }
+.a4-canvas {
+  width: 210mm !important;
+  height: 297mm !important;
+  min-height: 0 !important;
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  transform: none !important;
+  scale: none !important;
+  overflow: hidden !important;
+  page-break-inside: avoid !important;
+  page-break-after: avoid !important;
+  break-inside: avoid !important;
+  break-after: avoid !important;
+}
+* { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+@media screen {
+  html, body { width: auto; height: auto; overflow: auto !important; background: #e5e7eb !important; }
+  body { padding: 16px 0 !important; }
+  .a4-canvas {
+    margin: 0 auto !important;
+    border: 1px solid #d1d5db !important;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15) !important;
+  }
+}
+`;
 
 // ============================================================
 // CACHE LAYER
@@ -1104,6 +1144,7 @@ function collectFormData(canvasEl, fields) {
   return { data: data, missing: missing };
 }
 
+// ✅ ใช้ A4_PRINT_CSS บังคับขนาดกระดาษ
 function openPrintWindow(r, titleExtra) {
   const win = window.open('', '_blank');
   if (!win) { toast('เบราว์เซอร์บล็อกหน้าต่างพิมพ์ กรุณาอนุญาต Pop-up'); return null; }
@@ -1111,13 +1152,13 @@ function openPrintWindow(r, titleExtra) {
   const ctx = { mode: 'print', data: r.data || {}, prefix: '' };
   (r.fields || []).map(normalizeField).forEach(f => holder.appendChild(buildFieldElement(f, ctx)));
   const css = document.querySelector('style').textContent;
-  win.document.write('<!doctype html><html lang="th"><head><meta charset="utf-8"><title>' + esc(titleExtra || 'พิมพ์คำขอ') + '</title><style>' + css + '</style><style>@page{size:A4 portrait;margin:0}html,body{background:#fff;margin:0}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}.a4-canvas{box-shadow:none!important;margin:0!important;transform:none!important;border:0!important}</style></head><body>' + holder.outerHTML + '<script>window.onload=function(){setTimeout(function(){window.print()},500)}<\/script></body></html>');
+  win.document.write('<!doctype html><html lang="th"><head><meta charset="utf-8"><title>' + esc(titleExtra || 'พิมพ์คำขอ') + '</title><style>' + css + '</style><style>' + A4_PRINT_CSS + '</style></head><body>' + holder.outerHTML + '<script>window.onload=function(){setTimeout(function(){window.print()},500)}<\/script></body></html>');
   win.document.close();
   return win;
 }
 
 // ============================================================
-// ✅ DOWNLOAD FORM (Admin) — HTML file / PDF
+// ✅ DOWNLOAD FORM (Admin) — HTML file / PDF ขนาด A4
 // ============================================================
 function buildStandaloneHtml(fields, data, title) {
   const css = document.querySelector('style').textContent;
@@ -1129,9 +1170,8 @@ function buildStandaloneHtml(fields, data, title) {
     '<meta name="viewport" content="width=device-width, initial-scale=1">\n' +
     '<title>' + esc(title) + '</title>\n' +
     '<style>' + css + '</style>\n' +
-    '<style>\n@page{size:A4 portrait;margin:0}\nhtml,body{background:#fff!important;margin:0;padding:0;}\n' +
-    '.a4-canvas{box-shadow:none!important;margin:0 auto!important;transform:none!important;border:0!important}\n' +
-    '</style>\n</head>\n<body>\n' + holder.outerHTML + '\n</body>\n</html>';
+    '<style>' + A4_PRINT_CSS + '</style>\n' +
+    '</head>\n<body>\n' + holder.outerHTML + '\n</body>\n</html>';
 }
 
 function downloadBlob(content, filename, mime) {
@@ -1170,7 +1210,6 @@ $('#dlPdfBtn').addEventListener('click', () => {
   downloadCtx = null;
 });
 
-// ปุ่มดาวน์โหลดใน Builder = ฟอร์มเปล่า (ก่อนกรอกข้อมูล)
 $('#downloadFormBtn').addEventListener('click', () => {
   if (!state.templateId) return;
   closeAllModals();
@@ -1179,7 +1218,7 @@ $('#downloadFormBtn').addEventListener('click', () => {
     data: {},
     title: (state.meta.name || 'แบบฟอร์ม') + ' (แบบฟอร์มเปล่า)',
     filename: sanitizeFilename(state.meta.name || 'form') + '_blank',
-    desc: 'ดาวน์โหลด "' + (state.meta.name || 'แบบฟอร์ม') + '" แบบยังไม่ได้กรอกข้อมูล'
+    desc: 'ดาวน์โหลด "' + (state.meta.name || 'แบบฟอร์ม') + '" แบบยังไม่ได้กรอกข้อมูล (ขนาด A4)'
   });
 });
 
@@ -1515,7 +1554,7 @@ $('#adminMySubmissionsList').addEventListener('click', async e => {
 });
 
 // ============================================================
-// ADMIN: BUILDER (ปุ่ม 📋 คัดลอก + 📥 ดาวน์โหลด)
+// ADMIN: BUILDER (📋 คัดลอก + 📥 ดาวน์โหลด)
 // ============================================================
 async function loadTemplateList() {
   try {
@@ -2103,7 +2142,6 @@ $('#submissionFilterTabs').addEventListener('click', e => {
 });
 
 $('#adminSubmissionsList').addEventListener('click', async e => {
-  // ✅ ดาวน์โหลดคำขอที่กรอกแล้ว
   const dlSub = e.target.closest('[data-download-sub]');
   if (dlSub) {
     const id = dlSub.dataset.downloadSub;
