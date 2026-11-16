@@ -771,41 +771,66 @@ let downloadCtx = null;
 // ============================================================
 const A4_PRINT_CSS = `
 @page { size: 210mm 297mm; margin: 0; }
-html, body {
-  width: 210mm; height: 297mm;
-  margin: 0 !important; padding: 0 !important;
-  background: #fff !important;
-  overflow: hidden !important;
-}
-body { display: block !important; }
-.a4-canvas {
-  width: 210mm !important;
-  height: 297mm !important;
-  min-height: 0 !important;
-  max-width: none !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  border: 0 !important;
-  box-shadow: none !important;
-  transform: none !important;
-  scale: none !important;
-  overflow: hidden !important;
-  page-break-inside: avoid !important;
-  page-break-after: avoid !important;
-  break-inside: avoid !important;
-  break-after: avoid !important;
-}
 * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-@media screen {
-  html, body { width: auto; height: auto; overflow: auto !important; background: #e5e7eb !important; }
-  body { padding: 16px 0 !important; }
+
+/* ===== พิมพ์ / บันทึกเป็น PDF: บังคับกระดาษ A4 เป๊ะ ===== */
+@media print {
+  html, body {
+    width: 210mm; height: 297mm;
+    margin: 0 !important; padding: 0 !important;
+    background: #fff !important;
+    overflow: hidden !important;
+  }
+  body { display: block !important; }
+  .sheet-wrap { width: 210mm !important; height: 297mm !important; margin: 0 !important; padding: 0 !important; }
   .a4-canvas {
-    margin: 0 auto !important;
-    border: 1px solid #d1d5db !important;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.15) !important;
+    width: 210mm !important;
+    height: 297mm !important;
+    min-height: 0 !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    transform: none !important;
+    scale: none !important;
+    overflow: hidden !important;
+    page-break-inside: avoid !important;
+    page-break-after: avoid !important;
+    break-inside: avoid !important;
+    break-after: avoid !important;
   }
 }
+
+/* ===== ดูบนจอ: กระดาษ A4 กึ่งกลาง พื้นหลังเทา และย่อให้พอดีความกว้างจอ (--fit) ===== */
+@media screen {
+  html, body { width: auto; height: auto; overflow: auto !important; background: #e5e7eb !important; }
+  body { margin: 0 !important; padding: 16px 0 !important; }
+  .sheet-wrap { margin: 0 auto; position: relative; }
+  .a4-canvas {
+    width: 210mm !important;
+    height: 297mm !important;
+    min-height: 0 !important;
+    max-width: none !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+    border: 1px solid #d1d5db !important;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15) !important;
+    overflow: hidden !important;
+    transform: scale(var(--fit, 1)) !important;
+    transform-origin: 0 0 !important;
+    scale: none !important;
+  }
+  .sheet-wrap > .a4-canvas { margin: 0 !important; }
+}
 `;
+
+// สคริปต์เล็ก ๆ ในไฟล์ที่ดาวน์โหลด: ย่อกระดาษให้พอดีความกว้างหน้าต่าง (ไม่ขยายเกิน 100%)
+const A4_FIT_SCRIPT = '(function(){var w=document.getElementById("sheetWrap");if(!w)return;' +
+  'var c=w.firstElementChild,W=210*96/25.4,H=297*96/25.4;' +
+  'function fit(){var s=Math.max(0.2,Math.min(1,(document.documentElement.clientWidth-24)/W));' +
+  'w.style.width=(W*s)+"px";w.style.height=(H*s)+"px";c.style.setProperty("--fit",s);}' +
+  'fit();window.addEventListener("resize",fit);})();';
 
 // ============================================================
 // CACHE LAYER
@@ -1167,11 +1192,12 @@ function buildStandaloneHtml(fields, data, title) {
   const ctx = { mode: 'print', data: data || {}, prefix: 'dl' + (++renderSeq) + '_' };
   (fields || []).map(normalizeField).forEach(f => holder.appendChild(buildFieldElement(f, ctx)));
   return '<!doctype html>\n<html lang="th">\n<head>\n<meta charset="utf-8">\n' +
-    '<meta name="viewport" content="width=device-width, initial-scale=1">\n' +
+    '<meta name="viewport" content="width=820">\n' +
     '<title>' + esc(title) + '</title>\n' +
     '<style>' + css + '</style>\n' +
     '<style>' + A4_PRINT_CSS + '</style>\n' +
-    '</head>\n<body>\n' + holder.outerHTML + '\n</body>\n</html>';
+    '</head>\n<body>\n<div class="sheet-wrap" id="sheetWrap">' + holder.outerHTML + '</div>\n' +
+    '<script>' + A4_FIT_SCRIPT + '<\/script>\n</body>\n</html>';
 }
 
 function downloadBlob(content, filename, mime) {
