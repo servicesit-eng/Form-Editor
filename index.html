@@ -119,7 +119,7 @@ body {
 .card .meta { color: var(--gray-600); font-size: 12px; margin-top: var(--space-2); line-height: 1.6; }
 .card .btn { margin-top: var(--space-3); }
 .card-actions { display: flex; gap: var(--space-2); margin-top: var(--space-4); flex-wrap: wrap; }
-.card-actions .btn { flex: 1; min-width: 110px; margin-top: 0; }
+.card-actions .btn { flex: 1; min-width: 100px; margin-top: 0; }
 .status {
   display: inline-flex; align-items: center; gap: var(--space-1);
   padding: var(--space-1) var(--space-3); border-radius: var(--radius-md);
@@ -410,6 +410,8 @@ input::placeholder, textarea::placeholder { color: var(--gray-400); }
 .modal-header h3 { font-size: 18px; font-weight: 700; color: var(--primary); }
 .modal-header .modal-actions { display: flex; gap: var(--space-2); }
 .modal-body { background: var(--gray-50); padding: var(--space-5); border-radius: var(--radius-lg); overflow: auto; max-height: 70vh; display: block; }
+.dl-options { display: flex; flex-direction: column; gap: var(--space-3); }
+.dl-desc { color: var(--gray-600); font-size: 13px; margin-bottom: var(--space-2); }
 @media (max-width: 1200px) {
   .builder-layout { grid-template-columns: 1fr; grid-template-rows: auto auto auto; }
   .subm-layout { grid-template-columns: 1fr; }
@@ -572,7 +574,7 @@ input::placeholder, textarea::placeholder { color: var(--gray-400); }
             <div class="toolbox-item" draggable="true" data-field-type="checkbox_agree">✅ ยอมรับข้อตกลง</div>
             <div class="toolbox-item" draggable="true" data-field-type="divider">➖ เส้นคั่น</div>
           </div>
-          <p class="hint">• ลากไปวาง หรือ <b>คลิก</b> เพื่อเพิ่ม<br>• <b>ดับเบิลคลิก</b> เพื่อแก้ไขข้อความ<br>• Delete = ลบ, Ctrl+Z = ย้อนกลับ, Ctrl+S = บันทึก<br>• 📋 = คัดลอกฟอร์มเป็นฟอร์มใหม่</p>
+          <p class="hint">• ลากไปวาง หรือ <b>คลิก</b> เพื่อเพิ่ม<br>• <b>ดับเบิลคลิก</b> เพื่อแก้ไขข้อความ<br>• Delete = ลบ, Ctrl+Z = ย้อนกลับ, Ctrl+S = บันทึก<br>• 📋 = คัดลอกฟอร์ม · 📥 = ดาวน์โหลดฟอร์มเปล่า</p>
         </div>
       </aside>
       <div class="builder-main">
@@ -591,6 +593,7 @@ input::placeholder, textarea::placeholder { color: var(--gray-400); }
             </div>
             <button class="btn ghost" id="backToTemplateList">← กลับ</button>
             <button class="btn secondary" id="previewFormBtn">👁️ Preview</button>
+            <button class="btn ghost" id="downloadFormBtn">📥 ดาวน์โหลดฟอร์ม</button>
             <button class="btn ghost danger" id="deleteTemplateBtn">🗑️ ลบ</button>
             <button class="btn primary" id="saveFormBtn">💾 บันทึก</button>
           </div>
@@ -708,6 +711,22 @@ input::placeholder, textarea::placeholder { color: var(--gray-400); }
   </div>
 </div>
 
+<!-- ✅ Modal ดาวน์โหลดฟอร์ม (ใหม่) -->
+<div id="downloadModal" class="modal" hidden>
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3>📥 ดาวน์โหลดฟอร์ม</h3>
+      <button class="btn ghost" id="closeDownloadBtn">✕ ปิด</button>
+    </div>
+    <div class="dl-options">
+      <p class="dl-desc" id="downloadModalDesc"></p>
+      <button class="btn primary" id="dlHtmlBtn">💾 ดาวน์โหลดไฟล์ HTML (เก็บลงเครื่อง)</button>
+      <button class="btn secondary" id="dlPdfBtn">📄 บันทึกเป็น PDF (ผ่านหน้าพิมพ์)</button>
+      <p class="dl-desc" style="margin:0">ไฟล์ HTML เปิดได้ทันทีด้วยเบราว์เซอร์ ไม่ต้องใช้อินเทอร์เน็ต (ยกเว้นฟอนต์ออนไลน์) และสั่งพิมพ์เป็น A4 ได้เลย</p>
+    </div>
+  </div>
+</div>
+
 <div id="toast" role="status" aria-live="polite"></div>
 
 <script>
@@ -745,6 +764,8 @@ let viewingSubmissionId = null, viewingSubmissionCitizenId = null, toastTimer = 
 let lastSubmittedId = null, lastSubmittedCitizenId = null;
 let adminSelectedTemplateId = null, adminTemplates = [], adminSubmissionsSeq = 0;
 let currentFilter = 'ALL';
+let lastAdminSubmissions = [];
+let downloadCtx = null;
 
 // ============================================================
 // CACHE LAYER
@@ -804,6 +825,7 @@ function snap(v) { return Math.round(v / SNAP) * SNAP; }
 function round2(v) { return Math.round(v * 100) / 100; }
 function slugName(v) { return String(v || '').toLowerCase().replace(/[^a-z0-9_]/g, '_'); }
 function toHex(v, fallback) { return /^#[0-9a-fA-F]{6}$/.test(String(v || '')) ? v : fallback; }
+function sanitizeFilename(s) { return String(s || 'form').replace(/[\\/:*?"<>|]+/g, '_').replace(/\s+/g, '_').slice(0, 80); }
 function formatThaiDate(iso) {
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || ''));
   if (!m) return String(iso || '');
@@ -1095,6 +1117,73 @@ function openPrintWindow(r, titleExtra) {
 }
 
 // ============================================================
+// ✅ DOWNLOAD FORM (Admin) — HTML file / PDF
+// ============================================================
+function buildStandaloneHtml(fields, data, title) {
+  const css = document.querySelector('style').textContent;
+  const holder = document.createElement('div');
+  holder.className = 'a4-canvas';
+  const ctx = { mode: 'print', data: data || {}, prefix: 'dl' + (++renderSeq) + '_' };
+  (fields || []).map(normalizeField).forEach(f => holder.appendChild(buildFieldElement(f, ctx)));
+  return '<!doctype html>\n<html lang="th">\n<head>\n<meta charset="utf-8">\n' +
+    '<meta name="viewport" content="width=device-width, initial-scale=1">\n' +
+    '<title>' + esc(title) + '</title>\n' +
+    '<style>' + css + '</style>\n' +
+    '<style>\n@page{size:A4 portrait;margin:0}\nhtml,body{background:#fff!important;margin:0;padding:0;}\n' +
+    '.a4-canvas{box-shadow:none!important;margin:0 auto!important;transform:none!important;border:0!important}\n' +
+    '</style>\n</head>\n<body>\n' + holder.outerHTML + '\n</body>\n</html>';
+}
+
+function downloadBlob(content, filename, mime) {
+  const blob = new Blob([content], { type: mime || 'text/html;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 1000);
+}
+
+function openDownloadModal(ctx) {
+  downloadCtx = ctx;
+  $('#downloadModalDesc').textContent = ctx.desc || '';
+  $('#downloadModal').hidden = false;
+}
+
+$('#closeDownloadBtn').addEventListener('click', () => { $('#downloadModal').hidden = true; downloadCtx = null; });
+
+$('#dlHtmlBtn').addEventListener('click', () => {
+  if (!downloadCtx) return;
+  const html = buildStandaloneHtml(downloadCtx.fields, downloadCtx.data, downloadCtx.title);
+  const filename = downloadCtx.filename + '.html';
+  downloadBlob(html, filename, 'text/html;charset=utf-8');
+  $('#downloadModal').hidden = true;
+  toast('ดาวน์โหลดแล้ว: ' + filename);
+  downloadCtx = null;
+});
+
+$('#dlPdfBtn').addEventListener('click', () => {
+  if (!downloadCtx) return;
+  openPrintWindow({ fields: downloadCtx.fields, data: downloadCtx.data || {} }, downloadCtx.title);
+  $('#downloadModal').hidden = true;
+  toast('เลือก "Save as PDF" ในหน้าต่างพิมพ์');
+  downloadCtx = null;
+});
+
+// ปุ่มดาวน์โหลดใน Builder = ฟอร์มเปล่า (ก่อนกรอกข้อมูล)
+$('#downloadFormBtn').addEventListener('click', () => {
+  if (!state.templateId) return;
+  closeAllModals();
+  openDownloadModal({
+    fields: state.fields,
+    data: {},
+    title: (state.meta.name || 'แบบฟอร์ม') + ' (แบบฟอร์มเปล่า)',
+    filename: sanitizeFilename(state.meta.name || 'form') + '_blank',
+    desc: 'ดาวน์โหลด "' + (state.meta.name || 'แบบฟอร์ม') + '" แบบยังไม่ได้กรอกข้อมูล'
+  });
+});
+
+// ============================================================
 // PUBLIC: รายการฟอร์ม + thumbnail
 // ============================================================
 async function loadPublicFormList() {
@@ -1332,7 +1421,7 @@ $('#logoutBtn').addEventListener('click', () => {
   if (!confirm('ออกจากระบบ?')) return;
   accessToken = null;
   try { localStorage.removeItem('access_token'); } catch (e) {}
-  adminTemplates = []; resetAdminSubmissions();
+  adminTemplates = []; lastAdminSubmissions = []; resetAdminSubmissions();
   updateAuthUI();
   showView('publicFormListView');
   toast('ออกจากระบบแล้ว');
@@ -1426,7 +1515,7 @@ $('#adminMySubmissionsList').addEventListener('click', async e => {
 });
 
 // ============================================================
-// ADMIN: BUILDER (ปุ่ม 📋 คัดลอกฟอร์มอยู่ที่นี่)
+// ADMIN: BUILDER (ปุ่ม 📋 คัดลอก + 📥 ดาวน์โหลด)
 // ============================================================
 async function loadTemplateList() {
   try {
@@ -1445,7 +1534,6 @@ async function loadTemplateList() {
   } catch (e) { handleError(e); }
 }
 
-// ✅ Event: รองรับทั้งปุ่ม 📋 คัดลอก + การเลือกฟอร์ม
 $('#templateList').addEventListener('click', async e => {
   const dupBtn = e.target.closest('[data-duplicate]');
   if (dupBtn) {
@@ -1911,11 +1999,12 @@ $('#previewFormBtn').addEventListener('click', () => {
 });
 
 // ============================================================
-// ADMIN: SUBMISSIONS (filter + archive — ไม่มีปุ่มคัดลอกที่นี่)
+// ADMIN: SUBMISSIONS (filter + archive + 📥 ดาวน์โหลดคำขอ)
 // ============================================================
 function resetAdminSubmissions() {
   adminSelectedTemplateId = null;
   currentFilter = 'ALL';
+  lastAdminSubmissions = [];
   adminSubmissionsSeq++;
   $('#adminSubmissionsToolbar').hidden = true;
   $('#submissionFilterTabs').hidden = true;
@@ -1961,6 +2050,7 @@ async function loadAdminSubmissions(templateId) {
       });
     }
     if (seq !== adminSubmissionsSeq) return;
+    lastAdminSubmissions = submissions || [];
     const tpl = adminTemplates.find(x => x.id === templateId);
     $('#adminSubmissionsTitle').textContent = tpl ? tpl.name : 'คำขอ';
     $('#adminSubmissionsCount').textContent = 'ทั้งหมด ' + (submissions ? submissions.length : 0) + ' คำขอ';
@@ -1985,7 +2075,8 @@ async function loadAdminSubmissions(templateId) {
           '<div class="card-actions">' +
             '<button class="btn secondary" data-view-sub="' + esc(s.id) + '">👁️ ดู</button>' +
             actionBtns +
-            '<button class="btn ghost" data-print="' + esc(s.id) + '">พิมพ์</button>' +
+            '<button class="btn ghost" data-print="' + esc(s.id) + '">🖨️ พิมพ์</button>' +
+            '<button class="btn ghost" data-download-sub="' + esc(s.id) + '" title="ดาวน์โหลดฟอร์มที่กรอกแล้ว">📥</button>' +
             archiveBtn +
           '</div>' +
         '</article>';
@@ -2012,6 +2103,28 @@ $('#submissionFilterTabs').addEventListener('click', e => {
 });
 
 $('#adminSubmissionsList').addEventListener('click', async e => {
+  // ✅ ดาวน์โหลดคำขอที่กรอกแล้ว
+  const dlSub = e.target.closest('[data-download-sub]');
+  if (dlSub) {
+    const id = dlSub.dataset.downloadSub;
+    const sub = lastAdminSubmissions.find(x => x.id === id);
+    if (!sub || !adminSelectedTemplateId) return;
+    showLoading();
+    try {
+      const tpl = await apiCall('getFormTemplate', { id: adminSelectedTemplateId });
+      hideLoading();
+      closeAllModals();
+      openDownloadModal({
+        fields: tpl.fields || [],
+        data: sub.data || {},
+        title: (tpl.name || 'แบบฟอร์ม') + ' · เลขอ้างอิง ' + (sub.referenceId || ''),
+        filename: sanitizeFilename(tpl.name || 'form') + '_' + (sub.referenceId || String(id).slice(0, 8)),
+        desc: 'ดาวน์โหลดฟอร์มที่กรอกข้อมูลแล้ว · ผู้ยื่น: ' + (sub.submitted_by_name || '-') + ' · เลขอ้างอิง ' + (sub.referenceId || '')
+      });
+    } catch (x) { hideLoading(); handleError(x); }
+    return;
+  }
+
   const archiveBtn = e.target.closest('[data-archive]');
   const unarchiveBtn = e.target.closest('[data-unarchive]');
   if (archiveBtn) {
@@ -2061,7 +2174,7 @@ async function viewSubmission(id) {
     $('#submissionModalTitle').textContent = (r.template && r.template.name ? r.template.name : 'คำขอ') + ' · #' + String(id).slice(0, 8).toUpperCase();
     const canvas = renderFormOnCanvas('#submissionCanvas', (r.fields || []).map(normalizeField), 'print', r.data || {});
     $('#submissionModal').hidden = false;
-    applyZoom(canvas, fitZoom($('#submissionModal .modal-body')));
+    applyZoom(canvas, fitZoom($('#submissionModal .modal-body'));
   } catch (x) { hideLoading(); handleError(x); }
 }
 
