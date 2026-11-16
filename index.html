@@ -2174,7 +2174,7 @@ async function viewSubmission(id) {
     $('#submissionModalTitle').textContent = (r.template && r.template.name ? r.template.name : 'คำขอ') + ' · #' + String(id).slice(0, 8).toUpperCase();
     const canvas = renderFormOnCanvas('#submissionCanvas', (r.fields || []).map(normalizeField), 'print', r.data || {});
     $('#submissionModal').hidden = false;
-    applyZoom(canvas, fitZoom($('#submissionModal .modal-body'));
+    applyZoom(canvas, fitZoom($('#submissionModal .modal-body')));
   } catch (x) { hideLoading(); handleError(x); }
 }
 
