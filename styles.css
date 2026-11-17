@@ -642,7 +642,6 @@ body.boot *,body.boot *::before,body.boot *::after{
   animation-duration:0ms!important;animation-delay:0ms!important;transition-duration:0ms!important;
 }
 .card{opacity:1;transform:none;animation:cardIn .28s var(--ease) both}
-@keyframes cardIn2{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 .rail-item{opacity:1;transform:none;animation:railFade .18s var(--ease) both}
 @keyframes railFade{from{opacity:0}to{opacity:1}}
 #view.no-anim .card,#view.no-anim .rail-item,#view.no-anim .stat,
@@ -675,3 +674,100 @@ input:focus-visible,select:focus-visible,textarea:focus-visible{outline:none}
   .aurora{animation:none}
   .card,.rail-item,.art-stamp{animation:none}
 }
+
+/* ============================================================
+   COLOR PATCH — โทนมิ้นต์/อควา ตามภาพอ้างอิง (ทับค่าเดิมทั้งหมด)
+   ============================================================ */
+:root{
+  --bg:#EDF5F2; --bg2:#E0EDE8;
+  --surface:#FFFFFF; --surface2:#F5FBF8; --surface3:#E8F2EE;
+  --line:#D3E5DE; --line2:#BFD8CF;
+  --text:#0B2426; --text2:#47625D; --text3:#7C9691;
+  --paper:#F7FCFA; --bone:#E4F0EB;
+  --shadow-1:0 1px 2px rgba(6,42,48,.05),0 2px 6px rgba(6,42,48,.05);
+  --shadow-2:0 4px 12px rgba(6,42,48,.08),0 2px 4px rgba(6,42,48,.05);
+  --shadow-3:0 18px 44px rgba(6,42,48,.14),0 6px 14px rgba(6,42,48,.07);
+}
+
+/* พื้นหลังหลัก + aurora เพี้ยนเป็นมินต์อ่อนแบบภาพ */
+body{background:linear-gradient(180deg,#E3F1EC 0%,#EDF5F2 34%,#F2F8F5 100%)}
+.bg-grid{opacity:.20}
+.aurora.a1{background:radial-gradient(circle,#7FC9BC,transparent 66%);opacity:.26}
+.aurora.a2{background:radial-gradient(circle,#9ADFD4,transparent 66%);opacity:.22}
+.aurora.a3{background:radial-gradient(circle,#BFE8DE,transparent 70%);opacity:.16}
+
+/* แถบ breadcrumb สีอควาเต็มความกว้าง (ตามแถบบนของภาพ) */
+.crumbs{
+  margin:-20px -26px 14px; padding:9px 26px;
+  background:linear-gradient(90deg,#D9ECE5,#E4F1EC 60%,#EAF4F0);
+  border-bottom:1px solid #CBE2DA;
+  color:#5E807A;
+}
+.crumbs b{color:#0B4F55}
+.crumbs svg{color:#0E7C86;opacity:.7}
+
+/* หัวเซกชัน: แผงมินต์อ่อน + หัวข้อไล่เฉด petrol (ตามภาพ) */
+.sec-head{
+  background:linear-gradient(180deg,#F3FAF7 0%,#E9F4EF 100%);
+  border-bottom:1px solid var(--line);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.65);
+}
+.sec-title h1{
+  background:linear-gradient(96deg,#062A30 8%,#0B4F55 52%,#0E7C86 96%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.sec-title p{color:#5E807A}
+
+/* ปุ่ม: ขาวขอบอ่อน (ส่งออก CSV) + ทีลเข้มไล่เฉด (สร้างฟอร์มใหม่) */
+.btn{background:var(--surface);border-color:#C9DED6;color:#0B2426}
+.btn.ghost{background:#FFFFFF;border-color:#C9DED6;box-shadow:var(--shadow-1)}
+.btn.ghost:hover{background:#F3FAF7;border-color:var(--petrol-400);color:#0B4F55}
+.btn.pri{background:linear-gradient(100deg,#0B4F55,#0E7C86);color:#fff;border-color:transparent}
+.btn.pri:hover{box-shadow:0 8px 22px rgba(14,124,134,.35)}
+.btn.ok{background:linear-gradient(100deg,#047857,#10B981)}
+.btn.bad{background:linear-gradient(100deg,#9F1239,#F43F5E)}
+.btn.arch{background:linear-gradient(100deg,#5B21B6,#8B5CF6)}
+
+/* พื้นผิวควบคุมต่าง ๆ ให้เย็นลงสอดคล้องภาพ */
+.search{background:#FFFFFF;border-color:#C9DED6}
+.search:focus-within{border-color:var(--petrol-400);box-shadow:0 0 0 3px rgba(14,124,134,.15)}
+.sel{background-color:#FFFFFF;border-color:#C9DED6}
+.chip{background:#FFFFFF;border-color:#C9DED6;color:#47625D}
+.chip:hover{border-color:var(--petrol-400);color:#0B4F55}
+.chip.on{background:var(--petrol-600);border-color:transparent;color:#fff}
+.chip.saved{border-color:var(--violet);background:#F1ECFC;color:#5B21B6}
+.card,.tbl-wrap,.panel,.modal,.palette,.drawer,.notif,.status-box,.submitter{border-color:var(--line)}
+.card{background:#FFFFFF}
+.card:hover{border-color:#8FC5B8}
+
+/* ตารางโทนเย็น */
+thead th{background:#F0F8F5;color:#5E807A;border-bottom-color:var(--line)}
+tbody tr:hover{background:#F5FBF8}
+tbody tr.sel{background:#E7F4EE}
+tbody td{border-bottom:1px solid #E1EEE9}
+
+/* Rail / เมนูซ้าย เป็นกระจกมินต์ */
+.rail{background:color-mix(in srgb,#FFFFFF 76%,#E6F2ED);border-right-color:var(--line)}
+.rail-item:hover{background:#EAF4F0}
+.rail-item.on{background:linear-gradient(100deg,#0B4F55,#0E7C86)}
+.rail-label{color:#6E8B85}
+.cnt{background:#E4EFEB;color:#47625D}
+.cnt.hot{background:#FCEFC7;color:#92400E}
+.quota{background:linear-gradient(160deg,#F5FBF8,#E8F2EE);border-color:var(--line)}
+
+/* สถานะ/ Pills คงความหมายแต่ฐานเย็นลง */
+.pill.off{background:#E4EFEB;color:#5E807A}
+.pill.info{background:#E0EDF9;color:#1E40AF}
+
+/* ส่วนสาธารณะให้กลมกลืน */
+.hero-eyebrow{color:#0E7C86}
+.hero h1 em{background:linear-gradient(95deg,#0B4F55,#14A0A6);-webkit-background-clip:text;background-clip:text}
+.hero-points li::before{background:#10B981}
+.pub-footer{border-top-color:var(--line);color:#7C9691}
+.status-box,.submitter{background:#FFFFFF}
+.submitter{background:linear-gradient(100deg,#E0EDF9,#EAF6F1);border-color:#B9D3E8}
+
+/* โหมดมืด: คงเดิม (อิง teal-dark) แต่จูนพื้นหลังให้เข้าชุด */
+[data-theme=dark] body{background:linear-gradient(180deg,#05171C,#07222A 60%,#05171C)}
+[data-theme=dark] .crumbs{background:linear-gradient(90deg,#0A2E36,#0D3540);border-bottom-color:#17454F}
+[data-theme=dark] .sec-head{background:linear-gradient(180deg,#0A242B,#0D2C34)}
