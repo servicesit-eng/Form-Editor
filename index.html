@@ -9,18 +9,20 @@
   var p=JSON.parse(localStorage.getItem('dontum.console.v1')||'null');
   var t=(p&&p.prefs&&p.prefs.theme==='dark')?'dark':'light';
   var d=(p&&p.prefs&&p.prefs.density==='compact')?'compact':'cozy';
+  var sh=(p&&p.prefs&&p.prefs.shell==='admin')?'admin':'public';
   document.documentElement.dataset.theme=t;
   document.documentElement.dataset.density=d;
+  document.documentElement.dataset.shell=sh;
   if(p&&p.prefs&&p.prefs.rail==='mini')document.documentElement.classList.add('pre-mini');
 }catch(e){}})();
 </script>
-<title>แผงจัดการ · ระบบแบบฟอร์มอิเล็กทรอนิกส์ โรงพยาบาลดอนตูม</title>
+<title>ระบบกรอกแบบฟอร์มออนไลน์ | โรงพยาบาลดอนตูม</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700;800&family=IBM+Plex+Mono:wght@400;600&display=swap">
 <link rel="stylesheet" href="styles.css">
 </head>
-<body class="boot">
+<body class="boot" data-shell="public">
 <div class="bg-field" aria-hidden="true">
   <div class="bg-grid"></div>
   <div class="aurora a1"></div><div class="aurora a2"></div><div class="aurora a3"></div>
@@ -35,9 +37,15 @@
     <div class="brand-mark" id="brandMark">ด</div>
     <div class="brand-txt">
       <b>โรงพยาบาลดอนตูม</b>
-      <span>DONTUM e-FORM · ADMIN CONSOLE</span>
+      <span id="brandSub">DONTUM e-FORM · บริการประชาชน</span>
     </div>
   </div>
+
+  <nav class="pnav-wrap" id="pubNav" aria-label="เมนูสาธารณะ">
+    <button class="pnav on" data-pnav="home">หน้าแรก</button>
+    <button class="pnav" data-pnav="forms">ฟอร์มทั้งหมด</button>
+    <button class="pnav" data-pnav="status">ตรวจสอบคำขอ</button>
+  </nav>
 
   <button class="omni" id="omniBtn">
     <span class="omni-ico"></span>
@@ -46,16 +54,129 @@
   </button>
 
   <div class="top-actions">
-    <div class="mode-chip" id="modeChip" title="แหล่งข้อมูลที่ใช้แสดง"></div>
-    <button class="ico-btn" id="densityBtn" title="ความหนาแน่นตาราง"></button>
-    <button class="ico-btn" id="themeBtn" title="สลับธีม (Ctrl+J)"></button>
-    <button class="ico-btn bell" id="bellBtn" title="การแจ้งเตือน"><span class="dot" id="bellDot" hidden></span></button>
-    <button class="ico-btn" id="helpBtn" title="คีย์ลัด (?)"></button>
-    <div class="user-chip"><span class="avatar">ผ</span><div><b>ผู้ดูแลระบบ</b><i>ADMIN</i></div></div>
+    <div class="pub-actions" id="pubActions">
+      <button class="btn ghost topbtn" id="loginBtn">🔐 เข้าสู่ระบบผู้ดูแล</button>
+    </div>
+    <div class="admin-actions" id="adminActions">
+      <div class="mode-chip" id="modeChip" title="แหล่งข้อมูลที่ใช้แสดง"></div>
+      <button class="ico-btn" id="densityBtn" title="ความหนาแน่นตาราง"></button>
+      <button class="ico-btn" id="themeBtn" title="สลับธีม (Ctrl+J)"></button>
+      <button class="ico-btn bell" id="bellBtn" title="การแจ้งเตือน"><span class="dot" id="bellDot" hidden></span></button>
+      <button class="ico-btn" id="helpBtn" title="คีย์ลัด (?)"></button>
+      <button class="btn ghost topbtn" id="goPublicBtn" title="กลับหน้าสาธารณะ">🏠</button>
+      <div class="user-chip"><span class="avatar">ผ</span><div><b id="userName">ผู้ดูแลระบบ</b><i>ADMIN</i></div></div>
+      <button class="btn ghost topbtn" id="logoutBtn">ออกจากระบบ</button>
+    </div>
   </div>
 </header>
 
-<div class="shell">
+<!-- ==================== เปลือกสาธารณะ ==================== -->
+<main class="pub-main" id="pubMain">
+  <section class="pub-view active" id="pvHome">
+    <div class="hero">
+      <div class="hero-copy">
+        <span class="hero-eyebrow">DONTUM HOSPITAL · e-FORM SERVICE</span>
+        <h1>ยื่นคำขอออนไลน์<br><em>ไม่ต้องลงทะเบียน</em></h1>
+        <p>กรอกแบบฟอร์มราชการของโรงพยาบาลดอนตูมผ่านเว็บ ส่งคำขอได้ทันที พร้อมรับเลขอ้างอิงใช้ตรวจสอบสถานะและพิมพ์เอกสารขนาด A4</p>
+        <div class="hero-cta">
+          <button class="btn pri lg" data-pnav="forms">ดูฟอร์มทั้งหมด</button>
+          <button class="btn lg" data-pnav="status">ตรวจสอบคำขอของฉัน</button>
+        </div>
+        <ul class="hero-points">
+          <li>กรอกได้ตลอด 24 ชม.</li>
+          <li>พิมพ์/บันทึก PDF ขนาด A4</li>
+          <li>ข้อมูลส่วนบุคคลเข้ารหัส</li>
+        </ul>
+      </div>
+      <div class="hero-art" aria-hidden="true">
+        <div class="art-sheet s1"></div>
+        <div class="art-sheet s2"></div>
+        <div class="art-sheet s3"></div>
+        <div class="art-stamp">A4</div>
+      </div>
+    </div>
+    <div class="pub-section">
+      <div class="pub-section-head">
+        <h2>ฟอร์มที่เปิดรับขณะนี้</h2>
+        <p>เลือกฟอร์มเพื่อเริ่มกรอกออนไลน์</p>
+        <span class="cnt-pill" id="pubCount"></span>
+      </div>
+      <div id="pubFormGrid" class="grid"></div>
+    </div>
+  </section>
+
+  <section class="pub-view" id="pvForms">
+    <div class="pub-section-head" style="margin-top:8px">
+      <h2>ฟอร์มทั้งหมด</h2>
+      <p>ค้นหาและเลือกแบบฟอร์มที่เปิดใช้งาน</p>
+      <span class="cnt-pill" id="pfCount"></span>
+    </div>
+    <div class="toolbar">
+      <div class="search"><span id="pfSearchIco"></span><input id="pfSearch" placeholder="ค้นหาชื่อฟอร์ม / หน่วยงาน…"><kbd>/</kbd></div>
+    </div>
+    <div id="pfGrid" class="grid"></div>
+  </section>
+
+  <section class="pub-view" id="pvFill">
+    <div class="pub-section-head">
+      <h2 id="fillTitle">กรอกฟอร์ม</h2>
+      <p id="fillDesc"></p>
+      <button class="btn ghost" id="fillBack">← กลับ</button>
+    </div>
+    <div class="submitter">
+      <h3>📝 ข้อมูลผู้กรอก (บังคับ)</h3>
+      <div class="sub-grid">
+        <div class="fld" style="margin:0"><label for="fillName">ชื่อ-นามสกุล</label><input id="fillName" maxlength="200" placeholder="เช่น นายสมชาย ใจดี" autocomplete="name"></div>
+        <div class="fld" style="margin:0"><label for="fillCid">เลขบัตรประชาชน 13 หลัก</label><input id="fillCid" inputmode="numeric" maxlength="13" placeholder="1234567890123" autocomplete="off"></div>
+      </div>
+      <p class="sub-note">🔒 เลขบัตรถูกแปลงเป็นค่าแฮชก่อนจัดเก็บ ใช้สำหรับตรวจสอบคำขอของท่านภายหลัง</p>
+    </div>
+    <div class="fill-wrap" id="fillWrap"><div class="zoom-box"><div class="a4" id="fillCanvas"></div></div></div>
+    <div class="fill-acts">
+      <button class="btn pri lg" id="fillSend">📤 ส่งคำขอ</button>
+      <button class="btn lg" id="fillClear">ล้างฟอร์ม</button>
+    </div>
+  </section>
+
+  <section class="pub-view" id="pvOk">
+    <div class="ok-hero">
+      <div class="oi" id="okIco"></div>
+      <h2>ส่งคำขอเรียบร้อยแล้ว</h2>
+      <p id="okTplName" style="color:var(--text2)"></p>
+      <div class="refbox"><span id="okRef">------</span><button class="btn sm icon" id="okCopy" title="คัดลอก"></button></div>
+      <p style="font-size:12.5px;color:var(--text3)">เก็บเลขอ้างอิงนี้ไว้ใช้ตรวจสอบสถานะและพิมพ์เอกสาร</p>
+      <div class="ok-acts">
+        <button class="btn pri" id="okPrint">🖨️ พิมพ์เอกสาร</button>
+        <button class="btn" id="okDl">📥 ดาวน์โหลด HTML</button>
+        <button class="btn" id="okStatus">🔍 ตรวจสอบคำขอ</button>
+        <button class="btn ghost" id="okHome">🏠 กลับหน้าแรก</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="pub-view" id="pvStatus">
+    <div class="pub-section-head">
+      <h2>ตรวจสอบคำขอของฉัน</h2>
+      <p>กรอกเลขบัตรประชาชน 13 หลักที่ใช้ยื่นคำขอ</p>
+    </div>
+    <div class="status-box">
+      <div class="fld" style="margin:0"><label for="stCid">เลขบัตรประชาชน</label><input id="stCid" inputmode="numeric" maxlength="13" placeholder="1234567890123"></div>
+      <button class="btn pri" id="stSearch">🔍 ค้นหาคำขอ</button>
+    </div>
+    <div id="stList" class="grid"></div>
+  </section>
+</main>
+
+<footer class="pub-footer" id="pubFooter">
+  <span>โรงพยาบาลดอนตูม อำเภอดอนตูม จังหวัดนครปฐม</span>
+  <span>·</span>
+  <span>ระบบแบบฟอร์มอิเล็กทรอนิกส์ (e-Form)</span>
+  <span>·</span>
+  <span>ติดต่องานเทคโนโลยีสารสนเทศ</span>
+</footer>
+
+<!-- ==================== เปลือกคอนโซล (Admin) ==================== -->
+<div class="shell" id="adminShell">
   <nav class="rail" id="rail" aria-label="เมนูหลัก">
     <div class="rail-group">
       <span class="rail-label">จัดการแบบฟอร์ม</span>
@@ -74,7 +195,7 @@
     </div>
     <div class="rail-group">
       <span class="rail-label">มุมมองผู้ใช้</span>
-      <button class="rail-item" data-go="public"><i></i><span>หน้ากรอกฟอร์ม</span></button>
+      <button class="rail-item" data-go="public"><i></i><span>หน้าสาธารณะ</span></button>
     </div>
     <div class="rail-foot">
       <div class="quota">
@@ -91,7 +212,7 @@
   </main>
 </div>
 
-<!-- Detail drawer -->
+<!-- ==================== ส่วนร่วมทั้งสองเปลือก ==================== -->
 <div class="drawer-scrim" id="drawerScrim" hidden></div>
 <aside class="drawer" id="drawer" hidden aria-modal="true" role="dialog">
   <header class="drawer-head">
@@ -102,7 +223,6 @@
   <footer class="drawer-foot" id="drawerFoot"></footer>
 </aside>
 
-<!-- Command palette -->
 <div class="palette-scrim" id="paletteScrim" hidden>
   <div class="palette" role="dialog" aria-modal="true" aria-label="คำสั่งด่วน">
     <div class="palette-input"><span class="omni-ico"></span><input id="paletteInput" placeholder="พิมพ์คำสั่ง หรือค้นหา… เช่น อนุมัติ, คัดลอก, บุคลากร" autocomplete="off"><kbd>Esc</kbd></div>
@@ -111,13 +231,23 @@
   </div>
 </div>
 
-<!-- Notifications -->
 <div class="notif" id="notif" hidden>
   <header><b>การแจ้งเตือน</b><button class="mini" id="notifClear">ล้างทั้งหมด</button></header>
   <div id="notifList"></div>
 </div>
 
-<!-- Shortcuts -->
+<div class="modal-scrim" id="loginScrim" hidden>
+  <div class="modal modal-sm" role="dialog" aria-modal="true">
+    <header><h3>เข้าสู่ระบบผู้ดูแล</h3><button class="ico-btn" data-close-login></button></header>
+    <div class="modal-body">
+      <div class="fld"><label for="lgEmail">อีเมลราชการ</label><input id="lgEmail" type="email" autocomplete="username"></div>
+      <div class="fld"><label for="lgPass">รหัสผ่าน</label><input id="lgPass" type="password" autocomplete="current-password"></div>
+      <p class="lg-note">บัญชีผู้ดูแลเท่านั้น · ระบบบันทึกประวัติการเข้าใช้งาน</p>
+    </div>
+    <footer><button class="btn" data-close-login>ยกเลิก</button><button class="btn pri" id="lgGo">เข้าสู่ระบบ</button></footer>
+  </div>
+</div>
+
 <div class="modal-scrim" id="helpScrim" hidden>
   <div class="modal" role="dialog" aria-modal="true">
     <header><h3>คีย์ลัดทั้งหมด</h3><button class="ico-btn" data-close-modal></button></header>
@@ -125,7 +255,6 @@
   </div>
 </div>
 
-<!-- Generic modal -->
 <div class="modal-scrim" id="modalScrim" hidden>
   <div class="modal" role="dialog" aria-modal="true">
     <header><h3 id="modalTitle"></h3><button class="ico-btn" data-close-modal></button></header>
