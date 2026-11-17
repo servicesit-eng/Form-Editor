@@ -188,7 +188,19 @@ async function api(action,payload={},withToken=true){
  if(!r.ok)throw new Error('HTTP '+r.status);
  const j=await r.json();if(!j.ok)throw new Error(j.error||'API error');return j.data;
 }
-function remote(action,payload){ if(!S.live||!accessToken)return; api(action,payload).catch(e=>toast('ซิงก์ไม่สำเร็จ: '+e.message,{type:'warn'})); }
+/* ✅ SYNC FIX: เรคคอร์ดตัวอย่าง (id ไม่ใช่ UUID) ต้องไม่ถูกซิงก์ขึ้นเซิร์ฟเวอร์ */
+const LOCAL_ID_RE=/^(sub_|tpl_|stf_|f_|tmp_|sv_|a_)/;
+const isLocalId=v=>typeof v==='string'&&LOCAL_ID_RE.test(v);
+function remote(action,payload={}){
+ if(!S.live||!accessToken)return;
+ if(action==='createFormTemplate')return; // สร้างจริงตอน saveBuilder เพื่อสวม UUID
+ const vals=[payload.id,payload.templateId,payload.staffId].filter(Boolean);
+ if(vals.some(isLocalId)){
+  toast('รายการตัวอย่างอยู่ในเครื่องเท่านั้น — ไม่ถูกซิงก์ขึ้นเซิร์ฟเวอร์',{type:'info',ms:2600});
+  return;
+ }
+ api(action,payload).catch(e=>toast('ซิงก์ไม่สำเร็จ: '+e.message,{type:'warn'}));
+}
 
 /* ---------- sync จากเซิร์ฟเวอร์ ---------- */
 async function syncPublic(){
@@ -204,39 +216,55 @@ async function syncPublic(){
  }catch(e){ /* offline → ใช้ข้อมูลในเครื่อง */ }
  S.syncing=false;
 }
+/* ✅ SYNC FIX: ดึงเฉพาะข้อมูลจริง และล้างคำขอตัวอย่างกำพร้าออกทั้งหมด */
 async function syncAdmin(){
  if(!S.live||!accessToken)return;
  try{
   const tps=await api('getFormTemplates');
   if(Array.isArray(tps)){
-   DB.templates=tps.map(t=>{const ex=tpl(t.id);return {id:t.id,name:t.name,description:t.description||'',department:(ex&&ex.department)||t.department||'—',is_active:t.is_active===true,created_at:t.created_at||new Date().toISOString(),updated_at:t.updated_at||new Date().toISOString(),fields:(ex&&ex.fields)||[]}});
+   DB.templates=tps.map(t=>{
+    const ex=tpl(t.id);
+    return {id:t.id,name:t.name,description:t.description||'',
+     department:(ex&&ex.department)||t.department||'—',
+     is_active:t.is_active===true,
+     created_at:t.created_at||new Date().toISOString(),
+     updated_at:t.updated_at||new Date().toISOString(),
+     fields:(ex&&ex.fields)||[]};
+   });
   }
-  const logo=await api('getHeaderLogo');DB.logo=(logo&&logo.logo)||DB.logo||null;
+  const logo=await api('getHeaderLogo');
+  DB.logo=(logo&&logo.logo)||DB.logo||null;
+
+  const serverSubs=[];
   for(const t of DB.templates){
    try{
     const subs=await api('getFormSubmissions',{templateId:t.id});
     if(Array.isArray(subs)){
-     DB.submissions=DB.submissions.filter(s=>s.template_id!==t.id).concat(subs.map(s=>({
+     serverSubs.push(...subs.map(s=>({
       id:s.id,template_id:t.id,template_name:t.name,
       submitted_by_name:s.submitted_by_name||(s.data&&s.data._submitter_name)||'ไม่ระบุชื่อ',
-      department:(s.data&&s.data.department)||'',status:s.status,created_at:s.created_at,
-      archived_at:s.archived_at||null,reviewed_at:s.reviewed_at||null,reviewed_by:s.reviewed_by||null,
+      department:(s.data&&s.data.department)||'',
+      status:s.status,created_at:s.created_at,
+      archived_at:s.archived_at||null,
+      reviewed_at:s.reviewed_at||null,reviewed_by:s.reviewed_by||null,
       referenceId:s.referenceId,data:s.data||{}})));
     }
     const full=await api('getFormTemplate',{id:t.id});
     if(full&&full.fields)t.fields=full.fields.map(norm);
    }catch(e){}
   }
+  DB.submissions=serverSubs.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
+
   try{
    const staff=await api('getStaffDirectory');
    if(Array.isArray(staff)&&staff.length){
     DB.staff=staff.map(s=>({id:s.id,prefix:s.prefix||'',first_name:s.first_name||'',last_name:s.last_name||'',
-     full_name:s.full_name||((s.prefix||'')+s.first_name+' '+s.last_name).trim(),position:s.position||'—',
-     department:s.department||'—',employment_type:s.employment_type||'—',is_active:s.is_active!==false,
+     full_name:s.full_name||((s.prefix||'')+s.first_name+' '+s.last_name).trim(),
+     position:s.position||'—',department:s.department||'—',
+     employment_type:s.employment_type||'—',is_active:s.is_active!==false,
      email:s.email||'—',phone:s.phone||'—'}));
    }
   }catch(e){}
-  DB.submissions.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
   persist();paintCounts();
  }catch(e){toast('ซิงก์ข้อมูลผู้ดูแลไม่สำเร็จ — แสดงข้อมูลในเครื่อง',{type:'warn'})}
 }
@@ -457,7 +485,7 @@ function renderPubHome(){
  const act=DB.templates.filter(t=>t.is_active);
  $('#pubCount').textContent=act.length+' ฟอร์ม';
  $('#pubFormGrid').innerHTML=act.length?act.slice(0,4).map(pubCard).join(''):
-  `<div class="empty">${'<div class="em-ico">'+ic('globe',26)+'</div>'}<h3>ยังไม่มีฟอร์มที่เปิดรับ</h3><p>กรุณาติดต่อเจ้าหน้าที่หรือลองใหม่ภายหลัง</p></div>`;
+  `<div class="empty"><div class="em-ico">${ic('globe',26)}</div><h3>ยังไม่มีฟอร์มที่เปิดรับ</h3><p>กรุณาติดต่อเจ้าหน้าที่หรือลองใหม่ภายหลัง</p></div>`;
  paintThumbs($('#pvHome'));
 }
 function renderPubForms(){
@@ -491,7 +519,7 @@ function previewPub(id){
  requestAnimationFrame(()=>{const w=$('#pvA4');if(!w)return;const c=$('.sc',w);
   t.fields.map(norm).forEach(f=>c.appendChild(fieldEl(f,'print',{})));
   c.style.transform=`scale(${w.clientWidth/(PW*MM)})`});
- $('#drawerFoot').onclick=e=>{const b=e.target.closest('[data-pv]');if(b){closeDrawer();openPubFill(b.dataset.pv==='fill'?id:id)}};
+ $('#drawerFoot').onclick=e=>{const b=e.target.closest('[data-pv]');if(b){closeDrawer();openPubFill(id)}};
 }
 async function submitFill(){
  const name=$('#fillName').value.trim(),cid=$('#fillCid').value.trim();
@@ -770,8 +798,7 @@ function newForm(){
   const t={id:uid('tpl_'),name,description:$('#nfDesc').value.trim(),department:$('#nfDept').value,
    is_active:false,created_at:new Date().toISOString(),updated_at:new Date().toISOString(),fields};
   DB.templates.unshift(t);persist();closeModal();logAct('สร้างฟอร์ม “'+name+'”','ok');
-  toast('สร้างฟอร์มแล้ว — เริ่มออกแบบได้เลย',{type:'ok'});
-  remote('createFormTemplate',{data:{name,description:t.description}});
+  toast('สร้างฟอร์มแล้ว — กดบันทึกเพื่ออัปโหลดขึ้นเซิร์ฟเวอร์',{type:'ok'});
   openBuilder(t.id);
  };
 }
@@ -969,7 +996,8 @@ function doUndo(){const b=S.b;if(!b.undo.length)return;b.redo.push(JSON.stringif
 function doRedo(){const b=S.b;if(!b.redo.length)return;b.undo.push(JSON.stringify(b.fields));b.fields=JSON.parse(b.redo.pop());markDirty();render()}
 function markDirty(){S.b.dirty=true;const s=$('#saveState');if(s){s.className='save-state dirty';s.innerHTML=ic('clock',13)+'ยังไม่บันทึก'}autoSave()}
 const autoSave=debounce(()=>{if(S.b.dirty&&S.b.id)saveBuilder(true)},1600);
-function saveBuilder(auto){
+/* ✅ SYNC FIX: ฟอร์มที่สร้างในเครื่อง → สร้างบนเซิร์ฟเวอร์ครั้งแรกรวมสวม UUID */
+async function saveBuilder(auto){
  const b=S.b,t=tpl(b.id);if(!t)return;
  const seen={};
  for(const f of b.fields){
@@ -982,9 +1010,26 @@ function saveBuilder(auto){
  b.dirty=false;b.undo=[];b.redo=[];persist();
  const s=$('#saveState');if(s){s.className='save-state saved';s.innerHTML=ic('check',13)+'บันทึกแล้ว'}
  const u=$('[data-b="undo"]'),r=$('[data-b="redo"]');if(u)u.disabled=true;if(r)r.disabled=true;
+ if(S.live&&accessToken){
+  try{
+   let tid=t.id;
+   if(isLocalId(tid)){
+    const created=await api('createFormTemplate',{data:{name:t.name,description:t.description}});
+    if(created&&created.id){
+     const i=DB.templates.findIndex(x=>x.id===t.id);
+     t.id=created.id;if(i>=0)DB.templates[i]=t;
+     b.id=created.id;tid=created.id;
+     persist();
+    }
+   }
+   await api('saveFormLayout',{templateId:tid,meta:{name:t.name,description:t.description,is_active:t.is_active},fields:t.fields,deletedIds:[]});
+   if(!auto)toast('บันทึก “'+t.name+'” ขึ้นเซิร์ฟเวอร์แล้ว',{type:'ok'});
+  }catch(e){toast('ซิงก์ไม่สำเร็จ: '+e.message,{type:'warn'})}
+ }else if(!auto){
+  toast('บันทึก “'+t.name+'” แล้ว (อยู่ในเครื่อง)',{type:'ok'});
+ }
  paintCounts();
- remote('saveFormLayout',{templateId:t.id,meta:{name:t.name,description:t.description,is_active:t.is_active},fields:t.fields,deletedIds:[]});
- if(!auto)toast('บันทึก “'+t.name+'” แล้ว',{type:'ok'});
+ render();
 }
 function addField(type,x,y,center){
  const b=S.b;if(!b.id)return;
@@ -1549,7 +1594,7 @@ function commands(){
  c.push({g:'ตั้งค่า',t:S.live?'ตัดการเชื่อมต่อ API':'เชื่อมต่อ API จริง',s:S.live?'กลับไปใช้ข้อมูลตัวอย่าง':'ซิงก์กับ Apps Script + Supabase',i:'bolt',run:toggleLive});
  c.push({g:'ตั้งค่า',t:'รีเซ็ตข้อมูลตัวอย่าง',s:'ล้างการแก้ไขในเครื่องกลับค่าเริ่มต้น',i:'refresh',run:resetData});
  c.push({g:'ช่วยเหลือ',t:'ดูคีย์ลัดทั้งหมด',s:'ปุ่ม ?',i:'help',run:showHelp});
- DB.templates.slice(0,20).forEach(t=>c.push({g:'แบบฟอร์ม',t:t.name,s:(t.is_active?'เปิดใช้งาน':'ฉบับร่าง')+' · '+t.department,i:'forms',run:()=>{S.shell==='admin'?formDrawer(t.id):(openPubFill(t.id))}}));
+ DB.templates.slice(0,20).forEach(t=>c.push({g:'แบบฟอร์ม',t:t.name,s:(t.is_active?'เปิดใช้งาน':'ฉบับร่าง')+' · '+t.department,i:'forms',run:()=>{S.shell==='admin'?formDrawer(t.id):openPubFill(t.id)}}));
  if(S.shell==='admin'){
   DB.staff.slice(0,20).forEach(s=>c.push({g:'บุคลากร',t:s.full_name,s:s.position+' · '+s.department,i:'users',run:()=>{go('staff');staffDrawer(s.id)}}));
   DB.submissions.slice(0,20).forEach(s=>c.push({g:'คำขอ',t:'#'+refOf(s)+' · '+s.submitted_by_name,s:s.template_name,i:'inbox',run:()=>{go('inbox');subDrawer(s.id)}}));
