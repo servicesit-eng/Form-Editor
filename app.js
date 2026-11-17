@@ -1,7 +1,7 @@
 'use strict';
 /* ============================================================
    DONTUM e-FORM · UNIFIED APP (Public + Admin Console)
-   แก้: UUID ผิดรูปส่งขึ้น Supabase (22P02) + ล้างข้อมูลค้างอัตโนมัติ
+   แก้: กรอกฟอร์มไม่ได้บางฟิลด์/บางฟอร์ม — dual-mode fill + reflow
    ============================================================ */
 const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -12,7 +12,6 @@ const MM=96/25.4, PW=210, PH=297;
 const API_URL='https://script.google.com/macros/s/AKfycbwlBmF7UCDh1b-DlGy6uzT_Vot2J0Z02EoLoCRm5XFjtra1nDzCBD-cBHJ_8Yl6hX6oig/exec';
 const KEY='dontum.console.v1';
 
-/* ---------- UUID guards (หัวใจของรอบแก้) ---------- */
 const UUID_RE=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const isUuid=v=>UUID_RE.test(String(v||''));
 const isServerId=isUuid;
@@ -26,7 +25,6 @@ function repairUuid(v){
 }
 const tmpId=p=>'tmp_'+uid(p||'f_');
 
-/* ---------- icons ---------- */
 const P={
 forms:'M4 3h10l6 6v12H4z M14 3v6h6',inbox:'M3 12h5l2 3h4l2-3h5 M3 12l3-8h12l3 8v8H3z',
 builder:'M12 2l3 6 6 1-4.5 4.3 1 6.2L12 16.6 6.5 19.5l1-6.2L3 9l6-1z',
@@ -59,11 +57,10 @@ csv:'M14 2H6v20h12V6z M14 2v4h4 M9 13h6 M9 17h4',bolt:'M13 2L3 14h8l-1 8 10-12h-
 info:'M12 21a9 9 0 100-18 9 9 0 000 18 M12 16v-4 M12 8h.01',warn:'M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0 M12 9v4 M12 17h.01',
 lock:'M5 11h14v10H5z M8 11V7a4 4 0 018 0v4',refresh:'M21 12a9 9 0 11-3-6.7L21 8 M21 3v5h-5',
 home:'M3 10l9-7 9 7v10h-6v-6H9v6H3z',logout:'M9 21H5V3h4 M16 17l5-5-5-5 M21 12H9',
-broom:'M19 4l-9 9 M4 20l6-6 4 4-6 6z M14 14l6-6'
+broom:'M19 4l-9 9 M4 20l6-6 4 4-6 6z M14 14l6-6',list:'M8 6h13 M8 12h13 M8 18h13 M3 6h.01 M3 12h.01 M3 18h.01'
 };
 const ic=(n,s=16)=>`<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${(P[n]||'').split(' M').map((d,i)=>`<path d="${i?'M'+d:d}"/>`).join('')}</svg>`;
 
-/* ---------- constants / seed ---------- */
 const DEPTS=['งานเทคโนโลยีสารสนเทศ','งานพัสดุ','งานทรัพยากรบุคคล','งานสารบรรณ','งานช่างเทคนิค','งานพัฒนาคุณภาพ','งานยานพาหนะ','กลุ่มงานเวชศาสตร์ครอบครัว'];
 const NAMES=[['นาย','สมชาย','ใจดี'],['นาง','สมหญิง','รักงาน'],['นางสาว','พรทิพย์','แสงทอง'],['นาย','อนุชา','มั่นคง'],['นางสาว','กัลยา','ศรีสุข'],['นาย','ธีรพงษ์','พัฒนกุล'],['นาง','วิไลพร','บุญมา'],['นาย','ปกรณ์','ชัยยะ'],['นางสาว','ชญานิศ','ทองใบ'],['นาย','ศุภกร','วงศ์สุวรรณ'],['นาง','รัตนา','พงษ์ศรี'],['นาย','จิรวัฒน์','อินทร์แก้ว'],['นางสาว','เบญจวรรณ','สุขใจ'],['นาย','ณัฐพล','แก้วมณี'],['นาง','สุภาพร','ดำรงค์'],['นาย','วิทยา','พูนผล'],['นางสาว','อารยา','จันทร์เพ็ญ'],['นาย','เอกชัย','ศรีเมือง']];
 const POS=['นักวิชาการคอมพิวเตอร์','เจ้าพนักงานพัสดุ','นักทรัพยากรบุคคล','เจ้าพนักงานธุรการ','ช่างเทคนิค','พยาบาลวิชาชีพ','นายแพทย์ชำนาญการ','เจ้าพนักงานยานพาหนะ','นักวิเคราะห์นโยบายและแผน'];
@@ -85,7 +82,7 @@ function baseFields(title){
   mkF('label',{name:'lb_pos',label:'ตำแหน่ง',value:'ตำแหน่ง',pos_x:20,pos_y:64,width:24,height:7,border_style:'none',font_size:13}),
   mkF('text_input',{name:'position',label:'ตำแหน่ง',required:true,pos_x:44,pos_y:64,width:70,height:8}),
   mkF('label',{name:'lb_dept',label:'หน่วยงาน',value:'หน่วยงาน',pos_x:118,pos_y:64,width:24,height:7,border_style:'none',font_size:13}),
-  mkF('text_input',{name:'department',label:'หน่วยงาน',required:true,pos_x:142,pos_y:64,width:48,height:8}),
+  mkF('select',{name:'department',label:'หน่วยงาน',required:true,pos_x:142,pos_y:64,width:48,height:8,options:DEPTS.slice()}),
   mkF('date',{name:'req_date',label:'วันที่',required:true,pos_x:20,pos_y:78,width:52,height:8}),
   mkF('text_input',{name:'phone',label:'เบอร์โทรศัพท์',pos_x:80,pos_y:78,width:60,height:8}),
   mkF('textarea',{name:'detail',label:'รายละเอียด',required:true,pos_x:20,pos_y:94,width:170,height:38}),
@@ -141,7 +138,6 @@ function seed(){
   prefs:{theme:'light',density:'cozy',rail:'expanded',shell:'public'}};
 }
 
-/* ---------- state ---------- */
 let DB;
 try{DB=JSON.parse(localStorage.getItem(KEY))||seed()}catch(e){DB=seed()}
 if(!DB||!Array.isArray(DB.templates)||!DB.templates.length)DB=seed();
@@ -153,30 +149,19 @@ DB.submissions=Array.isArray(DB.submissions)?DB.submissions:[];
 DB.staff=Array.isArray(DB.staff)?DB.staff:[];
 DB.deptMap=DB.deptMap&&typeof DB.deptMap==='object'?DB.deptMap:{};
 
-/* ✅ ล้าง/ซ่อม id ที่ผิดรูปตั้งแต่เริ่ม — กัน 22P02 ทุกเส้นทาง */
 let PURGED=0;
 (function sanitizeStore(){
- const fixList=(arr,localPrefix)=>{
-  const out=[];
-  (arr||[]).forEach(it=>{
-   if(!it||!it.id){PURGED++;return}
-   const r=repairUuid(it.id);
-   if(r){it.id=r;out.push(it);return}
-   if(String(it.id).indexOf(localPrefix)===0){out.push(it);return}
-   PURGED++;
-  });
-  return out;
- };
+ const fixList=(arr,pfx)=>{const out=[];(arr||[]).forEach(it=>{
+  if(!it||!it.id){PURGED++;return}
+  const r=repairUuid(it.id);
+  if(r){it.id=r;out.push(it);return}
+  if(String(it.id).indexOf(pfx)===0){out.push(it);return}
+  PURGED++;});return out};
  DB.templates=fixList(DB.templates,'tpl_');
  DB.submissions=fixList(DB.submissions,'sub_');
  DB.staff=fixList(DB.staff,'stf_');
- DB.templates.forEach(t=>{
-  t.fields=(Array.isArray(t.fields)?t.fields:[]).map(f=>{
-   const r=repairUuid(f.id);
-   if(r)f.id=r;else if(!isLocalId(f.id))f.id=tmpId('f_');
-   return f;
-  });
- });
+ DB.templates.forEach(t=>{t.fields=(Array.isArray(t.fields)?t.fields:[]).map(f=>{
+  const r=repairUuid(f.id);if(r)f.id=r;else if(!isLocalId(f.id))f.id=tmpId('f_');return f})});
  const tids=new Set(DB.templates.map(t=>t.id));
  const before=DB.submissions.length;
  DB.submissions=DB.submissions.filter(s=>tids.has(s.template_id)||String(s.id).indexOf('sub_')===0);
@@ -191,7 +176,9 @@ let accessToken=null;
 try{accessToken=localStorage.getItem('access_token')}catch(e){}
 const S={
  shell:'public',live:true,syncing:false,meName:'',meRole:'',
- pubView:'home',pubQ:'',fill:{tpl:null,fields:[]},lastSub:null,
+ pubView:'home',pubQ:'',
+ fill:{tpl:null,fields:[],data:{},mode:'paper',zoom:0,errors:{}},
+ lastSub:null,
  forms:{q:'',status:'all',dept:'all',sort:'updated',view:'grid',fav:false},
  inbox:{tpl:'all',status:'ALL',q:'',sort:'newest',sel:new Set()},
  mine:{q:'',status:'all'},
@@ -205,8 +192,7 @@ const refOf=s=>s.referenceId||ref(s.id);
 const tpl=id=>DB.templates.find(t=>t.id===id);
 const sub=id=>DB.submissions.find(s=>s.id===id);
 const stf=id=>DB.staff.find(s=>s.id===id);
-const ago=iso=>{const d=(Date.now()-new Date(iso))/1000;
- if(!isFinite(d))return'—';
+const ago=iso=>{const d=(Date.now()-new Date(iso))/1000;if(!isFinite(d))return'—';
  if(d<60)return'เมื่อครู่';if(d<3600)return Math.floor(d/60)+' นาทีที่แล้ว';
  if(d<86400)return Math.floor(d/3600)+' ชม.ที่แล้ว';if(d<2592000)return Math.floor(d/86400)+' วันที่แล้ว';
  return new Date(iso).toLocaleDateString('th-TH',{day:'numeric',month:'short',year:'2-digit'})};
@@ -215,7 +201,6 @@ const hue=s=>{let h=0;for(const c of String(s))h=(h*31+c.charCodeAt(0))%360;retu
 const avStyle=n=>`background:linear-gradient(145deg,hsl(${hue(n)} 62% 46%),hsl(${(hue(n)+42)%360} 68% 38%))`;
 const err=e=>e&&e.message?e.message:'เกิดข้อผิดพลาด';
 
-/* ---------- toast / log ---------- */
 function toast(msg,opt={}){
  const wrap=$('#toasts');if(!wrap)return;
  while(wrap.children.length>=4){const o=wrap.firstElementChild;if(o&&o._timer)clearTimeout(o._timer);o.remove()}
@@ -236,25 +221,22 @@ function toast(msg,opt={}){
 }
 function logAct(text,kind='info'){DB.activity.unshift({id:uid('a_'),text,kind,at:new Date().toISOString(),read:false});DB.activity=DB.activity.slice(0,40);persist();paintBell()}
 
-/* ---------- api (กัน id ผิดรูปก่อนยิง شبکه) ---------- */
 async function api(action,payload={},withToken=true){
- const idKeys=['id','templateId','staffId','submissionId'];
- for(const k of idKeys){
+ for(const k of ['id','templateId','staffId','submissionId']){
   if(payload[k]===undefined||payload[k]===null||payload[k]==='')continue;
   const v=String(payload[k]);
   if(isUuid(v))continue;
   const r=repairUuid(v);
   if(r){payload[k]=r;continue}
-  if(isLocalId(v))throw new Error('รายการนี้ยังเป็นข้อมูลในเครื่อง — กดบันทึกหรือซิงก์ก่อน');
+  if(isLocalId(v))throw new Error('รายการนี้ยังเป็นข้อมูลในเครื่อง — ให้ผู้ดูแลบันทึกก่อน');
   throw new Error('รหัสไม่ถูกต้อง (ไม่ใช่ UUID) — กด “ล้างแคชและซิงก์ใหม่”');
  }
  const u=new URL(API_URL);u.searchParams.set('action',action);
  const body=Object.assign({},payload);
  if(withToken&&accessToken)body.token=accessToken;
  let r;
- try{
-  r=await fetch(u,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(body),redirect:'follow'});
- }catch(e){throw new Error('เชื่อมต่อ API ไม่ได้ — ตรวจอินเทอร์เน็ต ('+e.message+')')}
+ try{r=await fetch(u,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(body),redirect:'follow'})}
+ catch(e){throw new Error('เชื่อมต่อ API ไม่ได้ — ตรวจอินเทอร์เน็ต ('+e.message+')')}
  if(!r.ok)throw new Error('HTTP '+r.status);
  const j=await r.json();
  if(!j.ok)throw new Error(j.error||'API error');
@@ -262,12 +244,10 @@ async function api(action,payload={},withToken=true){
 }
 function remote(action,payload={}){
  if(!S.live||!accessToken)return;
- const ids=[payload.id,payload.templateId,payload.staffId].filter(Boolean);
- if(ids.some(v=>!isUuid(v)))return;
+ if([payload.id,payload.templateId,payload.staffId].filter(Boolean).some(v=>!isUuid(v)))return;
  api(action,payload).catch(e=>toast('ซิงก์ไม่สำเร็จ: '+e.message,{type:'warn'}));
 }
 
-/* ---------- sync ---------- */
 async function syncPublic(){
  if(!S.live||S.syncing)return;
  S.syncing=true;
@@ -275,13 +255,11 @@ async function syncPublic(){
   const [tps,logo]=await Promise.all([api('getPublicFormTemplates',{},false),api('getHeaderLogo',{},false)]);
   if(Array.isArray(tps)&&tps.length){
    const keep=DB.templates.filter(t=>isLocalId(t.id));
-   const server=tps.filter(t=>isUuid(t.id)).map(t=>{
-    const ex=tpl(t.id);
+   const server=tps.filter(t=>isUuid(t.id)).map(t=>{const ex=tpl(t.id);
     return {id:String(t.id).toLowerCase(),name:t.name,description:t.description||'',
      department:DB.deptMap[t.id]||(ex&&ex.department)||'—',is_active:true,
      created_at:t.created_at||new Date().toISOString(),updated_at:t.created_at||new Date().toISOString(),
-     fields:(t.fields&&t.fields.length)?t.fields.map(norm):((ex&&ex.fields)||[])};
-   });
+     fields:(t.fields&&t.fields.length)?t.fields.map(norm):((ex&&ex.fields)||[])}});
    DB.templates=keep.concat(server);
   }
   DB.logo=(logo&&logo.logo)||DB.logo||null;
@@ -296,25 +274,19 @@ async function syncAdmin(){
   const tps=await api('getFormTemplates');
   if(Array.isArray(tps)){
    const keep=DB.templates.filter(t=>isLocalId(t.id));
-   const server=tps.filter(t=>isUuid(t.id)).map(t=>{
-    const ex=tpl(t.id);
+   const server=tps.filter(t=>isUuid(t.id)).map(t=>{const ex=tpl(t.id);
     if(ex&&ex.department&&ex.department!=='—')DB.deptMap[t.id]=ex.department;
     return {id:String(t.id).toLowerCase(),name:t.name,description:t.description||'',
-     department:DB.deptMap[t.id]||(ex&&ex.department)||t.department||'—',
-     is_active:t.is_active===true,created_at:t.created_at||new Date().toISOString(),
-     updated_at:t.updated_at||new Date().toISOString(),fields:(ex&&ex.fields)||[]};
-   });
-   DB.templates=keep.concat(server);
-   persist();
+     department:DB.deptMap[t.id]||(ex&&ex.department)||t.department||'—',is_active:t.is_active===true,
+     created_at:t.created_at||new Date().toISOString(),updated_at:t.updated_at||new Date().toISOString(),
+     fields:(ex&&ex.fields)||[]}});
+   DB.templates=keep.concat(server);persist();
   }
   const logo=await api('getHeaderLogo');DB.logo=(logo&&logo.logo)||DB.logo||null;
   const serverSubs=[];
   await Promise.all(DB.templates.filter(t=>isUuid(t.id)).map(async t=>{
    try{
-    const [subs,full]=await Promise.all([
-     api('getFormSubmissions',{templateId:t.id}),
-     api('getFormTemplate',{id:t.id})
-    ]);
+    const [subs,full]=await Promise.all([api('getFormSubmissions',{templateId:t.id}),api('getFormTemplate',{id:t.id})]);
     if(Array.isArray(subs))subs.filter(s=>isUuid(s.id)).forEach(s=>serverSubs.push({
      id:String(s.id).toLowerCase(),template_id:t.id,template_name:t.name,
      submitted_by_name:s.submitted_by_name||(s.data&&s.data._submitter_name)||'ไม่ระบุชื่อ',
@@ -332,21 +304,17 @@ async function syncAdmin(){
     serverSubs.push(Object.assign({},m,{id:String(m.id).toLowerCase(),
      template_name:m.template_name||(t?t.name:'แบบฟอร์ม'),
      submitted_by_name:m.submitted_by_name||S.meName||'ผู้ดูแลระบบ',
-     department:(m.data&&m.data.department)||'',data:m.data||{}}));
-   });
+     department:(m.data&&m.data.department)||'',data:m.data||{}}))});
   }catch(e){}
   const localSubs=DB.submissions.filter(s=>isLocalId(s.id));
   DB.submissions=localSubs.concat(serverSubs).sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
   try{
    const staff=await api('getStaffDirectory');
-   if(Array.isArray(staff)&&staff.length){
-    DB.staff=staff.filter(s=>isUuid(s.id)).map(s=>({id:String(s.id).toLowerCase(),
-     prefix:s.prefix||'',first_name:s.first_name||'',last_name:s.last_name||'',
-     full_name:s.full_name||((s.prefix||'')+s.first_name+' '+s.last_name).trim(),
-     position:s.position||'—',department:s.department||'—',
-     employment_type:s.employment_type||'—',is_active:s.is_active!==false,
-     email:s.email||'—',phone:s.phone||'—'}));
-   }
+   if(Array.isArray(staff)&&staff.length)DB.staff=staff.filter(s=>isUuid(s.id)).map(s=>({
+    id:String(s.id).toLowerCase(),prefix:s.prefix||'',first_name:s.first_name||'',last_name:s.last_name||'',
+    full_name:s.full_name||((s.prefix||'')+s.first_name+' '+s.last_name).trim(),position:s.position||'—',
+    department:s.department||'—',employment_type:s.employment_type||'—',is_active:s.is_active!==false,
+    email:s.email||'—',phone:s.phone||'—'}));
   }catch(e){}
   persist();paintCounts();
  }catch(e){toast('ซิงก์ข้อมูลผู้ดูแลไม่สำเร็จ: '+e.message,{type:'warn'})}
@@ -354,24 +322,23 @@ async function syncAdmin(){
 }
 function hardResync(){
  modal('ล้างแคชและซิงก์ใหม่',
-  '<p style="font-size:13.5px">ลบข้อมูลฟอร์ม/คำขอที่ค้างในเครื่องซึ่งมีรหัสไม่ถูกต้อง แล้วดึงข้อมูลจริงจากเซิร์ฟเวอร์ใหม่ทั้งหมด</p>'+
+  '<p style="font-size:13.5px">ลบข้อมูลฟอร์ม/คำขอที่ค้างในเครื่องซึ่งรหัสไม่ถูกต้อง แล้วดึงข้อมูลจริงใหม่ทั้งหมด</p>'+
   '<p style="font-size:12.5px;color:var(--text3);margin-top:8px">ข้อมูลบน Supabase ไม่ถูกลบ · ฟอร์มร่างที่ยังไม่บันทึกจะถูกล้างด้วย</p>',
   '<button class="btn" data-close-modal>ยกเลิก</button><button class="btn pri" id="hrGo">'+ic('broom')+'ล้างและซิงก์</button>');
  $$('[data-close-modal]',$('#modalScrim')).forEach(b=>b.onclick=closeModal);
  $('#hrGo').onclick=async()=>{
   closeModal();
   DB.templates=[];DB.submissions=[];DB.deptMap={};DB.favorites=[];
-  S.fill={tpl:null,fields:[]};S.b.id=null;S.b.fields=[];S.b.deleted=[];S.sec=null;
-  persist();
+  S.fill={tpl:null,fields:[],data:{},mode:'paper',zoom:0,errors:{}};
+  S.b.id=null;S.b.fields=[];S.b.deleted=[];S.sec=null;persist();
   toast('กำลังดึงข้อมูลจากเซิร์ฟเวอร์…',{type:'info',ms:2200});
   await syncPublic();
   if(accessToken)await syncAdmin();
-  if(S.shell==='admin'){go('forms')}else{history.replaceState(null,'','#/');routePublic()}
+  if(S.shell==='admin')go('forms');else{history.replaceState(null,'','#/');routePublic()}
   toast('ซิงก์ข้อมูลใหม่เรียบร้อย',{type:'ok'});
  };
 }
 
-/* ---------- prefs / shell ---------- */
 function applyPrefs(){
  document.documentElement.dataset.theme=DB.prefs.theme;
  document.documentElement.dataset.density=DB.prefs.density;
@@ -404,10 +371,10 @@ function paintCounts(){
  $('#quotaHint').textContent=m?`เป้าหมาย 60 ฉบับ · ${Math.round(m/60*100)}%`:'ยังไม่มีคำขอใน 30 วัน';
 }
 
-/* ---------- A4 engine ---------- */
 function norm(f){const n=(v,d)=>{const x=Number(v);return isFinite(x)?x:d};
  let o=f.options;if(typeof o==='string'){try{o=JSON.parse(o)}catch(e){o=o.split(',').map(s=>s.trim()).filter(Boolean)}}
- return Object.assign({},f,{options:Array.isArray(o)?o.map(String):[],pos_x:n(f.pos_x,15),pos_y:n(f.pos_y,20),width:n(f.width,70),height:n(f.height,8),font_size:n(f.font_size,14)})}
+ return Object.assign({},f,{options:Array.isArray(o)?o.map(String).filter(Boolean):[],
+  pos_x:n(f.pos_x,15),pos_y:n(f.pos_y,20),width:n(f.width,70),height:n(f.height,8),font_size:n(f.font_size,14)})}
 function fieldEl(f,mode,data,pfx){
  const el=document.createElement('div');
  el.className='cf ft-'+f.field_type+(mode==='fill'&&f.required?' req':'');
@@ -429,35 +396,44 @@ function content(f,mode,data,pfx){
  if(t==='text_input'||t==='date'||t==='select'){
   fc.classList.add('cy');
   if(mode==='fill'){let c;
-   if(t==='select'){c=document.createElement('select');c.appendChild(new Option('-- เลือก --',''));f.options.forEach(o=>c.appendChild(new Option(o,o)))}
-   else{c=document.createElement('input');c.type=t==='date'?'date':'text';c.placeholder=t==='date'?'':f.label}
-   c.className='fci';fc.appendChild(c)}
+   if(t==='select'){c=document.createElement('select');c.appendChild(new Option('-- เลือก --',''));
+    (f.options.length?f.options:['ตัวเลือก 1','ตัวเลือก 2']).forEach(o=>c.appendChild(new Option(o,o)));
+    c.value=data[f.name]||''}
+   else{c=document.createElement('input');c.type=t==='date'?'date':'text';
+    c.placeholder=t==='date'?'':(f.label||'');c.value=data[f.name]??(f.value||'')}
+   c.className='fci';c.dataset.fname=f.name;fc.appendChild(c)}
   else if(mode==='print')fc.textContent=t==='date'&&v?new Date(v).toLocaleDateString('th-TH',{day:'numeric',month:'long',year:'numeric'}):v;
   else fc.appendChild(mk('span','ph',t==='date'?'__/__/____':(f.value||f.label||'ช่องกรอก')));
   return fc}
  if(t==='textarea'){
-  if(mode==='fill'){const c=document.createElement('textarea');c.className='fci';c.placeholder=f.label;fc.appendChild(c)}
+  if(mode==='fill'){const c=document.createElement('textarea');c.className='fci';c.dataset.fname=f.name;
+   c.placeholder=f.label||'';c.value=data[f.name]??(f.value||'');fc.appendChild(c)}
   else if(mode==='print')fc.textContent=v;else fc.appendChild(mk('span','ph',f.value||f.label||'ข้อความยาว'));
   return fc}
  if(t==='radio'||t==='checkbox'){
   fc.classList.add('cy');const g=mk('div','og'+(f.height>15?' col':''));
-  const chosen=mode==='print'?String(data[f.name]||'').split(', '):[];
-  (f.options.length?f.options:['ตัวเลือก 1','ตัวเลือก 2']).forEach(o=>{
+  const opts=f.options.length?f.options:['ตัวเลือก 1','ตัวเลือก 2'];
+  const chosen=mode==='print'?String(data[f.name]||'').split(', '):String(data[f.name]||'').split(', ').filter(Boolean);
+  opts.forEach((o,oi)=>{
    const l=mk('label','ol');
-   if(mode==='fill'){const i=document.createElement('input');i.type=t;i.name=pfx+f.id;i.value=o;l.appendChild(i)}
+   if(mode==='fill'){const i=document.createElement('input');i.type=t;i.name=pfx+f.id;i.value=o;
+    i.dataset.fname=f.name;i.checked=chosen.includes(o);l.appendChild(i)}
    else{const b=mk('span','ob'+(t==='radio'?' rd':''));if(mode==='print'&&chosen.includes(o))b.textContent=t==='radio'?'●':'✓';l.appendChild(b)}
    l.appendChild(document.createTextNode(o));g.appendChild(l)});
   fc.appendChild(g);return fc}
  if(t==='signature'){
   const sg=mk('div','sg'),ln=mk('div','sg-l');
-  if(mode==='fill'){const c=document.createElement('input');c.type='text';c.className='fci';c.placeholder='พิมพ์ชื่อเพื่อลงนาม';ln.appendChild(c)}
+  if(mode==='fill'){const c=document.createElement('input');c.type='text';c.className='fci';c.dataset.fname=f.name;
+   c.placeholder='พิมพ์ชื่อเพื่อลงนาม';c.value=data[f.name]||'';ln.appendChild(c)}
   else if(mode==='print')ln.textContent=v;
   sg.appendChild(ln);sg.appendChild(mk('div','sg-c',f.label?'('+f.label+')':''));fc.appendChild(sg);return fc}
  if(t==='checkbox_agree'){
   const r=mk('div','ag');
-  if(mode==='fill'){const c=document.createElement('input');c.type='checkbox';r.appendChild(c)}
-  else r.appendChild(mk('span','ob',mode==='print'&&v?'✓':''));
-  r.appendChild(mk('span','',f.value||f.label||''));fc.appendChild(r);return fc}
+  if(mode==='fill'){const c=document.createElement('input');c.type='checkbox';c.dataset.fname=f.name;
+   c.checked=!!data[f.name];c.id='ag_'+f.id;r.appendChild(c);
+   const lb=mk('label','',f.value||f.label||'ยอมรับข้อตกลง');lb.htmlFor='ag_'+f.id;lb.style.cursor='pointer';r.appendChild(lb)}
+  else{r.appendChild(mk('span','ob',mode==='print'&&v?'✓':''));r.appendChild(mk('span','',f.value||f.label||''))}
+  fc.appendChild(r);return fc}
  return fc;
 }
 function paintCanvas(sel,fields,mode,data){
@@ -466,19 +442,11 @@ function paintCanvas(sel,fields,mode,data){
  fields.map(norm).forEach(f=>c.appendChild(fieldEl(f,mode,data,pfx)));
  return c;
 }
-function zoomTo(c,z){if(!c)return;const b=c.parentElement;b.style.width=PW*MM*z+'px';b.style.height=PH*MM*z+'px';c.style.transform=z===1?'':`scale(${z})`}
-function fitOf(w){return clamp((w.clientWidth-46)/(PW*MM),.25,1.4)}
-function collect(c,fields){
- const data={},miss=[];
- fields.forEach(f=>{if(!INP.includes(f.field_type))return;
-  const el=c.querySelector(`[data-fid="${f.id}"]`);if(!el)return;let v='';
-  if(f.field_type==='radio'||f.field_type==='checkbox')v=[...el.querySelectorAll('input:checked')].map(i=>i.value).join(', ');
-  else if(f.field_type==='checkbox_agree'){const b=el.querySelector('input');v=b&&b.checked?'ยอมรับ':''}
-  else{const i=el.querySelector('input,textarea,select');v=i?i.value:''}
-  data[f.name]=v;el.classList.remove('err');
-  if(f.required&&!String(v).trim()){miss.push(f);el.classList.add('err')}});
- return {data,miss};
-}
+function zoomTo(c,z){if(!c)return;const b=c.parentElement;
+ b.style.width=PW*MM*z+'px';
+ b.style.height=(c.dataset.autoH?parseFloat(c.dataset.autoH):PH)*MM*z+'px';
+ c.style.transform=z===1?'':`scale(${z})`}
+function fitOf(w){return clamp((w.clientWidth-46)/(PW*MM),.25,1.6)}
 const EXPORT_CSS=`
 @page{size:210mm 297mm;margin:0}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}
@@ -532,7 +500,6 @@ function csv(rows,name){
  toast('ส่งออก '+name+' แล้ว',{type:'ok'});
 }
 
-/* ---------- modal / drawer ---------- */
 function modal(title,body,foot){
  $('#modalTitle').textContent=title;$('#modalBody').innerHTML=body;$('#modalFoot').innerHTML=foot||'';
  $('#modalScrim').hidden=false;
@@ -553,7 +520,284 @@ function closeDrawer(){$('#drawer').hidden=true;$('#drawerScrim').hidden=true;dr
  if(_lastFocus&&document.contains(_lastFocus))_lastFocus.focus();_lastFocus=null}
 $('#drawerClose').onclick=closeDrawer;$('#drawerScrim').onclick=closeDrawer;
 
-/* ============ PUBLIC ============ */
+/* ============================================================
+   PUBLIC · FILL SUBSYSTEM (แก้กรอกไม่ได้)
+   ============================================================ */
+const FILL_CSS=`
+.fill-toolbar{display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin:0 0 12px;
+ padding:10px 12px;border-radius:14px;background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow-1)}
+.fill-toolbar .sp{flex:1}
+.fill-progress{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:700;color:var(--text2)}
+.fill-progress .pb{width:96px;height:7px;border-radius:99px;background:var(--surface3);overflow:hidden;border:1px solid var(--line)}
+.fill-progress .pb i{display:block;height:100%;width:0;border-radius:99px;background:linear-gradient(90deg,var(--petrol-500),var(--emerald));transition:width .35s var(--ease)}
+.fill-progress.done{color:var(--ok-ink)}
+.fill-zoom{display:flex;gap:4px;align-items:center}
+.fill-simple{display:flex;flex-direction:column;gap:12px}
+.fs-card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px 17px;box-shadow:var(--shadow-1)}
+.fs-card.err{border-color:var(--crimson);box-shadow:0 0 0 3px rgba(244,63,94,.12)}
+.fs-q{display:flex;align-items:baseline;gap:8px;font-size:14px;font-weight:700;margin-bottom:9px;color:var(--text)}
+.fs-q .n{font-family:var(--mono);font-size:11px;color:var(--text3);flex:none}
+.fs-q .rq{color:var(--crimson);font-weight:800}
+.fs-hint{font-size:11.5px;color:var(--text3);margin-top:7px}
+.fs-err{font-size:12px;color:var(--bad-ink);background:var(--bad-bg);border-radius:8px;padding:6px 10px;margin-top:8px;font-weight:600}
+.fs-in{width:100%;padding:11px 13px;border-radius:10px;border:1px solid var(--line2);background:var(--surface2);
+ font-size:15px;font-family:inherit;color:var(--text);outline:0;transition:.16s}
+.fs-in:focus{border-color:var(--petrol-400);box-shadow:0 0 0 3px rgba(14,124,134,.16);background:#fff}
+textarea.fs-in{min-height:110px;resize:vertical;line-height:1.6}
+.fs-opts{display:flex;flex-direction:column;gap:8px}
+.fs-opt{display:flex;align-items:flex-start;gap:10px;padding:11px 13px;border-radius:10px;border:1px solid var(--line2);
+ background:var(--surface2);cursor:pointer;font-size:14.5px;transition:.16s;line-height:1.5}
+.fs-opt:hover{border-color:var(--petrol-400);background:#fff}
+.fs-opt.on{border-color:var(--petrol-500);background:color-mix(in srgb,var(--cyan) 12%,#fff);font-weight:600}
+.fs-opt input{margin-top:3px;width:18px;height:18px;accent-color:var(--petrol-500);flex:none;cursor:pointer}
+.fs-sec{font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--text3);
+ margin:6px 0 -2px;padding-left:2px}
+.fill-acts{position:sticky;bottom:0;z-index:20;padding:12px 0 6px;margin-top:14px;
+ background:linear-gradient(180deg,transparent,var(--bg) 34%);display:flex;gap:9px;justify-content:center;flex-wrap:wrap}
+.a4.fill-live{height:auto;min-height:297mm}
+.a4.fill-live .cf{overflow:visible}
+.a4.fill-live .cf.ft-radio,.a4.fill-live .cf.ft-checkbox,.a4.fill-live .cf.ft-select,.a4.fill-live .cf.ft-checkbox_agree{overflow:visible}
+.a4.fill-live .fci{pointer-events:auto}
+.a4.fill-live .cf .fc{pointer-events:auto}
+.a4.fill-live .cf.req::after{content:'*';position:absolute;top:-1px;right:1px;color:var(--crimson);font-weight:800}
+.a4.fill-live .cf.ferr{outline:2px solid var(--crimson);outline-offset:1px;background:#FFF1F2!important;border-radius:3px}
+.a4.fill-live input[type=radio],.a4.fill-live input[type=checkbox]{width:15px;height:15px;accent-color:var(--petrol-500);cursor:pointer;flex:none}
+.a4.fill-live .ol{cursor:pointer;align-items:center}
+.a4.fill-live .og{gap:2mm 5mm}
+.a4.fill-live select.fci{background:#fff;border:1px solid var(--line2);border-radius:4px;padding:0 4px}
+.fill-note{font-size:12px;color:var(--text2);background:var(--info-bg);border:1px solid color-mix(in srgb,var(--blue) 26%,var(--line));
+ border-radius:10px;padding:9px 12px;margin-bottom:12px;display:flex;gap:8px;align-items:flex-start}
+@media (max-width:820px){
+ .fill-toolbar{gap:7px;padding:9px 10px}
+ .fill-progress .pb{width:64px}
+}
+`;
+function ensureFillUI(){
+ if(document.getElementById('fillToolbar'))return;
+ const st=document.createElement('style');st.id='fillCss';st.textContent=FILL_CSS;document.head.appendChild(st);
+ const wrap=document.getElementById('fillWrap');if(!wrap)return;
+ const bar=document.createElement('div');
+ bar.id='fillToolbar';bar.className='fill-toolbar';
+ bar.innerHTML=
+  '<div class="seg" id="fillModeSeg">'+
+   '<button type="button" data-fm="paper">'+ic('forms',14)+'กระดาษ A4</button>'+
+   '<button type="button" data-fm="simple">'+ic('list',14)+'ฟอร์มง่าย</button>'+
+  '</div>'+
+  '<div class="fill-zoom" id="fillZoom">'+
+   '<button type="button" class="btn sm icon" data-fz="out" title="ย่อ">'+ic('zoomout',14)+'</button>'+
+   '<button type="button" class="btn sm" data-fz="fit" id="fillZoomLbl" title="พอดีจอ">100%</button>'+
+   '<button type="button" class="btn sm icon" data-fz="in" title="ขยาย">'+ic('zoomin',14)+'</button>'+
+  '</div>'+
+  '<span class="sp"></span>'+
+  '<span class="fill-progress" id="fillProgress"><span class="pb"><i></i></span><b>0/0</b></span>';
+ wrap.parentNode.insertBefore(bar,wrap);
+ const note=document.createElement('div');
+ note.className='fill-note';note.id='fillNote';
+ note.innerHTML=ic('info',15)+'<span>กรอกได้ 2 โหมด: <b>กระดาษ A4</b> เห็นตรงตามแบบจริง หรือ <b>ฟอร์มง่าย</b> ที่พิมพ์สะดวกบนมือถือ — ข้อมูลที่กรอกใช้ร่วมกัน สลับโหมดได้ตลอด</span>';
+ wrap.parentNode.insertBefore(note,wrap);
+ const simple=document.createElement('div');
+ simple.id='fillSimple';simple.className='fill-simple';simple.hidden=true;
+ wrap.parentNode.insertBefore(simple,wrap.nextSibling);
+ bar.addEventListener('click',e=>{
+  const m=e.target.closest('[data-fm]'),z=e.target.closest('[data-fz]');
+  if(m){setFillMode(m.dataset.fm);return}
+  if(z){
+   const k=z.dataset.fz;
+   if(k==='fit')S.fill.zoom=fitOf($('#fillWrap'));
+   else S.fill.zoom=clamp((S.fill.zoom||1)+(k==='in'?.15:-.15),.3,1.8);
+   applyFillZoom();
+  }
+ });
+ $('#fillSimple').addEventListener('input',onSimpleInput);
+ $('#fillSimple').addEventListener('change',onSimpleInput);
+ $('#fillCanvas').addEventListener('input',onPaperInput);
+ $('#fillCanvas').addEventListener('change',onPaperInput);
+}
+function setFillMode(m){
+ S.fill.mode=m;
+ $$('#fillModeSeg button').forEach(b=>b.classList.toggle('on',b.dataset.fm===m));
+ const paper=m==='paper';
+ $('#fillWrap').hidden=!paper;
+ $('#fillZoom').style.display=paper?'flex':'none';
+ $('#fillSimple').hidden=paper;
+ if(paper){renderFillPaper()}else{renderFillSimple()}
+ updateFillProgress();
+}
+function uniqueFillFields(fields){
+ const seen={},out=[];
+ (fields||[]).map(norm).forEach((f,i)=>{
+  if(!INP.includes(f.field_type)){out.push(f);return}
+  let n=String(f.name||'').trim().toLowerCase().replace(/[^a-z0-9_]/g,'_');
+  if(!n)n='field_'+(i+1);
+  if(seen[n]){let k=2;while(seen[n+'_'+k])k++;n=n+'_'+k}
+  seen[n]=1;
+  out.push(Object.assign({},f,{name:n}));
+ });
+ return out;
+}
+function initFillData(){
+ const d={};
+ S.fill.fields.forEach(f=>{
+  if(!INP.includes(f.field_type))return;
+  if(f.field_type==='checkbox'||f.field_type==='radio'||f.field_type==='checkbox_agree')d[f.name]='';
+  else d[f.name]=f.value||'';
+ });
+ S.fill.data=d;S.fill.errors={};
+}
+function renderFillPaper(){
+ const c=paintCanvas('#fillCanvas',S.fill.fields,'fill',S.fill.data);
+ if(!c)return;
+ c.classList.add('fill-live');
+ reflowFill();
+ if(!S.fill.zoom)S.fill.zoom=fitOf($('#fillWrap'));
+ applyFillZoom();
+ markFillErrors();
+}
+function reflowFill(){
+ const c=$('#fillCanvas');if(!c)return;
+ const items=S.fill.fields.map(f=>({f,el:c.querySelector('[data-fid="'+f.id+'"]')})).filter(x=>x.el);
+ items.sort((a,b)=>a.f.pos_y-b.f.pos_y||a.f.pos_x-b.f.pos_x);
+ let shift=0,maxBottom=PH;
+ items.forEach(({f,el})=>{
+  el.style.top=(f.pos_y+shift)+'mm';
+  el.style.height='auto';
+  el.style.minHeight=f.height+'mm';
+  const need=el.scrollHeight/MM;
+  const used=Math.max(f.height,need+.6);
+  el.style.height=used+'mm';
+  if(used>f.height)shift+=(used-f.height);
+  maxBottom=Math.max(maxBottom,f.pos_y+shift+used+8);
+ });
+ c.style.height=maxBottom+'mm';
+ c.dataset.autoH=String(maxBottom);
+}
+function applyFillZoom(){
+ const c=$('#fillCanvas');if(!c)return;
+ zoomTo(c,S.fill.zoom||1);
+ const l=$('#fillZoomLbl');if(l)l.textContent=Math.round((S.fill.zoom||1)*100)+'%';
+}
+function renderFillSimple(){
+ const box=$('#fillSimple');if(!box)return;
+ const inputs=S.fill.fields.filter(f=>INP.includes(f.field_type));
+ if(!inputs.length){box.innerHTML='<div class="empty"><div class="em-ico">'+ic('inbox',26)+'</div><h3>ฟอร์มนี้ยังไม่มีช่องให้กรอก</h3><p>ให้ผู้ดูแลเพิ่มฟิลด์ในเมนูออกแบบฟอร์มก่อน</p></div>';return}
+ let n=0;
+ box.innerHTML=inputs.map(f=>{
+  n++;
+  const v=S.fill.data[f.name]??'';
+  const id='fs_'+f.id;
+  const req=f.required?'<span class="rq">*</span>':'';
+  const label=esc(f.label||FTL[f.field_type]||f.name);
+  let ctl='';
+  if(f.field_type==='textarea')ctl='<textarea class="fs-in" id="'+id+'" data-fn="'+esc(f.name)+'" placeholder="'+label+'">'+esc(v)+'</textarea>';
+  else if(f.field_type==='date')ctl='<input class="fs-in" type="date" id="'+id+'" data-fn="'+esc(f.name)+'" value="'+esc(v)+'">';
+  else if(f.field_type==='select'){
+   const opts=f.options.length?f.options:['ตัวเลือก 1','ตัวเลือก 2'];
+   ctl='<select class="fs-in" id="'+id+'" data-fn="'+esc(f.name)+'"><option value="">-- เลือก --</option>'+
+    opts.map(o=>'<option value="'+esc(o)+'"'+(v===o?' selected':'')+'>'+esc(o)+'</option>').join('')+'</select>';
+  }
+  else if(f.field_type==='radio'||f.field_type==='checkbox'){
+   const opts=f.options.length?f.options:['ตัวเลือก 1','ตัวเลือก 2'];
+   const sel=String(v||'').split(', ').filter(Boolean);
+   ctl='<div class="fs-opts" data-fn="'+esc(f.name)+'" data-ft="'+f.field_type+'">'+opts.map((o,i)=>
+    '<label class="fs-opt'+(sel.includes(o)?' on':'')+'"><input type="'+f.field_type+'" name="'+id+'" value="'+esc(o)+'"'+(sel.includes(o)?' checked':'')+'><span>'+esc(o)+'</span></label>').join('')+'</div>';
+  }
+  else if(f.field_type==='checkbox_agree'){
+   ctl='<label class="fs-opt'+(v?' on':'')+'" data-fn="'+esc(f.name)+'" data-ft="checkbox_agree"><input type="checkbox"'+(v?' checked':'')+'><span>'+esc(f.value||f.label||'ยอมรับข้อตกลง')+'</span></label>';
+  }
+  else if(f.field_type==='signature')ctl='<input class="fs-in" type="text" id="'+id+'" data-fn="'+esc(f.name)+'" placeholder="พิมพ์ชื่อ-นามสกุลเพื่อลงนาม" value="'+esc(v)+'"><div class="fs-hint">การพิมพ์ชื่อถือเป็นการลงนามอิเล็กทรอนิกส์</div>';
+  else ctl='<input class="fs-in" type="text" id="'+id+'" data-fn="'+esc(f.name)+'" placeholder="'+label+'" value="'+esc(v)+'">';
+  const hint=(f.field_type==='checkbox'?'<div class="fs-hint">เลือกได้มากกว่า 1 ข้อ</div>':'');
+  return '<div class="fs-card" data-card="'+esc(f.name)+'"><div class="fs-q"><span class="n">'+String(n).padStart(2,'0')+'</span><span>'+label+'</span>'+req+'</div>'+ctl+hint+'<div class="fs-err" hidden></div></div>';
+ }).join('');
+}
+function onSimpleInput(e){
+ const t=e.target;
+ const wrapOpt=t.closest('[data-fn]');
+ if(wrapOpt&&wrapOpt.dataset.ft){
+  const name=wrapOpt.dataset.fn,ft=wrapOpt.dataset.ft;
+  if(ft==='checkbox_agree'){
+   S.fill.data[name]=t.checked?'ยอมรับ':'';
+   wrapOpt.classList.toggle('on',t.checked);
+  }else{
+   const vals=[...wrapOpt.querySelectorAll('input:checked')].map(i=>i.value);
+   S.fill.data[name]=vals.join(', ');
+   wrapOpt.querySelectorAll('.fs-opt').forEach(l=>l.classList.toggle('on',l.querySelector('input').checked));
+  }
+  clearFieldError(name);updateFillProgress();return;
+ }
+ const name=t.dataset&&t.dataset.fn;
+ if(!name)return;
+ S.fill.data[name]=t.value;
+ clearFieldError(name);updateFillProgress();
+}
+function onPaperInput(e){
+ const t=e.target;
+ const name=t.dataset&&t.dataset.fname;
+ if(!name)return;
+ const f=S.fill.fields.find(x=>x.name===name);
+ if(!f)return;
+ if(f.field_type==='radio'||f.field_type==='checkbox'){
+  const box=$('#fillCanvas').querySelector('[data-fid="'+f.id+'"]');
+  S.fill.data[name]=[...box.querySelectorAll('input:checked')].map(i=>i.value).join(', ');
+ }else if(f.field_type==='checkbox_agree'){
+  S.fill.data[name]=t.checked?'ยอมรับ':'';
+ }else{
+  S.fill.data[name]=t.value;
+ }
+ clearFieldError(name);updateFillProgress();
+}
+function clearFieldError(name){
+ if(!S.fill.errors[name])return;
+ delete S.fill.errors[name];
+ const card=$('#fillSimple').querySelector('[data-card="'+CSS.escape(name)+'"]');
+ if(card){card.classList.remove('err');const e=$('.fs-err',card);if(e)e.hidden=true}
+ const el=$('#fillCanvas').querySelector('[data-fid="'+(S.fill.fields.find(f=>f.name===name)||{}).id+'"]');
+ if(el)el.classList.remove('ferr');
+}
+function markFillErrors(){
+ S.fill.fields.forEach(f=>{
+  if(!S.fill.errors[f.name])return;
+  const el=$('#fillCanvas').querySelector('[data-fid="'+f.id+'"]');
+  if(el)el.classList.add('ferr');
+  const card=$('#fillSimple').querySelector('[data-card="'+CSS.escape(f.name)+'"]');
+  if(card){card.classList.add('err');const e=$('.fs-err',card);if(e){e.hidden=false;e.textContent=S.fill.errors[f.name]}}
+ });
+}
+function updateFillProgress(){
+ const req=S.fill.fields.filter(f=>f.required&&INP.includes(f.field_type));
+ const done=req.filter(f=>String(S.fill.data[f.name]||'').trim()).length;
+ const p=$('#fillProgress');if(!p)return;
+ const pct=req.length?Math.round(done/req.length*100):100;
+ $('i',p).style.width=pct+'%';
+ $('b',p).textContent=done+'/'+req.length+' ช่องบังคับ';
+ p.classList.toggle('done',done===req.length);
+}
+function validateFill(){
+ const errors={};
+ S.fill.fields.forEach(f=>{
+  if(!INP.includes(f.field_type))return;
+  const v=String(S.fill.data[f.name]||'').trim();
+  if(f.required&&!v)errors[f.name]='กรุณากรอก “'+(f.label||FTL[f.field_type])+'”';
+  else if(f.field_type==='date'&&v&&!/^\d{4}-\d{2}-\d{2}$/.test(v))errors[f.name]='รูปแบบวันที่ไม่ถูกต้อง';
+  else if(f.name==='phone'&&v&&!/^[0-9+\-\s]{9,12}$/.test(v))errors[f.name]='เบอร์โทรศัพท์ควรเป็นตัวเลข 9–10 หลัก';
+  else if(v.length>5000)errors[f.name]='ข้อความยาวเกินไป (สูงสุด 5,000 ตัวอักษร)';
+ });
+ S.fill.errors=errors;
+ return errors;
+}
+function focusFirstError(){
+ const first=Object.keys(S.fill.errors)[0];if(!first)return;
+ const f=S.fill.fields.find(x=>x.name===first);if(!f)return;
+ if(S.fill.mode==='simple'){
+  const card=$('#fillSimple').querySelector('[data-card="'+CSS.escape(first)+'"]');
+  if(card){card.scrollIntoView({block:'center',behavior:'smooth'});
+   const inp=card.querySelector('input,textarea,select');if(inp)setTimeout(()=>inp.focus(),320)}
+ }else{
+  const el=$('#fillCanvas').querySelector('[data-fid="'+f.id+'"]');
+  if(el){el.scrollIntoView({block:'center',behavior:'smooth'});
+   const inp=el.querySelector('input,textarea,select');if(inp)setTimeout(()=>inp.focus(),320)}
+ }
+}
 function showPubView(v){
  S.pubView=v;
  const map={home:'pvHome',forms:'pvForms',fill:'pvFill',ok:'pvOk',status:'pvStatus'};
@@ -562,11 +806,12 @@ function showPubView(v){
  $('#pubMain').scrollTop=0;
 }
 function pubCard(t,i){
+ const n=(t.fields||[]).filter(f=>INP.includes(f.field_type)).length;
  return `<article class="card" style="animation-delay:${Math.min(i*40,320)}ms">
  <div class="card-top"><h3>${esc(t.name)}</h3><span class="pill on">เปิดรับ</span></div>
  <p>${esc(t.description||'')}</p>
  <div class="thumb" data-t="${esc(t.id)}"><span class="thumb-tag">A4</span><div class="thumb-c"></div></div>
- <div class="card-meta"><span>${esc(t.department||'—')}</span><span>${(t.fields||[]).filter(f=>INP.includes(f.field_type)).length} ช่องกรอก</span></div>
+ <div class="card-meta"><span>${esc(t.department||'—')}</span><span>${n} ช่องกรอก</span></div>
  <div class="card-acts"><button class="btn pri" data-fill="${esc(t.id)}">${ic('edit',13)}กรอกออนไลน์</button>
  <button class="btn" data-pview="${esc(t.id)}">${ic('eye',13)}ดูตัวอย่าง</button></div></article>`;
 }
@@ -605,6 +850,7 @@ async function openPubFill(rawId){
  if(_fillBusy)return;
  _fillBusy=true;
  try{
+  ensureFillUI();
   if(S.shell!=='public'){S.shell='public';DB.prefs.shell='public';persist();applyPrefs()}
   let t=tpl(id);
   if((!t||!(t.fields||[]).length)&&S.live&&isUuid(id)){
@@ -623,15 +869,24 @@ async function openPubFill(rawId){
    }
   }
   if(!t){toast('ไม่พบแบบฟอร์มนี้ในรายการ',{type:'warn'});showPubView('forms');renderPubForms();return}
-  if(!(t.fields||[]).length){toast('ฟอร์มนี้ยังไม่มีฟิลด์ — ผู้ดูแลต้องเพิ่มฟิลด์ก่อน',{type:'warn'});showPubView('forms');renderPubForms();return}
-  S.fill={tpl:t.id,fields:t.fields.map(norm)};
+  const fields=uniqueFillFields(t.fields||[]);
+  if(!fields.filter(f=>INP.includes(f.field_type)).length){
+   toast('ฟอร์มนี้ยังไม่มีช่องให้กรอก — ให้ผู้ดูแลเพิ่มฟิลด์ก่อน',{type:'warn'});
+   showPubView('forms');renderPubForms();return;
+  }
+  S.fill={tpl:t.id,fields,data:{},mode:(window.innerWidth<820?'simple':'paper'),zoom:0,errors:{}};
+  initFillData();
   $('#fillTitle').textContent=t.name;
   $('#fillDesc').textContent=t.description||'';
   $('#fillName').value='';$('#fillCid').value='';
   showPubView('fill');
   history.replaceState(null,'','#/fill/'+t.id);
-  const c=paintCanvas('#fillCanvas',S.fill.fields,'fill');
-  requestAnimationFrame(()=>zoomTo(c,fitOf($('#fillWrap'))));
+  setFillMode(S.fill.mode);
+  requestAnimationFrame(()=>{
+   if(S.fill.mode==='paper'){reflowFill();S.fill.zoom=fitOf($('#fillWrap'));applyFillZoom()}
+   const first=$('#fillSimple').querySelector('.fs-in');
+   if(S.fill.mode==='simple'&&first&&window.innerWidth>820)first.focus();
+  });
  }finally{_fillBusy=false}
 }
 function previewPub(id){
@@ -646,16 +901,19 @@ function previewPub(id){
 }
 async function submitFill(){
  const name=$('#fillName').value.trim(),cid=$('#fillCid').value.trim();
- if(!name)return toast('กรุณากรอกชื่อ-นามสกุลผู้ยื่น',{type:'warn'});
+ if(!name){toast('กรุณากรอกชื่อ-นามสกุลผู้ยื่น',{type:'warn'});$('#fillName').focus();$('#fillName').scrollIntoView({block:'center',behavior:'smooth'});return}
  if(name.length>200)return toast('ชื่อ-นามสกุลยาวเกินไป (สูงสุด 200 ตัวอักษร)',{type:'warn'});
- if(!/^\d{13}$/.test(cid)){toast('เลขบัตรประชาชนต้องเป็นตัวเลข 13 หลัก',{type:'warn'});$('#fillCid').focus();return}
- const {data,miss}=collect($('#fillCanvas'),S.fill.fields);
- if(miss.length){
-  const el=$(`#fillCanvas [data-fid="${miss[0].id}"]`);el?.scrollIntoView({block:'center',behavior:'smooth'});
-  return toast('กรุณากรอก “'+(miss[0].label||miss[0].name)+'”'+(miss.length>1?' และอีก '+(miss.length-1)+' ช่อง':''),{type:'warn'});
+ if(!/^\d{13}$/.test(cid)){toast('เลขบัตรประชาชนต้องเป็นตัวเลข 13 หลัก',{type:'warn'});$('#fillCid').focus();$('#fillCid').scrollIntoView({block:'center',behavior:'smooth'});return}
+ const errors=validateFill();
+ const keys=Object.keys(errors);
+ if(keys.length){
+  markFillErrors();focusFirstError();
+  const f=S.fill.fields.find(x=>x.name===keys[0]);
+  return toast(errors[keys[0]]+(keys.length>1?' · Cònอีก '+(keys.length-1)+' ช่อง':''),{type:'warn'});
  }
  if(S.live&&!isUuid(S.fill.tpl))return toast('ฟอร์มร่างในเครื่องยังส่งจริงไม่ได้ — ให้ผู้ดูแลบันทึกฟอร์มก่อน',{type:'warn'});
- const btn=$('#fillSend');btn.disabled=true;
+ const data=Object.assign({},S.fill.data);
+ const btn=$('#fillSend');btn.disabled=true;const old=btn.innerHTML;btn.innerHTML='กำลังส่ง…';
  try{
   let res;
   if(S.live)res=await api('submitFormAnonymous',{templateId:S.fill.tpl,formData:data,citizenId:cid,fullName:name},false);
@@ -672,7 +930,7 @@ async function submitFill(){
   showPubView('ok');history.replaceState(null,'','#/');
   logAct('คำขอใหม่ #'+rid+' — '+(t?t.name:''),'info');
  }catch(e){toast(err(e),{type:'bad'})}
- finally{btn.disabled=false}
+ finally{btn.disabled=false;btn.innerHTML=old}
 }
 async function lookupStatus(cid){
  if(!/^\d{13}$/.test(cid)){toast('กรุณากรอกเลขบัตรประชาชน 13 หลัก',{type:'warn'});return}
@@ -740,7 +998,10 @@ $('#pubMain').onclick=e=>{
 };
 $('#pfSearch').oninput=debounce(e=>{S.pubQ=e.target.value;renderPubForms()},200);
 $('#fillBack').onclick=()=>pubGo('forms');
-$('#fillClear').onclick=()=>{paintCanvas('#fillCanvas',S.fill.fields,'fill');zoomTo($('#fillCanvas'),fitOf($('#fillWrap')));toast('ล้างข้อมูลในฟอร์มแล้ว')};
+$('#fillClear').onclick=()=>{
+ if(!confirm('ล้างข้อมูลที่กรอกไว้ทั้งหมดในฟอร์มนี้?'))return;
+ initFillData();setFillMode(S.fill.mode);toast('ล้างข้อมูลในฟอร์มแล้ว');
+};
 $('#fillSend').onclick=submitFill;
 $('#okCopy').onclick=()=>{navigator.clipboard?.writeText($('#okRef').textContent);toast('คัดลอกเลขอ้างอิงแล้ว',{type:'ok'})};
 $('#okPrint').onclick=()=>{if(S.lastSub)printSheet(S.lastSub.fields,S.lastSub.data,S.lastSub.templateName+' #'+S.lastSub.referenceId)};
@@ -769,7 +1030,7 @@ async function doLogin(){
   S.meName=r.fullName||'ผู้ดูแลระบบ';S.meRole=r.role||'ADMIN';
   $('#userName').textContent=S.meName;
   closeLogin();$('#lgPass').value='';
-  S.fill={tpl:null,fields:[]};S.lastSub=null;
+  S.fill={tpl:null,fields:[],data:{},mode:'paper',zoom:0,errors:{}};S.lastSub=null;
   toast('ยินดีต้อนรับ '+S.meName,{type:'ok'});
   logAct('เข้าสู่ระบบผู้ดูแล '+S.meName,'ok');
   enterAdmin();
@@ -778,11 +1039,9 @@ async function doLogin(){
 }
 async function restoreSession(){
  if(!accessToken)return false;
- try{
-  const s=await api('getSession');
+ try{const s=await api('getSession');
   S.meName=s.fullName||'ผู้ดูแลระบบ';S.meRole=s.role||'ADMIN';
-  $('#userName').textContent=S.meName;
-  return true;
+  $('#userName').textContent=S.meName;return true;
  }catch(e){return false}
 }
 function enterAdmin(){
@@ -817,8 +1076,7 @@ function go(sec){
  $$('.rail-item').forEach(b=>{const on=b.dataset.go===sec;b.classList.toggle('on',on);
   if(on)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current')});
  $('#crumbs').innerHTML=`<span>แผงจัดการ</span>${ic('chev',12)}<b>${esc(SECS[sec][0])}</b>`;
- $('#main').scrollTop=0;
- render();
+ $('#main').scrollTop=0;render();
 }
 $$('.rail-item').forEach(b=>b.onclick=()=>{if(b.dataset.go==='public'){setShell('public');return}S.sec=null;go(b.dataset.go)});
 function render(){
@@ -831,7 +1089,6 @@ const head=(k,acts)=>`<div class="sec-head"><div class="sec-title"><h1>${esc(SEC
 const emptyBox=(i,t,d,b)=>`<div class="empty"><div class="em-ico">${ic(i,26)}</div><h3>${esc(t)}</h3><p>${esc(d)}</p>${b||''}</div>`;
 const syncBtn=`<button class="btn" data-a="resync">${ic('broom')}ล้างแคชและซิงก์ใหม่</button>`;
 
-/* ============ FORMS ============ */
 function vForms(v){
  const f=S.forms;
  let list=DB.templates.filter(t=>{
@@ -1072,7 +1329,8 @@ function vBuilder(v){
  </div>`;
  paintCanvas('#canvas',b.fields,'design');
  decorateCanvas();
- zoomTo($('#canvas'),b.zoom);
+ const cv=$('#canvas');cv.classList.remove('fill-live');cv.style.height='';delete cv.dataset.autoH;
+ zoomTo(cv,b.zoom);
  bindBuilder();
 }
 function decorateCanvas(){
@@ -1087,6 +1345,7 @@ function decorateCanvas(){
 function repaintCanvas(){
  const b=S.b;
  paintCanvas('#canvas',b.fields,'design');
+ const cv=$('#canvas');if(cv){cv.classList.remove('fill-live');cv.style.height='';delete cv.dataset.autoH;zoomTo(cv,b.zoom)}
  decorateCanvas();
  const L=$('#layers');if(L)L.innerHTML=b.fields.map((f,i)=>layerRow(f,i)).join('');
  bindLayers();
@@ -1129,7 +1388,7 @@ function bindBuilder(){
   else if(k==='zi'){b.zoom=clamp(b.zoom+.1,.25,1.6);zoomTo($('#canvas'),b.zoom);$('#zLbl').textContent=Math.round(b.zoom*100)+'%'}
   else if(k==='zo'){b.zoom=clamp(b.zoom-.1,.25,1.6);zoomTo($('#canvas'),b.zoom);$('#zLbl').textContent=Math.round(b.zoom*100)+'%'}
   else if(k==='fit'){b.zoom=fitOf($('#cwrap'));zoomTo($('#canvas'),b.zoom);$('#zLbl').textContent=Math.round(b.zoom*100)+'%'}
-  else if(k==='preview'){const c=paintCanvas('#pvCanvas',b.fields,'fill');$('#previewScrim').hidden=false;zoomTo(c,fitOf($('#pvWrap')))}
+  else if(k==='preview'){const c=paintCanvas('#pvCanvas',b.fields,'fill',{});$('#previewScrim').hidden=false;requestAnimationFrame(()=>zoomTo(c,fitOf($('#pvWrap'))))}
   else if(k==='dl')dlForm(b.id);
   else if(k==='dupf')dupField(b.sel);
   else if(k==='delf')removeField(b.sel);
@@ -1205,16 +1464,11 @@ async function saveBuilder(auto){
     meta:{name:t.name,description:t.description,is_active:t.is_active},
     fields:sendFields,deletedIds:b.deleted.filter(isUuid)});
    const map=(res&&res.idMap)||{};
-   b.fields.forEach((f,i)=>{
-    const nid=repairUuid(map[sendIds[i]]);
-    if(nid){if(b.sel===f.id)b.sel=nid;f.id=nid}
-   });
+   b.fields.forEach((f,i)=>{const nid=repairUuid(map[sendIds[i]]);if(nid){if(b.sel===f.id)b.sel=nid;f.id=nid}});
    t.fields=JSON.parse(JSON.stringify(b.fields));
    b.deleted=[];
    if(!auto)toast('บันทึก “'+t.name+'” ขึ้นเซิร์ฟเวอร์แล้ว',{type:'ok'});
-  }else if(!auto){
-   toast('บันทึก “'+t.name+'” แล้ว (อยู่ในเครื่อง)',{type:'ok'});
-  }
+  }else if(!auto){toast('บันทึก “'+t.name+'” แล้ว (อยู่ในเครื่อง)',{type:'ok'})}
   b.dirty=false;b.undo=[];b.redo=[];persist();
   if(st){st.className='save-state saved';st.innerHTML=ic('check',13)+'บันทึกแล้ว'}
   updateUndoUI();repaintCanvas();refreshProps();
@@ -1231,7 +1485,7 @@ function addField(type,x,y,center){
  const d={title:{width:150,height:11,font_size:18,font_weight:'bold',text_align:'center',border_style:'none',value:'หัวข้อเรื่อง'},
   label:{width:60,height:7,border_style:'none',value:'ข้อความบรรยาย'},
   logo:{width:26,height:26,border_style:'none',value:DB.logo||''},
-  textarea:{width:170,height:32},date:{width:52},select:{width:70},
+  textarea:{width:170,height:32},date:{width:52},select:{width:70,options:DEPTS.slice(0,4)},
   radio:{width:150,height:9,border_style:'none',options:['ตัวเลือก 1','ตัวเลือก 2','ตัวเลือก 3']},
   checkbox:{width:150,height:9,border_style:'none',options:['ตัวเลือก 1','ตัวเลือก 2']},
   signature:{width:72,height:20,border_style:'none'},
@@ -1947,7 +2201,9 @@ document.addEventListener('keydown',e=>{
 window.addEventListener('beforeunload',e=>{if(S.b.dirty){e.preventDefault();e.returnValue=''}});
 window.addEventListener('resize',debounce(()=>{
  if(S.shell==='admin'&&S.sec==='builder'&&S.b.id&&$('#canvas'))zoomTo($('#canvas'),S.b.zoom);
- if(S.shell==='public'&&S.pubView==='fill'&&$('#fillCanvas'))zoomTo($('#fillCanvas'),fitOf($('#fillWrap')));
+ if(S.shell==='public'&&S.pubView==='fill'){
+  if(S.fill.mode==='paper'){reflowFill();S.fill.zoom=fitOf($('#fillWrap'));applyFillZoom()}
+ }
  $$('.thumb').forEach(t=>{const c=$('.thumb-c',t);if(c&&c.dataset.done)c.style.transform=`scale(${t.clientWidth/(PW*MM)})`});
 },180));
 window.addEventListener('hashchange',()=>{if(S.shell==='public')routePublic()});
@@ -1967,26 +2223,15 @@ $('#main').addEventListener('scroll',()=>{
 
 /* ============ INIT ============ */
 (async function init(){
- applyPrefs();paintBell();paintCounts();
- if(PURGED>0){
-  persist();
-  toast('ล้างข้อมูลที่รหัสไม่ถูกต้อง '+PURGED+' รายการแล้ว — กำลังดึงข้อมูลจริงใหม่',{type:'warn',ms:5200});
- }
+ applyPrefs();paintBell();paintCounts();ensureFillUI();
+ if(PURGED>0){persist();toast('ล้างข้อมูลที่รหัสไม่ถูกต้อง '+PURGED+' รายการแล้ว — กำลังดึงข้อมูลจริงใหม่',{type:'warn',ms:5200})}
  const hasSession=await restoreSession();
  if(hasSession)$('#userName').textContent=S.meName;
  const wantAdmin=(location.hash==='#/admin');
- if(wantAdmin&&hasSession){
-  setShell('admin');
-  await syncAdmin();
-  if(S.shell==='admin')render();
- }else if(wantAdmin&&!hasSession){
-  S.shell='public';DB.prefs.shell='public';applyPrefs();
-  history.replaceState(null,'','#/');routePublic();openLogin();
- }else{
-  S.shell='public';DB.prefs.shell='public';applyPrefs();
-  routePublic();
-  syncPublic().then(()=>{if(S.shell==='public')routePublic()});
- }
+ if(wantAdmin&&hasSession){setShell('admin');await syncAdmin();if(S.shell==='admin')render()}
+ else if(wantAdmin&&!hasSession){S.shell='public';DB.prefs.shell='public';applyPrefs();history.replaceState(null,'','#/');routePublic();openLogin()}
+ else{S.shell='public';DB.prefs.shell='public';applyPrefs();routePublic();
+  syncPublic().then(()=>{if(S.shell==='public'&&S.pubView!=='fill')routePublic()})}
  if(!DB.activity.length)logAct('ยินดีต้อนรับสู่ระบบ e-Form — ประชาชนกรอกได้ทันที, ผู้ดูแลกด Ctrl+K','info');
  requestAnimationFrame(()=>requestAnimationFrame(()=>document.body.classList.remove('boot')));
 })();
