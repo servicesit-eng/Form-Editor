@@ -1,13 +1,11 @@
 'use strict';
 /* ============================================================
    DONTUM e-FORM · UNIFIED APP (Public + Admin Console)
-   รวมแก้: 22P02 field-id, undo ฟิลด์, Delete-key guard, B-01…B-20
    ============================================================ */
 const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const uid=p=>p+Math.random().toString(36).slice(2,9);
 const tmpId=p=>'tmp_'+uid(p||'f_');
-const isTempId=id=>/^tmp_/.test(String(id||''));
 const isServerId=id=>/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(id||''));
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const debounce=(fn,ms)=>{let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>fn(...a),ms)}};
@@ -15,7 +13,6 @@ const MM=96/25.4, PW=210, PH=297;
 const API_URL='https://script.google.com/macros/s/AKfycbwlBmF7UCDh1b-DlGy6uzT_Vot2J0Z02EoLoCRm5XFjtra1nDzCBD-cBHJ_8Yl6hX6oig/exec';
 const KEY='dontum.console.v1';
 
-/* ---------- icons ---------- */
 const P={
 forms:'M4 3h10l6 6v12H4z M14 3v6h6',inbox:'M3 12h5l2 3h4l2-3h5 M3 12l3-8h12l3 8v8H3z',
 builder:'M12 2l3 6 6 1-4.5 4.3 1 6.2L12 16.6 6.5 19.5l1-6.2L3 9l6-1z',
@@ -51,7 +48,6 @@ home:'M3 10l9-7 9 7v10h-6v-6H9v6H3z',logout:'M9 21H5V3h4 M16 17l5-5-5-5 M21 12H9
 };
 const ic=(n,s=16)=>`<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${(P[n]||'').split(' M').map((d,i)=>`<path d="${i?'M'+d:d}"/>`).join('')}</svg>`;
 
-/* ---------- constants / seed ---------- */
 const DEPTS=['งานเทคโนโลยีสารสนเทศ','งานพัสดุ','งานทรัพยากรบุคคล','งานสารบรรณ','งานช่างเทคนิค','งานพัฒนาคุณภาพ','งานยานพาหนะ','กลุ่มงานเวชศาสตร์ครอบครัว'];
 const NAMES=[['นาย','สมชาย','ใจดี'],['นาง','สมหญิง','รักงาน'],['นางสาว','พรทิพย์','แสงทอง'],['นาย','อนุชา','มั่นคง'],['นางสาว','กัลยา','ศรีสุข'],['นาย','ธีรพงษ์','พัฒนกุล'],['นาง','วิไลพร','บุญมา'],['นาย','ปกรณ์','ชัยยะ'],['นางสาว','ชญานิศ','ทองใบ'],['นาย','ศุภกร','วงศ์สุวรรณ'],['นาง','รัตนา','พงษ์ศรี'],['นาย','จิรวัฒน์','อินทร์แก้ว'],['นางสาว','เบญจวรรณ','สุขใจ'],['นาย','ณัฐพล','แก้วมณี'],['นาง','สุภาพร','ดำรงค์'],['นาย','วิทยา','พูนผล'],['นางสาว','อารยา','จันทร์เพ็ญ'],['นาย','เอกชัย','ศรีเมือง']];
 const POS=['นักวิชาการคอมพิวเตอร์','เจ้าพนักงานพัสดุ','นักทรัพยากรบุคคล','เจ้าพนักงานธุรการ','ช่างเทคนิค','พยาบาลวิชาชีพ','นายแพทย์ชำนาญการ','เจ้าพนักงานยานพาหนะ','นักวิเคราะห์นโยบายและแผน'];
@@ -97,11 +93,10 @@ const TPLS=[
 function seed(){
  const now=Date.now(),D=864e5;
  const templates=TPLS.map((t,i)=>({id:'tpl_'+(i+1),name:t[0],description:t[1],department:t[2],is_active:t[3],
-   created_at:new Date(now-(40-i*3)*D).toISOString(),updated_at:new Date(now-(i*2+1)*D).toISOString(),
-   fields:baseFields(t[0])}));
+  created_at:new Date(now-(40-i*3)*D).toISOString(),updated_at:new Date(now-(i*2+1)*D).toISOString(),fields:baseFields(t[0])}));
  const subs=[];
  for(let i=0;i<28;i++){
-  const t=templates[i%templates.length], n=NAMES[i%NAMES.length];
+  const t=templates[i%templates.length],n=NAMES[i%NAMES.length];
   const st=i%7===0?'REJECTED':(i%3===0?'APPROVED':'SUBMITTED');
   const created=now-Math.floor(Math.random()*26)*D-Math.floor(Math.random()*20)*36e5;
   const data={};t.fields.forEach(f=>{if(!INP.includes(f.field_type))return;
@@ -129,7 +124,6 @@ function seed(){
  return {templates,submissions:subs,staff,logo:null,favorites:['tpl_1'],savedViews:[],activity:[],deptMap:{},prefs:{theme:'light',density:'cozy',rail:'expanded',shell:'public'}};
 }
 
-/* ---------- state (B-09: กัน localStorage เก่าพัง) ---------- */
 let DB;
 try{DB=JSON.parse(localStorage.getItem(KEY))||seed()}catch(e){DB=seed()}
 if(!DB||!DB.templates||!DB.templates.length)DB=seed();
@@ -140,11 +134,8 @@ const persist=debounce(()=>{try{localStorage.setItem(KEY,JSON.stringify(DB))}cat
 let accessToken=null;
 try{accessToken=localStorage.getItem('access_token')}catch(e){}
 const S={
- shell:'public', live:true, syncing:false,
- meName:'', meRole:'',
- pubView:'home', pubQ:'',
- fill:{tpl:null,fields:[]},
- lastSub:null,
+ shell:'public',live:true,syncing:false,meName:'',meRole:'',
+ pubView:'home',pubQ:'',fill:{tpl:null,fields:[]},lastSub:null,
  forms:{q:'',status:'all',dept:'all',sort:'updated',view:'grid',fav:false},
  inbox:{tpl:'all',status:'ALL',q:'',sort:'newest',sel:new Set()},
  mine:{q:'',status:'all'},
@@ -152,7 +143,6 @@ const S={
  b:{id:null,fields:[],deleted:[],sel:null,zoom:.72,grid:true,snap:true,dirty:false,undo:[],redo:[],saving:false},
  palette:{q:'',idx:0,items:[]}
 };
-/* B-10: ref fallback สำหรับ uuid ที่ไม่มีเลข */
 const ref=id=>{const d=String(id).replace(/\D/g,'');
  return (d.length>=4?d.slice(-6):String(id).replace(/[^a-zA-Z0-9]/g,'').slice(0,6).toUpperCase()).padStart(6,'0')};
 const refOf=s=>s.referenceId||ref(s.id);
@@ -166,19 +156,19 @@ const ago=iso=>{const d=(Date.now()-new Date(iso))/1000;
 const fdate=iso=>new Date(iso).toLocaleString('th-TH',{day:'numeric',month:'short',year:'2-digit',hour:'2-digit',minute:'2-digit'});
 const hue=s=>{let h=0;for(const c of String(s))h=(h*31+c.charCodeAt(0))%360;return h};
 const avStyle=n=>`background:linear-gradient(145deg,hsl(${hue(n)} 62% 46%),hsl(${(hue(n)+42)%360} 68% 38%))`;
+const err=e=>e&&e.message?e.message:'เกิดข้อผิดพลาด';
 
-/* ---------- toast / log (B-20: เคลียร์ timer ใบที่ถูกขับออก) ---------- */
 function toast(msg,opt={}){
  const wrap=$('#toasts');
- while(wrap.children.length>=4){const old=wrap.firstElementChild;if(old&&old._timer)clearTimeout(old._timer);old.remove();}
+ while(wrap.children.length>=4){const old=wrap.firstElementChild;if(old&&old._timer)clearTimeout(old._timer);old.remove()}
  const t=document.createElement('div');
  t.className='toast '+(opt.type||'info');
  const icons={ok:'check',bad:'x',warn:'warn',info:'info'};
  t.innerHTML=`<span class="ti">${ic(icons[opt.type||'info'],15)}</span><b>${esc(msg)}</b>`+
   (opt.undo?`<button class="undo">เลิกทำ</button>`:'')+`<button class="tx">${ic('x',13)}</button><i class="life"></i>`;
  wrap.appendChild(t);
- const life=opt.ms||(opt.undo?7000:3600);
- const bar=$('.life',t);bar.style.transition=`width ${life}ms linear`;requestAnimationFrame(()=>bar.style.width='0%');bar.style.width='100%';
+ const life=opt.ms||(opt.undo?7000:3800);
+ const bar=$('.life',t);bar.style.transition=`width ${life}ms linear`;bar.style.width='100%';requestAnimationFrame(()=>bar.style.width='0%');
  let done=false;const kill=()=>{if(done)return;done=true;t.classList.add('out');setTimeout(()=>t.remove(),220)};
  t._timer=setTimeout(kill,life);
  $('.tx',t).onclick=()=>{clearTimeout(t._timer);kill()};
@@ -187,38 +177,43 @@ function toast(msg,opt={}){
 }
 function logAct(text,kind='info'){DB.activity.unshift({id:uid('a_'),text,kind,at:new Date().toISOString(),read:false});DB.activity=DB.activity.slice(0,40);persist();paintBell()}
 
-/* ---------- api / remote ---------- */
 async function api(action,payload={},withToken=true){
  const u=new URL(API_URL);u.searchParams.set('action',action);
  const body=Object.assign({},payload);
  if(withToken&&accessToken)body.token=accessToken;
- const r=await fetch(u,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(body),redirect:'follow'});
+ let r;
+ try{
+  r=await fetch(u,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(body),redirect:'follow'});
+ }catch(e){throw new Error('เชื่อมต่อ API ไม่ได้ — ตรวจอินเทอร์เน็ต/CSP ('+e.message+')')}
  if(!r.ok)throw new Error('HTTP '+r.status);
- const j=await r.json();if(!j.ok)throw new Error(j.error||'API error');return j.data;
+ const j=await r.json();
+ if(!j.ok)throw new Error(j.error||'API error');
+ return j.data;
 }
 function remote(action,payload={}){
  if(!S.live||!accessToken)return;
  if(action==='createFormTemplate')return;
  const vals=[payload.id,payload.templateId,payload.staffId].filter(Boolean);
- if(vals.some(v=>!isServerId(v)))return; // เรคคอร์ดท้องถิ่นไม่ซิงก์
+ if(vals.some(v=>!isServerId(v)))return;
  api(action,payload).catch(e=>toast('ซิงก์ไม่สำเร็จ: '+e.message,{type:'warn'}));
 }
 
-/* ---------- sync ---------- */
 async function syncPublic(){
  if(!S.live||S.syncing)return;
  S.syncing=true;
  try{
   const [tps,logo]=await Promise.all([api('getPublicFormTemplates',{},false),api('getHeaderLogo',{},false)]);
   if(Array.isArray(tps)&&tps.length){
-   DB.templates=tps.map(t=>{const ex=tpl(t.id);return {id:t.id,name:t.name,description:t.description||'',department:DB.deptMap[t.id]||(ex&&ex.department)||'—',is_active:true,created_at:t.created_at||new Date().toISOString(),updated_at:t.created_at||new Date().toISOString(),fields:(t.fields||[]).map(norm)}});
+   DB.templates=tps.map(t=>{const ex=tpl(t.id);
+    return {id:t.id,name:t.name,description:t.description||'',department:DB.deptMap[t.id]||(ex&&ex.department)||'—',
+     is_active:true,created_at:t.created_at||new Date().toISOString(),updated_at:t.created_at||new Date().toISOString(),
+     fields:(t.fields&&t.fields.length)?t.fields.map(norm):((ex&&ex.fields)||[])}});
   }
   DB.logo=(logo&&logo.logo)||DB.logo||null;
   persist();
  }catch(e){}
  S.syncing=false;
 }
-/* B-04: ขนาน + B-05: รวมคำขอของฉัน + B-18: คง department ท้องถิ่น */
 async function syncAdmin(){
  if(!S.live||!accessToken)return;
  S.syncing=true;
@@ -229,10 +224,8 @@ async function syncAdmin(){
     if(ex&&ex.department&&ex.department!=='—')DB.deptMap[t.id]=ex.department;
     return {id:t.id,name:t.name,description:t.description||'',
      department:DB.deptMap[t.id]||(ex&&ex.department)||t.department||'—',
-     is_active:t.is_active===true,
-     created_at:t.created_at||new Date().toISOString(),
-     updated_at:t.updated_at||new Date().toISOString(),
-     fields:(ex&&ex.fields)||[]};});
+     is_active:t.is_active===true,created_at:t.created_at||new Date().toISOString(),
+     updated_at:t.updated_at||new Date().toISOString(),fields:(ex&&ex.fields)||[]}});
    persist();
   }
   const logo=await api('getHeaderLogo');DB.logo=(logo&&logo.logo)||DB.logo||null;
@@ -246,7 +239,7 @@ async function syncAdmin(){
      department:(s.data&&s.data.department)||'',status:s.status,created_at:s.created_at,
      archived_at:s.archived_at||null,reviewed_at:s.reviewed_at||null,reviewed_by:s.reviewed_by||null,
      referenceId:s.referenceId,data:s.data||{}})));
-    if(full&&full.fields)t.fields=full.fields.map(norm);
+    if(full&&full.fields&&full.fields.length)t.fields=full.fields.map(norm);
    }catch(e){}
   }));
   try{
@@ -265,11 +258,10 @@ async function syncAdmin(){
    }
   }catch(e){}
   persist();paintCounts();
- }catch(e){toast('ซิงก์ข้อมูลผู้ดูแลไม่สำเร็จ — แสดงข้อมูลในเครื่อง',{type:'warn'})}
+ }catch(e){toast('ซิงก์ข้อมูลผู้ดูแลไม่สำเร็จ: '+e.message,{type:'warn'})}
  S.syncing=false;
 }
 
-/* ---------- prefs / shell ---------- */
 function applyPrefs(){
  document.documentElement.dataset.theme=DB.prefs.theme;
  document.documentElement.dataset.density=DB.prefs.density;
@@ -288,7 +280,7 @@ function applyPrefs(){
 function setShell(sh){
  S.shell=sh;DB.prefs.shell=sh;persist();applyPrefs();
  if(sh==='admin'){history.replaceState(null,'','#/admin');go(S._lastAdminSec||'forms')}
- else{history.replaceState(null,'',pubHash());routePublic()}
+ else{history.replaceState(null,'','#/');showPubView('home');renderPubHome()}
 }
 function paintBell(){const un=DB.activity.filter(a=>!a.read).length;$('#bellDot').hidden=un===0}
 function paintCounts(){
@@ -303,10 +295,9 @@ function paintCounts(){
  $('#quotaHint').textContent=m?`เป้าหมาย 60 ฉบับ · ${Math.round(m/60*100)}%`:'ยังไม่มีคำขอใน 30 วัน';
 }
 
-/* ---------- A4 engine ---------- */
 function norm(f){const n=(v,d)=>{const x=Number(v);return isFinite(x)?x:d};
  let o=f.options;if(typeof o==='string'){try{o=JSON.parse(o)}catch(e){o=o.split(',').map(s=>s.trim()).filter(Boolean)}}
- return Object.assign({},f,{options:Array.isArray(o)?o.map(String):[],pos_x:n(f.pos_x,15),pos_y:n(f.pos_y,20),width:n(f.width,70),height:n(f.height,8),font_size:n(f.font_size,14)});}
+ return Object.assign({},f,{options:Array.isArray(o)?o.map(String):[],pos_x:n(f.pos_x,15),pos_y:n(f.pos_y,20),width:n(f.width,70),height:n(f.height,8),font_size:n(f.font_size,14)})}
 function fieldEl(f,mode,data,pfx){
  const el=document.createElement('div');
  el.className='cf ft-'+f.field_type+(mode==='fill'&&f.required?' req':'');
@@ -430,7 +421,6 @@ function csv(rows,name){
  toast('ส่งออก '+name+' แล้ว',{type:'ok'});
 }
 
-/* ---------- modal / drawer ---------- */
 function modal(title,body,foot){
  $('#modalTitle').textContent=title;$('#modalBody').innerHTML=body;$('#modalFoot').innerHTML=foot||'';
  $('#modalScrim').hidden=false;
@@ -451,10 +441,7 @@ function closeDrawer(){$('#drawer').hidden=true;$('#drawerScrim').hidden=true;dr
  if(_lastFocus&&document.contains(_lastFocus))_lastFocus.focus();_lastFocus=null}
 $('#drawerClose').onclick=closeDrawer;$('#drawerScrim').onclick=closeDrawer;
 
-/* ============================================================
-   PUBLIC SHELL
-   ============================================================ */
-function pubHash(){return {home:'#/',forms:'#/forms',status:'#/status',fill:'#/fill/'+(S.fill.tpl||'')}[S.pubView]||'#/'}
+/* ============ PUBLIC ============ */
 function showPubView(v){
  S.pubView=v;
  $$('.pub-view').forEach(s=>s.classList.toggle('active',s.id==={home:'pvHome',forms:'pvForms',fill:'pvFill',ok:'pvOk',status:'pvStatus'}[v]));
@@ -466,18 +453,17 @@ function pubCard(t,i){
  <div class="card-top"><h3>${esc(t.name)}</h3><span class="pill on">เปิดรับ</span></div>
  <p>${esc(t.description||'')}</p>
  <div class="thumb" data-t="${t.id}"><span class="thumb-tag">A4</span><div class="thumb-c"></div></div>
- <div class="card-meta"><span>${esc(t.department||'—')}</span><span>${t.fields.filter(f=>INP.includes(f.field_type)).length} ช่องกรอก</span></div>
+ <div class="card-meta"><span>${esc(t.department||'—')}</span><span>${(t.fields||[]).filter(f=>INP.includes(f.field_type)).length} ช่องกรอก</span></div>
  <div class="card-acts"><button class="btn pri" data-fill="${t.id}">${ic('edit',13)}กรอกออนไลน์</button>
  <button class="btn" data-pview="${t.id}">${ic('eye',13)}ดูตัวอย่าง</button></div></article>`;
 }
-/* B-06: thumb cache key = ลายเซ็นฟิลด์ */
 function paintThumbs(scope){
  requestAnimationFrame(()=>$$('.thumb',scope||document).forEach(t=>{
   const c=$('.thumb-c',t),t0=tpl(t.dataset.t);if(!c||!t0)return;
-  const key=t0.fields.length+':'+(t0.updated_at||'');
+  const key=(t0.fields||[]).length+':'+(t0.updated_at||'');
   if(c.dataset.done===key)return;
   c.innerHTML='';c.dataset.done=key;
-  t0.fields.map(norm).forEach(f=>c.appendChild(fieldEl(f,'print',{})));
+  (t0.fields||[]).map(norm).forEach(f=>c.appendChild(fieldEl(f,'print',{})));
   c.style.transform=`scale(${t.clientWidth/(PW*MM)})`;
  }));
 }
@@ -496,26 +482,38 @@ function renderPubForms(){
   `<div class="empty"><div class="em-ico">${ic('search',26)}</div><h3>ไม่พบฟอร์มที่ค้น</h3><p>ลองเปลี่ยนคำค้นใหม่</p></div>`;
  paintThumbs($('#pvForms'));
 }
-/* B-01/B-12/B-16: สลับเปลือกอัตโนมัติ + กัน hash ว่าง */
+let _fillBusy=false;
 async function openPubFill(id){
  if(!id){showPubView('home');renderPubHome();history.replaceState(null,'','#/');return}
- if(S.shell!=='public')setShell('public');
- let t=tpl(id);
- if((!t||!t.fields.length)&&S.live){
-  try{const r=await api('getPublicFormTemplate',{id},false);t={id:r.id,name:r.name,description:r.description||'',department:DB.deptMap[id]||'—',is_active:true,fields:(r.fields||[]).map(norm)}}catch(e){}
- }
- if(!t||!t.fields.length)return toast('ไม่พบแบบฟอร์มนี้',{type:'warn'});
- S.fill={tpl:t.id,fields:t.fields.map(norm)};
- $('#fillTitle').textContent=t.name;
- $('#fillDesc').textContent=t.description||'';
- $('#fillName').value='';$('#fillCid').value='';
- showPubView('fill');
- history.replaceState(null,'','#/fill/'+id);
- const c=paintCanvas('#fillCanvas',S.fill.fields,'fill');
- requestAnimationFrame(()=>zoomTo(c,fitOf($('#fillWrap'))));
+ if(_fillBusy)return;
+ _fillBusy=true;
+ try{
+  if(S.shell!=='public'){S.shell='public';DB.prefs.shell='public';persist();applyPrefs()}
+  let t=tpl(id);
+  if((!t||!t.fields||!t.fields.length)&&S.live){
+   try{
+    const r=await api('getPublicFormTemplate',{id},false);
+    t={id:r.id,name:r.name,description:r.description||'',department:DB.deptMap[id]||'—',is_active:true,
+     created_at:r.created_at||new Date().toISOString(),updated_at:new Date().toISOString(),fields:(r.fields||[]).map(norm)};
+    const i=DB.templates.findIndex(x=>x.id===id);
+    if(i>=0)DB.templates[i]=t;else DB.templates.push(t);
+    persist();
+   }catch(e){toast('โหลดฟอร์มไม่สำเร็จ: '+e.message,{type:'bad'});return}
+  }
+  if(!t){toast('ไม่พบแบบฟอร์มนี้ในรายการ',{type:'warn'});return}
+  if(!t.fields||!t.fields.length){toast('ฟอร์มนี้ยังไม่มีฟิลด์ — เปิด “ออกแบบฟอร์ม” เพื่อเพิ่มฟิลด์ก่อน',{type:'warn'});return}
+  S.fill={tpl:t.id,fields:t.fields.map(norm)};
+  $('#fillTitle').textContent=t.name;
+  $('#fillDesc').textContent=t.description||'';
+  $('#fillName').value='';$('#fillCid').value='';
+  showPubView('fill');
+  history.replaceState(null,'','#/fill/'+id);
+  const c=paintCanvas('#fillCanvas',S.fill.fields,'fill');
+  requestAnimationFrame(()=>zoomTo(c,fitOf($('#fillWrap'))));
+ }finally{_fillBusy=false}
 }
 function previewPub(id){
- const t=tpl(id);if(!t)return;
+ const t=tpl(id);if(!t||!(t.fields||[]).length)return toast('ยังไม่มีฟิลด์ให้แสดงตัวอย่าง',{type:'warn'});
  openDrawer('ตัวอย่างฟอร์ม',t.name,
   `<div class="mini-a4" id="pvA4" style="aspect-ratio:210/297"><div class="sc"></div></div>`,
   `<button class="btn pri" data-pv="fill">${ic('edit')}กรอกออนไลน์</button>`,{kind:'pv',id});
@@ -537,19 +535,17 @@ async function submitFill(){
  const btn=$('#fillSend');btn.disabled=true;
  try{
   let res;
-  if(S.live){res=await api('submitFormAnonymous',{templateId:S.fill.tpl,formData:data,citizenId:cid,fullName:name},false)}
-  else{res={id:uid('sub_'),referenceId:ref(uid('123456'))}}
+  if(S.live)res=await api('submitFormAnonymous',{templateId:S.fill.tpl,formData:data,citizenId:cid,fullName:name},false);
+  else res={id:uid('sub_'),referenceId:ref(uid('123456'))};
   const t=tpl(S.fill.tpl);
   S.lastSub={id:res.id,referenceId:res.referenceId||ref(res.id),cid,templateId:S.fill.tpl,templateName:t?t.name:'',fields:S.fill.fields,data};
-  /* B-02: เก็บ _cid + B-07: อัปเดตตัวนับทันที */
   DB.submissions.unshift({id:res.id,_cid:cid,template_id:S.fill.tpl,template_name:t?t.name:'',submitted_by_name:name,
    department:data.department||'',status:'SUBMITTED',created_at:new Date().toISOString(),archived_at:null,
    reviewed_at:null,reviewed_by:null,referenceId:res.referenceId,data});
   persist();paintCounts();
   $('#okTplName').textContent=(t?t.name:'')+' · ส่งเมื่อ '+fdate(new Date().toISOString());
   $('#okRef').textContent=res.referenceId||ref(res.id);
-  showPubView('ok');
-  history.replaceState(null,'','#/');
+  showPubView('ok');history.replaceState(null,'','#/');
   logAct('คำขอใหม่ #'+(res.referenceId||ref(res.id))+' — '+(t?t.name:''),'info');
  }catch(e){toast(err(e),{type:'bad'})}
  finally{btn.disabled=false}
@@ -591,15 +587,18 @@ async function openStatusDoc(id,cid){
 }
 function routePublic(){
  const h=location.hash||'#/';
- if(h.startsWith('#/fill/')){openPubFill(h.slice(6));return}
+ if(h.startsWith('#/fill/')){const id=h.slice(6);if(id){openPubFill(id);return}}
  if(h.startsWith('#/forms')){showPubView('forms');renderPubForms();return}
  if(h.startsWith('#/status')){showPubView('status');return}
  showPubView('home');renderPubHome();
 }
 $('#pubNav').onclick=e=>{const b=e.target.closest('[data-pnav]');if(!b)return;
- const v=b.dataset.pnav;showPubView(v);history.replaceState(null,'',pubHash());
+ const v=b.dataset.pnav;showPubView(v);history.replaceState(null,'','#/'+(v==='home'?'':v));
  if(v==='home')renderPubHome();if(v==='forms')renderPubForms();};
 $('#pubMain').onclick=e=>{
+ const nav=e.target.closest('[data-pnav]');
+ if(nav){const v=nav.dataset.pnav;showPubView(v);history.replaceState(null,'','#/'+(v==='home'?'':v));
+  if(v==='home')renderPubHome();if(v==='forms')renderPubForms();return}
  const fill=e.target.closest('[data-fill]'),pv=e.target.closest('[data-pview]'),
        sv=e.target.closest('[data-st-view]'),sp=e.target.closest('[data-st-print]');
  if(fill){openPubFill(fill.dataset.fill);return}
@@ -619,9 +618,7 @@ $('#okHome').onclick=()=>{showPubView('home');renderPubHome();history.replaceSta
 $('#stSearch').onclick=()=>lookupStatus($('#stCid').value.trim());
 $('#stCid').onkeydown=e=>{if(e.key==='Enter')lookupStatus($('#stCid').value.trim())};
 
-/* ============================================================
-   LOGIN / SESSION
-   ============================================================ */
+/* ============ LOGIN ============ */
 function openLogin(){$('#loginScrim').hidden=false;setTimeout(()=>$('#lgEmail').focus(),40)}
 function closeLogin(){$('#loginScrim').hidden=true}
 $$('[data-close-login]').forEach(b=>b.onclick=closeLogin);
@@ -632,7 +629,7 @@ $('#lgPass').onkeydown=e=>{if(e.key==='Enter')doLogin()};
 async function doLogin(){
  const email=$('#lgEmail').value.trim(),pass=$('#lgPass').value;
  if(!email||!pass)return toast('กรุณากรอกอีเมลและรหัสผ่าน',{type:'warn'});
- const b=$('#lgGo');b.disabled=true;
+ const b=$('#lgGo');b.disabled=true;const old=b.textContent;b.textContent='กำลังเข้าสู่ระบบ…';
  try{
   const r=await api('loginWithPassword',{email,password:pass},false);
   accessToken=r.accessToken;
@@ -643,8 +640,8 @@ async function doLogin(){
   toast('ยินดีต้อนรับ '+S.meName,{type:'ok'});
   logAct('เข้าสู่ระบบผู้ดูแล '+S.meName,'ok');
   enterAdmin();
- }catch(e){toast(err(e),{type:'bad'})}
- finally{b.disabled=false}
+ }catch(e){toast('เข้าสู่ระบบไม่สำเร็จ: '+err(e),{type:'bad'})}
+ finally{b.disabled=false;b.textContent=old}
 }
 async function restoreSession(){
  if(!accessToken)return false;
@@ -653,7 +650,7 @@ async function restoreSession(){
   S.meName=s.fullName||'ผู้ดูแลระบบ';S.meRole=s.role||'ADMIN';
   $('#userName').textContent=S.meName;
   return true;
- }catch(e){accessToken=null;try{localStorage.removeItem('access_token')}catch(x){};return false}
+ }catch(e){return false}
 }
 function enterAdmin(){
  if(!accessToken){openLogin();return}
@@ -669,9 +666,7 @@ $('#logoutBtn').onclick=()=>{
 };
 $('#goPublicBtn').onclick=()=>setShell('public');
 
-/* ============================================================
-   ADMIN CONSOLE
-   ============================================================ */
+/* ============ ADMIN ============ */
 const SECS={forms:['คลังแบบฟอร์ม','จัดการแม่แบบทั้งหมดของโรงพยาบาล','forms'],
  builder:['ออกแบบฟอร์ม','วางฟิลด์บนกระดาษ A4 แล้วเผยแพร่ให้ผู้ใช้กรอก','builder'],
  inbox:['กล่องคำขอ','ตรวจพิจารณา อนุมัติ และจัดเก็บคำขอถาวร','inbox'],
@@ -681,7 +676,7 @@ const SECS={forms:['คลังแบบฟอร์ม','จัดการแ
 function go(sec){
  if(!SECS[sec])return;
  if(S.shell!=='admin'){enterAdmin();return}
- if(S.sec===sec&&$('#view').dataset.sec===sec){return}
+ if(S.sec===sec&&$('#view').dataset.sec===sec)return;
  if(S.sec==='builder'&&S.b.dirty&&sec!=='builder'){
   if(!confirm('มีการแก้ไขแบบฟอร์มที่ยังไม่บันทึก ต้องการออกหรือไม่?'))return;
  }
@@ -702,7 +697,6 @@ function render(){
 const head=(k,acts)=>`<div class="sec-head"><div class="sec-title"><h1>${esc(SECS[k][0])}</h1><p>${esc(SECS[k][1])}</p></div><div class="sec-actions">${acts||''}</div></div>`;
 const emptyBox=(iconName,title,desc,btn)=>`<div class="empty"><div class="em-ico">${ic(iconName,26)}</div><h3>${esc(title)}</h3><p>${esc(desc)}</p>${btn||''}</div>`;
 
-/* ============ FORMS ============ */
 function vForms(v){
  const f=S.forms;
  let list=DB.templates.filter(t=>{
@@ -735,12 +729,12 @@ function vForms(v){
   const a=e.target.closest('[data-a]'),row=e.target.closest('[data-id]');
   if(a){const k=a.dataset.a,id=a.dataset.id||row?.dataset.id;
    if(k==='new')return newForm();
-   if(k==='csv')return csv([['ชื่อฟอร์ม','หน่วยงาน','สถานะ','ฟิลด์','คำขอ','แก้ไขล่าสุด'],...list.map(t=>[t.name,t.department,t.is_active?'เปิดใช้งาน':'ฉบับร่าง',t.fields.length,DB.submissions.filter(s=>s.template_id===t.id).length,fdate(t.updated_at)])],'dontum-forms.csv');
+   if(k==='csv')return csv([['ชื่อฟอร์ม','หน่วยงาน','สถานะ','ฟิลด์','คำขอ','แก้ไขล่าสุด'],...list.map(t=>[t.name,t.department,t.is_active?'เปิดใช้งาน':'ฉบับร่าง',(t.fields||[]).length,DB.submissions.filter(s=>s.template_id===t.id).length,fdate(t.updated_at)])],'dontum-forms.csv');
    if(k==='fav'){f.fav=!f.fav;return render()}
    if(k==='grid'||k==='list'){f.view=k;return render()}
    if(k==='star'){const i=DB.favorites.indexOf(id);i<0?DB.favorites.push(id):DB.favorites.splice(i,1);persist();return render()}
    if(k==='edit'){S.b.id=null;return openBuilder(id)}
-   if(k==='fill'){return openPubFill(id)}
+   if(k==='fill')return openPubFill(id);
    if(k==='dup')return dupForm(id);
    if(k==='dl')return dlForm(id);
    if(k==='pub')return togglePub(id);
@@ -757,7 +751,7 @@ function formCards(list){
    <div class="card-top"><h3>${esc(t.name)}</h3><button class="star${DB.favorites.includes(t.id)?' on':''}" data-a="star" data-id="${t.id}" title="รายการโปรด">${ic('star',15)}</button></div>
    <p>${esc(t.description)}</p>
    <div class="thumb" data-t="${t.id}"><span class="thumb-tag">A4</span><div class="thumb-c"></div></div>
-   <div class="card-meta"><span>${t.fields.length} ฟิลด์</span><span>${n} คำขอ</span><span>${ago(t.updated_at)}</span></div>
+   <div class="card-meta"><span>${(t.fields||[]).length} ฟิลด์</span><span>${n} คำขอ</span><span>${ago(t.updated_at)}</span></div>
    <span class="pill ${t.is_active?'on':'off'}">${t.is_active?'เปิดใช้งาน':'ฉบับร่าง'}</span>
    <div class="card-acts">
      <button class="btn sm pri" data-a="fill" data-id="${t.id}">${ic('edit',13)}กรอก</button>
@@ -775,7 +769,7 @@ function formTable(list){
   return `<tr data-id="${t.id}">
    <td><button class="star${DB.favorites.includes(t.id)?' on':''}" data-a="star" data-id="${t.id}">${ic('star',14)}</button></td>
    <td><b>${esc(t.name)}</b><br><small style="color:var(--text3)">${esc(t.description)}</small></td>
-   <td>${esc(t.department)}</td><td class="num">${t.fields.length}</td><td class="num">${n}</td>
+   <td>${esc(t.department)}</td><td class="num">${(t.fields||[]).length}</td><td class="num">${n}</td>
    <td><span class="pill ${t.is_active?'on':'off'}">${t.is_active?'เปิดใช้งาน':'ฉบับร่าง'}</span></td>
    <td class="num">${ago(t.updated_at)}</td>
    <td class="acts">
@@ -792,7 +786,7 @@ function newForm(){
   `<div class="fld"><label>ชื่อฟอร์ม *</label><input id="nfName" placeholder="เช่น แบบฟอร์มขอใช้ห้องประชุม" maxlength="120"></div>
    <div class="fld"><label>คำอธิบาย</label><textarea id="nfDesc" placeholder="อธิบายวัตถุประสงค์ของแบบฟอร์มนี้"></textarea></div>
    <div class="fld"><label>หน่วยงานเจ้าของ</label><select id="nfDept">${DEPTS.map(d=>`<option>${esc(d)}</option>`).join('')}</select></div>
-   <div class="fld"><label>เริ่มจาก</label><select id="nfBase"><option value="blank">กระดาษเปล่า</option><option value="std">โครงร่างมาตรฐาน (หัวเรื่อง / ผู้ยื่น / รายละเอียด / ลายเซ็น)</option>${DB.templates.map(t=>`<option value="${t.id}">คัดลอกจาก: ${esc(t.name)}</option>`).join('')}</select></div>`,
+   <div class="fld"><label>เริ่มจาก</label><select id="nfBase"><option value="std">โครงร่างมาตรฐาน (หัวเรื่อง / ผู้ยื่น / รายละเอียด / ลายเซ็น)</option><option value="blank">กระดาษเปล่า</option>${DB.templates.map(t=>`<option value="${t.id}">คัดลอกจาก: ${esc(t.name)}</option>`).join('')}</select></div>`,
   `<button class="btn" data-close-modal>ยกเลิก</button><button class="btn pri" id="nfGo">${ic('plus')}สร้างและออกแบบ</button>`);
  $$('[data-close-modal]',$('#modalScrim')).forEach(b=>b.onclick=closeModal);
  $('#nfName').focus();
@@ -801,7 +795,7 @@ function newForm(){
   const base=$('#nfBase').value;
   let fields=[];
   if(base==='std')fields=baseFields(name);
-  else if(base!=='blank'){const s=tpl(base);if(s)fields=JSON.parse(JSON.stringify(s.fields)).map(f=>{f.id=tmpId('f_');return f})}
+  else if(base!=='blank'){const s=tpl(base);if(s)fields=JSON.parse(JSON.stringify(s.fields||[])).map(f=>{f.id=tmpId('f_');return f})}
   const t={id:uid('tpl_'),name,description:$('#nfDesc').value.trim(),department:$('#nfDept').value,
    is_active:false,created_at:new Date().toISOString(),updated_at:new Date().toISOString(),fields};
   DB.deptMap[t.id]=t.department;
@@ -810,19 +804,17 @@ function newForm(){
   openBuilder(t.id);
  };
 }
-/* B-03: ไม่ยิง duplicate ซ้ำบนเซิร์ฟเวอร์ (สำเนาท้องถิ่นจะอัปโหลดตอนบันทึก) */
 function dupForm(id){
  const s=tpl(id);if(!s)return;
  const t=JSON.parse(JSON.stringify(s));
  t.id=uid('tpl_');t.name=s.name+' (สำเนา)';t.is_active=false;
  t.created_at=t.updated_at=new Date().toISOString();
- t.fields=t.fields.map(f=>{f.id=tmpId('f_');return f});
+ t.fields=(t.fields||[]).map(f=>{f.id=tmpId('f_');return f});
  DB.templates.unshift(t);persist();render();
  logAct('คัดลอกฟอร์ม “'+s.name+'”','ok');
- toast('คัดลอก “'+t.name+'” พร้อม '+t.fields.length+' ฟิลด์ (อยู่ในเครื่องจนกว่าจะบันทึก)',{type:'ok',
+ toast('คัดลอก “'+t.name+'” แล้ว (อยู่ในเครื่องจนกว่าจะบันทึก)',{type:'ok',
   undo:()=>{DB.templates=DB.templates.filter(x=>x.id!==t.id);persist();render();toast('ยกเลิกการคัดลอกแล้ว')}});
 }
-/* B-15: ชัดเจนว่า undo กู้เฉพาะในเครื่อง */
 function delForm(id){
  const i=DB.templates.findIndex(t=>t.id===id);if(i<0)return;
  const t=DB.templates[i],n=DB.submissions.filter(s=>s.template_id===id).length;
@@ -834,12 +826,13 @@ function delForm(id){
 function togglePub(id){
  const t=tpl(id);if(!t)return;t.is_active=!t.is_active;t.updated_at=new Date().toISOString();persist();render();
  remote('publishFormTemplate',{id});
- toast(t.is_active?'เผยแพร่ “'+t.name+'” ให้ผู้ใช้กรอกแล้ว':'ปิดรับคำขอ “'+t.name+'”',{type:t.is_active?'ok':'warn'});
+ toast(t.is_active?'เผยแพร่ “'+t.name+'” แล้ว':'ปิดรับคำขอ “'+t.name+'”',{type:t.is_active?'ok':'warn'});
 }
 function dlForm(id){
  const t=tpl(id);if(!t)return;
+ if(!(t.fields||[]).length)return toast('ฟอร์มนี้ยังไม่มีฟิลด์ให้ดาวน์โหลด',{type:'warn'});
  modal('ดาวน์โหลดแบบฟอร์ม',
-  `<p style="font-size:13px;color:var(--text2);margin-bottom:14px">แบบฟอร์มเปล่าขนาด A4 (210 × 297 มม.) พร้อมพิมพ์หรือส่งต่อให้ผู้อื่นกรอกด้วยมือ</p>
+  `<p style="font-size:13px;color:var(--text2);margin-bottom:14px">แบบฟอร์มเปล่าขนาด A4 (210 × 297 มม.)</p>
    <div class="fld"><label>ชื่อไฟล์</label><input id="dlName" value="${esc(fname(t.name))}_blank"></div>`,
   `<button class="btn" data-close-modal>ยกเลิก</button>
    <button class="btn" id="dlPdf">${ic('print')}บันทึกเป็น PDF</button>
@@ -855,20 +848,17 @@ function formDrawer(id){
   `<dl class="kv">
   <dt>หน่วยงาน</dt><dd>${esc(t.department)}</dd>
   <dt>สถานะ</dt><dd><span class="pill ${t.is_active?'on':'off'}">${t.is_active?'เปิดรับคำขอ':'ฉบับร่าง'}</span></dd>
-  <dt>จำนวนฟิลด์</dt><dd>${t.fields.length} ฟิลด์ (${t.fields.filter(f=>f.required).length} จำเป็น)</dd>
+  <dt>จำนวนฟิลด์</dt><dd>${(t.fields||[]).length} ฟิลด์</dd>
   <dt>คำขอทั้งหมด</dt><dd>${subs.length} รายการ</dd>
-  <dt>สร้างเมื่อ</dt><dd>${fdate(t.created_at)}</dd>
   <dt>แก้ไขล่าสุด</dt><dd>${fdate(t.updated_at)}</dd></dl>
-  <div class="d-sec">ตัวอย่างเอกสาร A4</div><div class="mini-a4" id="dThumb" style="aspect-ratio:210/297"><div class="sc"></div></div>
-  <div class="d-sec">รายการฟิลด์</div>
-  ${t.fields.map(f=>`<div class="fval"><span>${esc(f.label||FTL[f.field_type])}</span><b>${esc(FTL[f.field_type])}${f.required?' · จำเป็น':''}</b></div>`).join('')}`,
+  <div class="d-sec">ตัวอย่างเอกสาร A4</div><div class="mini-a4" id="dThumb" style="aspect-ratio:210/297"><div class="sc"></div></div>`,
   `<button class="btn pri" data-d="fill">${ic('edit')}กรอกฟอร์ม</button>
    <button class="btn" data-d="edit">${ic('builder')}ออกแบบ</button>
    <button class="btn" data-d="dup">${ic('copy')}คัดลอก</button>
    <button class="btn" data-d="dl">${ic('dl')}ดาวน์โหลด</button>
    <button class="btn ${t.is_active?'':'ok'}" data-d="pub">${ic(t.is_active?'lock':'check')}${t.is_active?'ปิดรับ':'เผยแพร่'}</button>`,{kind:'form',id});
  requestAnimationFrame(()=>{const w=$('#dThumb');if(!w)return;const c=$('.sc',w);
-  t.fields.map(norm).forEach(f=>c.appendChild(fieldEl(f,'print',{})));
+  (t.fields||[]).map(norm).forEach(f=>c.appendChild(fieldEl(f,'print',{})));
   c.style.transform=`scale(${w.clientWidth/(PW*MM)})`});
  $('#drawerFoot').onclick=e=>{const b=e.target.closest('[data-d]');if(!b)return;closeDrawer();
   ({fill:()=>openPubFill(id),edit:()=>openBuilder(id),dup:()=>dupForm(id),dl:()=>dlForm(id),pub:()=>togglePub(id)})[b.dataset.d]()};
@@ -878,15 +868,16 @@ function formDrawer(id){
 function openBuilder(id){
  const t=tpl(id);if(!t)return;
  if(S.shell!=='admin'){enterAdmin();return}
- S.b={id,fields:JSON.parse(JSON.stringify(t.fields)).map(norm),deleted:[],sel:null,zoom:S.b.zoom||.72,grid:S.b.grid,snap:S.b.snap,dirty:false,undo:[],redo:[],saving:false};
- go('builder');
+ S.b={id,fields:JSON.parse(JSON.stringify(t.fields||[])).map(norm),deleted:[],sel:null,
+  zoom:S.b.zoom||.72,grid:S.b.grid,snap:S.b.snap,dirty:false,undo:[],redo:[],saving:false};
+ S.sec=null;go('builder');
 }
 function vBuilder(v){
  if(!S.b.id){
   v.innerHTML=head('builder',`<button class="btn pri" data-a="new">${ic('plus')}สร้างฟอร์มใหม่</button>`)+
    `<div class="grid">${DB.templates.map((t,i)=>`<article class="card" data-open="${t.id}" style="animation-delay:${i*35}ms">
     <div class="card-top"><h3>${esc(t.name)}</h3><span class="pill ${t.is_active?'on':'off'}">${t.is_active?'ใช้งาน':'ร่าง'}</span></div>
-    <p>${esc(t.description)}</p><div class="card-meta"><span>${t.fields.length} ฟิลด์</span><span>${ago(t.updated_at)}</span></div>
+    <p>${esc(t.description)}</p><div class="card-meta"><span>${(t.fields||[]).length} ฟิลด์</span><span>${ago(t.updated_at)}</span></div>
     <div class="card-acts"><button class="btn sm pri" data-open="${t.id}">${ic('builder',13)}เปิดออกแบบ</button>
     <button class="btn sm" data-a="dup" data-id="${t.id}">${ic('copy',13)}คัดลอก</button></div></article>`).join('')}</div>`;
   v.onclick=e=>{const o=e.target.closest('[data-open]'),a=e.target.closest('[data-a]');
@@ -896,7 +887,7 @@ function vBuilder(v){
   return;
  }
  const t=tpl(S.b.id),b=S.b;
- v.innerHTML=`<div class="sec-head"><div class="sec-title"><h1>${esc(t.name)}</h1><p>ลากฟิลด์จากซ้ายมาวาง · ดับเบิลคลิกแก้ข้อความ · Ctrl+S บันทึก · Ctrl+Z ย้อน</p></div>
+ v.innerHTML=`<div class="sec-head"><div class="sec-title"><h1>${esc(t.name)}</h1><p>ลากฟิลด์มาวาง · ดับเบิลคลิกแก้ข้อความ · Ctrl+S บันทึก · Ctrl+Z ย้อน</p></div>
   <div class="sec-actions">
    <span class="save-state ${b.dirty?'dirty':'saved'}" id="saveState">${ic(b.dirty?'clock':'check',13)}${b.dirty?'ยังไม่บันทึก':'บันทึกแล้ว'}</span>
    <button class="btn" data-b="preview">${ic('eye')}ดูตัวอย่าง</button>
@@ -915,7 +906,7 @@ function vBuilder(v){
     <input class="bld-name" id="bName" value="${esc(t.name)}">
     <label class="tgl"><input type="checkbox" id="bPub"${t.is_active?' checked':''}>เปิดรับคำขอ</label>
     <label class="tgl"><input type="checkbox" id="bGrid"${b.grid?' checked':''}>เส้นตาราง</label>
-    <label class="tgl"><input type="checkbox" id="bSnap"${b.snap?' checked':''}>.snap 0.5 มม.</label>
+    <label class="tgl"><input type="checkbox" id="bSnap"${b.snap?' checked':''}>snap 0.5 มม.</label>
     <span class="sp"></span>
     <button class="btn sm icon" data-b="undo" title="ย้อนกลับ (Ctrl+Z)"${b.undo.length?'':' disabled'}>${ic('undo',14)}</button>
     <button class="btn sm icon" data-b="redo" title="ทำซ้ำ (Ctrl+Shift+Z)"${b.redo.length?'':' disabled'}>${ic('redo',14)}</button>
@@ -928,7 +919,7 @@ function vBuilder(v){
   </div>
   <div class="bld-col">
    <div class="panel" style="flex:1"><div class="panel-h">${ic('edit',14)}<b>คุณสมบัติฟิลด์</b></div>
-    <div class="panel-b" id="props">${b.sel?propHTML(b.fields.find(f=>f.id===b.sel)):'<p style="font-size:12.5px;color:var(--text3);padding:6px">เลือกฟิลด์บนกระดาษหรือจากรายการลำดับชั้นเพื่อแก้ไขคุณสมบัติ</p>'}</div>
+    <div class="panel-b" id="props">${b.sel?propHTML(b.fields.find(f=>f.id===b.sel)):'<p style="font-size:12.5px;color:var(--text3);padding:6px">เลือกฟิลด์บนกระดาษหรือจากรายการลำดับชั้น</p>'}</div>
     ${b.sel?`<div class="pacts">
       <button class="btn sm" data-b="undo">${ic('undo',13)}ย้อนกลับ</button>
       <button class="btn sm" data-b="redo">${ic('redo',13)}ทำซ้ำ</button>
@@ -953,7 +944,6 @@ function decorateCanvas(){
   g.addEventListener('pointerdown',resizeStart);
  });
 }
-/* repaint เฉพาะกระดาษ+ลำดับชั้น (ไม่แตะ input → โฟกัสไม่หาย) */
 function repaintCanvas(){
  const b=S.b;
  paintCanvas('#canvas',b.fields,'design');
@@ -993,7 +983,7 @@ function bindBuilder(){
   if(!bt)return;
   const k=bt.dataset.b;
   if(k==='save')saveBuilder();
-  else if(k==='close'){if(b.dirty&&!confirm('ยังไม่ได้บันทึก ต้องการปิดหรือไม่?'))return;S.b.id=null;render()}
+  else if(k==='close'){if(b.dirty&&!confirm('ยังไม่ได้บันทึก ต้องการปิดหรือไม่?'))return;S.b.id=null;S.sec=null;go('builder')}
   else if(k==='undo')doUndo();
   else if(k==='redo')doRedo();
   else if(k==='zi'){b.zoom=clamp(b.zoom+.1,.25,1.6);zoomTo($('#canvas'),b.zoom);$('#zLbl').textContent=Math.round(b.zoom*100)+'%'}
@@ -1028,21 +1018,18 @@ function doRedo(){const b=S.b;if(!b.redo.length)return;b.undo.push(JSON.stringif
  if(b.sel&&!b.fields.some(f=>f.id===b.sel))b.sel=null;
  markDirty();repaintCanvas();refreshProps();updateUndoUI()}
 function updateUndoUI(){
- const u=$('[data-b="undo"]'),r=$('[data-b="redo"]');
- if(u)u.disabled=!S.b.undo.length;
- if(r)r.disabled=!S.b.redo.length;
+ $$('[data-b="undo"]').forEach(u=>u.disabled=!S.b.undo.length);
+ $$('[data-b="redo"]').forEach(r=>r.disabled=!S.b.redo.length);
 }
 function markDirty(){S.b.dirty=true;const s=$('#saveState');if(s){s.className='save-state dirty';s.innerHTML=ic('clock',13)+'ยังไม่บันทึก'}autoSave()}
-/* B-17: ข้าม autosave เมื่อโฟกัสยังพิมพ์ค้างอยู่ในช่องชื่อ/คุณสมบัติ */
 const autoSave=debounce(()=>{
- if(!S.b.dirty||!S.b.id)return;
+ if(!S.b.dirty||!S.b.id||S.b.saving)return;
  const ae=document.activeElement;
- if(ae&&(ae.id==='bName'||ae.closest&&ae.closest('#props,.bld-bar')))return;
+ if(ae&&(ae.id==='bName'||(ae.closest&&ae.closest('#props,.bld-bar'))))return;
  saveBuilder(true);
 },2200);
-/* แก้ 22P02 + สวม UUID + deletedIds + ไม่ render ทับโฟกัส */
 async function saveBuilder(auto){
- const b=S.b,t=tpl(b.id);if(!t)return;
+ const b=S.b,t=tpl(b.id);if(!t||b.saving)return;
  const seen={};
  for(const f of b.fields){
   if(!f.name){toast('มีฟิลด์ที่ยังไม่มีชื่อ (name)',{type:'warn'});return}
@@ -1050,12 +1037,18 @@ async function saveBuilder(auto){
   seen[f.name]=1;
   if(OPT.includes(f.field_type)&&!f.options.length){toast('ฟิลด์ “'+f.label+'” ต้องมีตัวเลือกอย่างน้อย 1 ข้อ',{type:'warn'});selectField(f.id);return}
  }
- t.fields=JSON.parse(JSON.stringify(b.fields));t.updated_at=new Date().toISOString();
- b.dirty=false;b.undo=[];b.redo=[];persist();
- const s=$('#saveState');if(s){s.className='save-state saved';s.innerHTML=ic('check',13)+'บันทึกแล้ว'}
- updateUndoUI();
- if(S.live&&accessToken){
-  try{
+ b.saving=true;
+ const st=$('#saveState');
+ if(st){st.className='save-state saving';st.innerHTML=ic('clock',13)+'กำลังบันทึก…'}
+ const sendIds=[];
+ const sendFields=b.fields.map((f,i)=>{
+  if(isServerId(f.id)){sendIds[i]=f.id;return Object.assign({},f)}
+  const sid='tmp_'+String(f.id).replace(/[^a-zA-Z0-9]/g,'')+'x'+i;
+  sendIds[i]=sid;return Object.assign({},f,{id:sid});
+ });
+ t.fields=JSON.parse(JSON.stringify(b.fields));t.updated_at=new Date().toISOString();persist();
+ try{
+  if(S.live&&accessToken){
    let tid=t.id;
    if(!isServerId(tid)){
     const created=await api('createFormTemplate',{data:{name:t.name,description:t.description}});
@@ -1068,20 +1061,23 @@ async function saveBuilder(auto){
    }
    const res=await api('saveFormLayout',{templateId:tid,
     meta:{name:t.name,description:t.description,is_active:t.is_active},
-    fields:t.fields,deletedIds:b.deleted.filter(isServerId)});
+    fields:sendFields,deletedIds:b.deleted.filter(isServerId)});
    const map=(res&&res.idMap)||{};
-   if(Object.keys(map).length){
-    const remap=f=>{if(map[f.id]){if(b.sel===f.id)b.sel=map[f.id];f.id=map[f.id]}return f};
-    t.fields.forEach(remap);b.fields=t.fields.map(x=>Object.assign({},x));
-    b.fields.forEach((f,i)=>{f.id=t.fields[i].id});
-    repaintCanvas();refreshProps();
-   }
-   b.deleted=[];persist();
+   b.fields.forEach((f,i)=>{const nid=map[sendIds[i]];if(nid){if(b.sel===f.id)b.sel=nid;f.id=nid}});
+   t.fields=JSON.parse(JSON.stringify(b.fields));
+   b.deleted=[];
    if(!auto)toast('บันทึก “'+t.name+'” ขึ้นเซิร์ฟเวอร์แล้ว',{type:'ok'});
-  }catch(e){toast('ซิงก์ไม่สำเร็จ: '+e.message,{type:'warn'})}
- }else if(!auto){
-  toast('บันทึก “'+t.name+'” แล้ว (อยู่ในเครื่อง)',{type:'ok'});
- }
+  }else if(!auto){
+   toast('บันทึก “'+t.name+'” แล้ว (อยู่ในเครื่อง)',{type:'ok'});
+  }
+  b.dirty=false;b.undo=[];b.redo=[];persist();
+  if(st){st.className='save-state saved';st.innerHTML=ic('check',13)+'บันทึกแล้ว'}
+  updateUndoUI();repaintCanvas();refreshProps();
+ }catch(e){
+  b.dirty=true;
+  if(st){st.className='save-state dirty';st.innerHTML=ic('warn',13)+'บันทึกไม่สำเร็จ'}
+  toast('บันทึกไม่สำเร็จ: '+e.message,{type:'bad'});
+ }finally{b.saving=false}
  paintCounts();
 }
 function addField(type,x,y,center){
@@ -1107,9 +1103,10 @@ function selectField(id){S.b.sel=id;refreshProps();paintSel();$$('.layer').forEa
 function paintSel(){$$('#canvas .cf').forEach(e=>e.classList.toggle('on',e.dataset.fid===S.b.sel))}
 function refreshProps(){
  const b=S.b,f=b.fields.find(x=>x.id===b.sel);
- $('#props').innerHTML=f?propHTML(f):'<p style="font-size:12.5px;color:var(--text3);padding:6px">เลือกฟิลด์เพื่อแก้ไขคุณสมบัติ</p>';
- const p=$('.pacts');if(p)p.style.display=f?'grid':'none';
- $('#props').oninput=$('#props').onchange=propChange;
+ const p=$('#props');if(!p)return;
+ p.innerHTML=f?propHTML(f):'<p style="font-size:12.5px;color:var(--text3);padding:6px">เลือกฟิลด์เพื่อแก้ไขคุณสมบัติ</p>';
+ const pa=$('.pacts');if(pa)pa.style.display=f?'grid':'none';
+ p.oninput=p.onchange=propChange;
 }
 function propHTML(f){
  if(!f)return'';
@@ -1163,7 +1160,7 @@ function propChange(e){
 function removeField(id){
  const b=S.b,i=b.fields.findIndex(f=>f.id===id);if(i<0)return;
  const [f]=b.fields.splice(i,1);
- if(isServerId(id))b.deleted.push(id);   // ส่งลบจริงบนเซิร์ฟเวอร์ตอนบันทึก
+ if(isServerId(id))b.deleted.push(id);
  if(b.sel===id)b.sel=null;
  pushUndo();markDirty();repaintCanvas();refreshProps();
  toast('ลบฟิลด์ “'+(f.label||FTL[f.field_type])+'”',{type:'bad',
@@ -1261,7 +1258,7 @@ function vInbox(v){
    <button class="btn" data-i="saveview">${ic('bolt')}บันทึกมุมมอง</button>`)+
  `<div class="stats">
    <div class="stat s1"><span>รอตรวจสอบ</span><b>${cnt('SUBMITTED')}</b><i>ต้องดำเนินการ</i></div>
-   <div class="stat s2"><span>อนุมัติแล้ว</span><b>${cnt('APPROVED')}</b><i>เดือนนี้</i></div>
+   <div class="stat s2"><span>อนุมัติแล้ว</span><b>${cnt('APPROVED')}</b><i>ทั้งหมด</i></div>
    <div class="stat s3"><span>ไม่อนุมัติ</span><b>${cnt('REJECTED')}</b><i>ส่งกลับแก้ไข</i></div>
    <div class="stat s4"><span>เก็บถาวร</span><b>${cnt('ARCHIVED')}</b><i>ซ่อนจากกล่องหลัก</i></div>
    <div class="stat s5"><span>ทั้งหมด</span><b>${DB.submissions.length}</b><i>ทุกสถานะ</i></div>
@@ -1278,10 +1275,9 @@ function vInbox(v){
  </div>
  ${list.length?`<div class="tbl-wrap"><div class="tbl-scroll"><table><thead><tr>
    <th style="width:36px"><input type="checkbox" class="cbx" id="selAll"></th>
-   <th>เลขอ้างอิง</th><th>ผู้ยื่น</th><th>แบบฟอร์ม</th>
-   <th>สถานะ</th><th>ส่งเมื่อ</th><th></th></tr></thead>
+   <th>เลขอ้างอิง</th><th>ผู้ยื่น</th><th>แบบฟอร์ม</th><th>สถานะ</th><th>ส่งเมื่อ</th><th></th></tr></thead>
    <tbody>${list.map(s=>`<tr data-sid="${s.id}" class="${f.sel.has(s.id)?'sel':''}">
-    <td><input type="checkbox" class="cbx rowcb" data-cb="${s.id}"${f.sel.has(s.id)?' checked':''}></td>
+    <td><input type="checkbox" class="cbx" data-cb="${s.id}"${f.sel.has(s.id)?' checked':''}></td>
     <td><span class="ref" data-copy="${refOf(s)}" title="คลิกเพื่อคัดลอก">#${refOf(s)}</span></td>
     <td><div class="who"><span class="av" style="${avStyle(s.submitted_by_name)}">${esc(s.submitted_by_name.replace(/^(นาย|นาง|นางสาว)/,'').trim()[0]||'?')}</span>
       <div><b>${esc(s.submitted_by_name)}</b><small>${esc(s.department||'')}</small></div></div></td>
@@ -1308,15 +1304,15 @@ function vInbox(v){
  const sa=$('#selAll');if(sa)sa.onchange=e=>{list.forEach(s=>e.target.checked?f.sel.add(s.id):f.sel.delete(s.id));render()};
  v.onclick=e=>{
   const st=e.target.closest('[data-st]'),cp=e.target.closest('[data-copy]'),ia=e.target.closest('[data-ia]'),
-        bk=e.target.closest('[data-bulk]'),gi=e.target.closest('[data-i]'),sv=e.target.closest('[data-sv]'),svx=e.target.closest('[data-svx]'),
-        cb=e.target.closest('[data-cb]'),row=e.target.closest('[data-sid]');
+        bk=e.target.closest('[data-bulk]'),gi=e.target.closest('[data-i]'),sv=e.target.closest('[data-sv]'),
+        svx=e.target.closest('[data-svx]'),cb=e.target.closest('[data-cb]'),row=e.target.closest('[data-sid]');
   if(svx){DB.savedViews=DB.savedViews.filter(x=>x.id!==svx.dataset.svx);persist();return render()}
   if(sv){const x=DB.savedViews.find(y=>y.id===sv.dataset.sv);Object.assign(f,x.state,{sel:new Set()});return render()}
-  if(cb){cb.dataset.cb&&(f.sel.has(cb.dataset.cb)?f.sel.delete(cb.dataset.cb):f.sel.add(cb.dataset.cb));return render()}
+  if(cb){const id=cb.dataset.cb;f.sel.has(id)?f.sel.delete(id):f.sel.add(id);return render()}
   if(cp){navigator.clipboard?.writeText(cp.dataset.copy);return toast('คัดลอกเลขอ้างอิง #'+cp.dataset.copy,{type:'ok'})}
   if(st){f.status=st.dataset.st;f.sel.clear();return render()}
   if(gi){const k=gi.dataset.i;
-   if(k==='sync'){syncAdmin().then(()=>{render();toast('ซิงก์ข้อมูลล่าสุดแล้ว',{type:'ok'})});return}
+   if(k==='sync'){toast('กำลังซิงก์…',{type:'info',ms:1500});syncAdmin().then(()=>{render();toast('ซิงก์ข้อมูลล่าสุดแล้ว',{type:'ok'})});return}
    if(k==='csv')return csv([['เลขอ้างอิง','ผู้ยื่น','หน่วยงาน','แบบฟอร์ม','สถานะ','ส่งเมื่อ','เก็บถาวร'],
     ...list.map(s=>['#'+refOf(s),s.submitted_by_name,s.department||'',s.template_name,s.archived_at?'คลังถาวร':ST[s.status],fdate(s.created_at),s.archived_at?fdate(s.archived_at):''])],'dontum-submissions.csv');
    if(k==='saveview')return saveView();
@@ -1335,7 +1331,7 @@ function vInbox(v){
 }
 function saveView(){
  modal('บันทึกมุมมองปัจจุบัน',
-  `<p style="font-size:13px;color:var(--text2);margin-bottom:12px">บันทึกชุดตัวกรอง (แบบฟอร์ม · สถานะ · คำค้น · การเรียง) ไว้เรียกใช้ซ้ำด้วยคลิกเดียว</p>
+  `<p style="font-size:13px;color:var(--text2);margin-bottom:12px">บันทึกชุดตัวกรองไว้เรียกใช้ซ้ำด้วยคลิกเดียว</p>
    <div class="fld"><label>ชื่อมุมมอง</label><input id="svName" placeholder="เช่น รอตรวจ — งานพัสดุ"></div>`,
   `<button class="btn" data-close-modal>ยกเลิก</button><button class="btn pri" id="svGo">${ic('bolt')}บันทึก</button>`);
  $$('[data-close-modal]',$('#modalScrim')).forEach(b=>b.onclick=closeModal);
@@ -1372,16 +1368,17 @@ function setArch(ids,on){
   undo:()=>{before.forEach(b=>{const s=sub(b.id);if(s)s.archived_at=b.prev});persist();render();toast('ย้อนกลับแล้ว')}});
 }
 function printSub(id){
- const s=sub(id),t=tpl(s?.template_id);if(!s||!t)return toast('ไม่พบแบบฟอร์มต้นฉบับ',{type:'warn'});
+ const s=sub(id),t=tpl(s?.template_id);
+ if(!s||!t||!(t.fields||[]).length)return toast('ไม่พบฟิลด์ของแบบฟอร์มต้นฉบับ — กดซิงก์ข้อมูลก่อน',{type:'warn'});
  printSheet(t.fields,s.data,t.name+' · #'+refOf(s));
 }
 function subDrawer(id){
  const s=sub(id);if(!s)return;const t=tpl(s.template_id);
  const tl=[{c:'',t:'ยื่นคำขอเข้าระบบ',at:s.created_at}];
- if(s.reviewed_at)tl.push({c:s.status==='APPROVED'?'ok':'bad',t:s.status==='APPROVED'?'อนุมัติโดย '+s.reviewed_by:'ไม่อนุมัติโดย '+s.reviewed_by,at:s.reviewed_at});
+ if(s.reviewed_at)tl.push({c:s.status==='APPROVED'?'ok':'bad',t:(s.status==='APPROVED'?'อนุมัติโดย ':'ไม่อนุมัติโดย ')+(s.reviewed_by||'ผู้ดูแล'),at:s.reviewed_at});
  if(s.archived_at)tl.push({c:'arch',t:'เก็บเข้าคลังถาวร',at:s.archived_at});
  const vals=t?Object.entries(s.data||{}).filter(([k])=>!k.startsWith('_')).map(([k,v])=>{
-  const f=t.fields.find(x=>x.name===k);return `<div class="fval"><span>${esc(f?.label||k)}</span><b>${esc(v||'—')}</b></div>`}).join(''):'';
+  const f=(t.fields||[]).find(x=>x.name===k);return `<div class="fval"><span>${esc(f?.label||k)}</span><b>${esc(v||'—')}</b></div>`}).join(''):'';
  openDrawer('คำขอ #'+refOf(s),s.template_name,
   `<dl class="kv">
    <dt>ผู้ยื่น</dt><dd>${esc(s.submitted_by_name)}</dd>
@@ -1391,26 +1388,26 @@ function subDrawer(id){
    <dt>ส่งเมื่อ</dt><dd>${fdate(s.created_at)}</dd></dl>
    <div class="d-sec">ลำดับเหตุการณ์</div><div class="tline">${tl.map(x=>`<div class="tl ${x.c}"><b>${esc(x.t)}</b><small>${fdate(x.at)}</small></div>`).join('')}</div>
    <div class="d-sec">ข้อมูลที่กรอก</div>${vals||'<p style="font-size:12.5px;color:var(--text3)">ไม่มีข้อมูล</p>'}
-   ${t?`<div class="d-sec">เอกสาร A4</div><div class="mini-a4" id="dA4" style="aspect-ratio:210/297"><div class="sc"></div></div>`:''}`,
+   ${(t&&(t.fields||[]).length)?`<div class="d-sec">เอกสาร A4</div><div class="mini-a4" id="dA4" style="aspect-ratio:210/297"><div class="sc"></div></div>`:''}`,
   `${s.status==='SUBMITTED'&&!s.archived_at?`<button class="btn ok" data-s="ok">${ic('check')}อนุมัติ</button><button class="btn bad" data-s="no">${ic('x')}ไม่อนุมัติ</button>`:''}
    <button class="btn pri" data-s="print">${ic('print')}พิมพ์ A4</button>
    <button class="btn" data-s="dl">${ic('dl')}ดาวน์โหลด</button>
    <button class="btn arch" data-s="arch">${ic(s.archived_at?'undo':'arch')}${s.archived_at?'คืนจากคลัง':'เก็บถาวร'}</button>`,{kind:'sub',id});
  requestAnimationFrame(()=>{const w=$('#dA4');if(!w||!t)return;const c=$('.sc',w);
-  t.fields.map(norm).forEach(f=>c.appendChild(fieldEl(f,'print',s.data)));
+  (t.fields||[]).map(norm).forEach(f=>c.appendChild(fieldEl(f,'print',s.data)));
   c.style.transform=`scale(${w.clientWidth/(PW*MM)})`});
  $('#drawerBody').onclick=e=>{const c=e.target.closest('[data-copy]');if(c){navigator.clipboard?.writeText(c.dataset.copy);toast('คัดลอกแล้ว',{type:'ok'})}};
  $('#drawerFoot').onclick=e=>{const b=e.target.closest('[data-s]');if(!b)return;const k=b.dataset.s;
   if(k==='ok'||k==='no'){setStatus([id],k==='ok'?'APPROVED':'REJECTED');closeDrawer()}
-  else if(k==='print'){printSub(id)}
-  else if(k==='dl'){if(!t)return;download(sheetHTML(t.fields,s.data,t.name+' #'+refOf(s),false),fname(t.name)+'_'+refOf(s)+'.html');toast('ดาวน์โหลดเอกสารแล้ว',{type:'ok'})}
+  else if(k==='print')printSub(id);
+  else if(k==='dl'){if(!t||!(t.fields||[]).length)return toast('ไม่มีฟิลด์ให้ดาวน์โหลด',{type:'warn'});
+   download(sheetHTML(t.fields,s.data,t.name+' #'+refOf(s),false),fname(t.name)+'_'+refOf(s)+'.html');toast('ดาวน์โหลดเอกสารแล้ว',{type:'ok'})}
   else if(k==='arch'){setArch([id],!s.archived_at);closeDrawer()}};
 }
 
 /* ============ MINE ============ */
 function vMine(v){
- const f=S.mine;
- const me=S.meName||'ผู้ดูแลระบบ';
+ const f=S.mine,me=S.meName||'ผู้ดูแลระบบ';
  const list=DB.submissions.filter(s=>{
   if(s.submitted_by_name!==me)return false;
   if(f.status!=='all'&&s.status!==f.status)return false;
@@ -1423,10 +1420,9 @@ function vMine(v){
    <div class="card-top"><h3>${esc(s.template_name)}</h3></div>
    <div class="card-meta"><span class="ref" data-copy="${refOf(s)}">#${refOf(s)}</span><span>${ago(s.created_at)}</span></div>
    <span class="pill ${s.archived_at?'arch':s.status}">${s.archived_at?'คลังถาวร':ST[s.status]}</span>
-   <p style="margin-top:9px">${esc(s.submitted_by_name)}</p>
    <div class="card-acts"><button class="btn sm" data-m="view" data-id="${s.id}">${ic('eye',13)}รายละเอียด</button>
    <button class="btn sm" data-m="print" data-id="${s.id}">${ic('print',13)}พิมพ์</button></div></article>`).join('')}</div>`
-  :emptyBox('mine','ยังไม่มีคำขอในนามบัญชีนี้','ยื่นคำขอใหม่หรือสลับไปกล่องคำขอเพื่อดูทั้งหมด','<button class="btn pri" data-m="new">'+ic('plus')+'ยื่นคำขอใหม่</button>')}`;
+  :emptyBox('mine','ยังไม่มีคำขอในนามบัญชีนี้','ยื่นคำขอใหม่หรือดูทั้งหมดที่กล่องคำขอ','<button class="btn pri" data-m="new">'+ic('plus')+'ยื่นคำขอใหม่</button>')}`;
  $('#mq').oninput=debounce(e=>{f.q=e.target.value;render();$('#mq').focus()},220);
  $('#mst').onchange=e=>{f.status=e.target.value;render()};
  v.onclick=e=>{const m=e.target.closest('[data-m]'),c=e.target.closest('[data-copy]'),card=e.target.closest('[data-mid]');
@@ -1471,7 +1467,7 @@ function vStaff(v){
      <button class="btn sm ${s.is_active?'bad':'ok'}" data-t="toggle" data-id="${s.id}">${ic(s.is_active?'lock':'check',13)}${s.is_active?'ระงับ':'เปิดใช้'}</button>
      <button class="btn sm icon bad" data-t="del" data-id="${s.id}" title="ลบออกจากทะเบียน">${ic('trash',13)}</button></td>
    </tr>`).join('')}</tbody></table></div></div>`
-  :emptyBox('users','ไม่พบบุคลากร','ลองเปลี่ยนคำค้นหรือตัวกรองหน่วยงาน หรือเพิ่มบุคลากรใหม่','<button class="btn pri" data-t="add">'+ic('plus')+'เพิ่มบุคลากร</button>')}
+  :emptyBox('users','ไม่พบบุคลากร','ลองเปลี่ยนคำค้นหรือเพิ่มบุคลากรใหม่','<button class="btn pri" data-t="add">'+ic('plus')+'เพิ่มบุคลากร</button>')}
  ${f.sel.size?`<div class="bulk"><b>${f.sel.size}</b><span>คนที่เลือก</span><span class="sp"></span>
    <button class="btn sm" data-tb="on">${ic('check',13)}เปิดสิทธิ์</button>
    <button class="btn sm" data-tb="off">${ic('lock',13)}ระงับสิทธิ์</button>
@@ -1514,19 +1510,19 @@ function delStaff(ids){
  if(!targets.length)return;
  const names=targets.map(t=>t.full_name);
  modal('ลบบุคลากรออกจากทะเบียน',
-  `<p style="font-size:13.5px">ต้องการลบ <b>${targets.length}</b> รายชื่อออกจากทะเบียนบุคลากรใช่หรือไม่</p>
+  `<p style="font-size:13.5px">ต้องการลบ <b>${targets.length}</b> รายชื่อใช่หรือไม่</p>
    <div style="max-height:170px;overflow:auto;margin:11px 0;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface2)">
      ${names.map(n=>`<div style="font-size:12.5px;padding:3px 0;display:flex;gap:7px;align-items:center">${ic('users',13)}<span>${esc(n)}</span></div>`).join('')}
    </div>
-   <p style="font-size:11.5px;color:var(--text3)">การลบนี้สามารถกู้คืนได้จากปุ่ม “เลิกทำ” ในแถบแจ้ง${S.live?' · หมายเหตุ: API ยังไม่มีคำสั่งลบบุคลากรโดยตรง จึงมีผลกับทะเบียนในคอนโซลนี้':''}</p>`,
+   <p style="font-size:11.5px;color:var(--text3)">กู้คืนได้จากปุ่ม “เลิกทำ” ในแถบแจ้ง</p>`,
   `<button class="btn" data-close-modal>ยกเลิก</button><button class="btn bad" id="delGo">${ic('trash',14)}ลบออกจากทะเบียน</button>`);
  $$('[data-close-modal]',$('#modalScrim')).forEach(b=>b.onclick=closeModal);
  $('#delGo').onclick=()=>{
   const snap=targets.map(t=>({item:t,idx:DB.staff.indexOf(t)}));
   DB.staff=DB.staff.filter(s=>!ids.includes(s.id));
   S.staff.sel.clear();persist();closeModal();render();
-  logAct('ลบบุคลากร '+targets.length+' คน: '+names.slice(0,3).join(', ')+(names.length>3?' และอื่น ๆ':''),'bad');
-  toast('ลบ '+targets.length+' รายชื่อออกจากทะเบียนแล้ว',{type:'bad',undo:()=>{
+  logAct('ลบบุคลากร '+targets.length+' คน','bad');
+  toast('ลบ '+targets.length+' รายชื่อแล้ว',{type:'bad',undo:()=>{
    snap.sort((a,b)=>a.idx-b.idx).forEach(o=>DB.staff.splice(Math.min(o.idx,DB.staff.length),0,o.item));
    persist();render();toast('กู้คืนรายชื่อแล้ว',{type:'ok'});
   }});
@@ -1587,14 +1583,14 @@ function vBrand(v){
     <div class="drop" id="drop" style="margin-top:12px">
       <div style="color:var(--accent);margin-bottom:8px">${ic('image',26)}</div>
       <b style="font-size:13.5px">ลากรูปมาวางที่นี่</b>
-      <p style="font-size:12px;color:var(--text2);margin:5px 0 11px">PNG · JPG · SVG · WebP — ไม่เกิน 40 KB<br>แนะนำภาพสี่เหลี่ยมจัตุรัสพื้นโปร่งใส</p>
+      <p style="font-size:12px;color:var(--text2);margin:5px 0 11px">PNG · JPG · SVG · WebP — ไม่เกิน 40 KB</p>
       <button class="btn pri sm" id="pick">${ic('image',13)}เลือกไฟล์จากเครื่อง</button>
     </div>
     ${l?`<button class="btn bad" style="width:100%;margin-top:10px" id="rmLogo">${ic('trash',13)}ลบตราสัญลักษณ์</button>`:''}
    </div>
    <div>
     <div class="panel"><div class="panel-h">${ic('eye',14)}<b>ตัวอย่างการใช้งาน</b></div><div class="panel-b">
-     ${[[56,'หัวเว็บ (Topbar)','แสดงมุมซ้ายบนทุกหน้า'],[40,'ปุ่มย่อเมนู','ขนาดกลาง'],[28,'หัวเอกสาร A4','แทรกในแบบฟอร์ม'],[16,'Favicon','แท็บเบราว์เซอร์']].map(([s,t,d])=>
+     ${[[56,'หัวเว็บ (Topbar)','มุมซ้ายบนทุกหน้า'],[40,'ปุ่มย่อเมนู','ขนาดกลาง'],[28,'หัวเอกสาร A4','แทรกในแบบฟอร์ม'],[16,'Favicon','แท็บเบราว์เซอร์']].map(([s,t,d])=>
       `<div class="size-row"><div class="box" style="width:${s}px;height:${s}px">${l?`<img src="${l}">`:`<span style="font-size:${s*.5}px;font-weight:800;color:var(--text3)">ด</span>`}</div>
        <div><b>${t}</b><small>${d} · ${s}×${s} px</small></div></div>`).join('')}
     </div></div>
@@ -1602,7 +1598,7 @@ function vBrand(v){
      ${l?`<dl class="kv" style="margin:0"><dt>ชนิด</dt><dd>${esc((l.match(/^data:([^;]+)/)||[])[1]||'image')}</dd>
       <dt>ขนาดโดยประมาณ</dt><dd>${(l.length*.75/1024).toFixed(1)} KB</dd>
       <dt>สถานะ</dt><dd><span class="pill on">ใช้งานอยู่</span></dd></dl>`
-      :'<p style="font-size:12.5px;color:var(--text3)">ยังไม่มีตราสัญลักษณ์ — ระบบใช้ตัวอักษร “ด” แทนชั่วคราว</p>'}
+      :'<p style="font-size:12.5px;color:var(--text3)">ยังไม่มีตราสัญลักษณ์ — ใช้ตัวอักษร “ด” แทนชั่วคราว</p>'}
     </div></div>
    </div>
  </div>`;
@@ -1622,7 +1618,7 @@ function readLogo(file){
  const r=new FileReader();
  r.onload=e=>{
   const target=$('#logoFile').dataset.target;
-  if(target==='field'){const f=S.b.fields.find(x=>x.id===S.b.sel);if(f){pushUndo();f.value=e.target.result;markDirty();repaintCanvas();toast('ใส่โลโก้ในฟิลด์แล้ว',{type:'ok'})}}
+  if(target==='field'){const f=S.b.fields.find(x=>x.id===S.b.sel);if(f){pushUndo();f.value=e.target.result;markDirty();repaintCanvas();refreshProps();toast('ใส่โลโก้ในฟิลด์แล้ว',{type:'ok'})}}
   else{const old=DB.logo;DB.logo=e.target.result;persist();applyPrefs();render();logAct('เปลี่ยนตราสัญลักษณ์โรงพยาบาล','ok');
    toast('อัปเดตตราสัญลักษณ์แล้ว',{type:'ok',undo:()=>{DB.logo=old;persist();applyPrefs();render()}});remote('uploadHeaderLogo',{base64Data:e.target.result})}
  };
@@ -1634,27 +1630,28 @@ $('#logoFile').onchange=e=>{const f=e.target.files[0];if(f)readLogo(f);e.target.
 function commands(){
  const c=[];
  if(S.shell==='admin'){
-  Object.entries(SECS).forEach(([k,x])=>c.push({g:'ไปยังหน้า',t:x[0],s:x[1],i:x[2],run:()=>go(k)}));
-  c.push({g:'สร้าง',t:'สร้างฟอร์มใหม่',s:'เริ่มจากกระดาษเปล่าหรือโครงมาตรฐาน',i:'plus',run:newForm});
+  Object.entries(SECS).forEach(([k,x])=>c.push({g:'ไปยังหน้า',t:x[0],s:x[1],i:x[2],run:()=>{S.sec=null;go(k)}}));
+  c.push({g:'สร้าง',t:'สร้างฟอร์มใหม่',s:'โครงมาตรฐานหรือกระดาษเปล่า',i:'plus',run:newForm});
   c.push({g:'สร้าง',t:'เพิ่มบุคลากร',s:'ลงทะเบียนผู้ใช้ใหม่',i:'users',run:addStaff});
-  c.push({g:'สร้าง',t:'บันทึกมุมมองกล่องคำขอ',s:'เก็บชุดตัวกรองไว้ใช้ซ้ำ',i:'bolt',run:()=>{go('inbox');saveView()}});
-  c.push({g:'มุมมอง',t:'คำขอรอตรวจสอบทั้งหมด',s:'กรองเฉพาะสถานะรอตรวจ',i:'clock',run:()=>{S.inbox.status='SUBMITTED';S.inbox.sel.clear();go('inbox')}});
-  c.push({g:'มุมมอง',t:'คลังคำขอถาวร',s:'รายการที่เก็บถาวรแล้ว',i:'arch',run:()=>{S.inbox.status='ARCHIVED';go('inbox')}});
-  c.push({g:'มุมมอง',t:'ฟอร์มที่ยังไม่เผยแพร่',s:'ฉบับร่างทั้งหมด',i:'lock',run:()=>{S.forms.status='draft';go('forms')}});
+  c.push({g:'สร้าง',t:'บันทึกมุมมองกล่องคำขอ',s:'เก็บชุดตัวกรองไว้ใช้ซ้ำ',i:'bolt',run:()=>{S.sec=null;go('inbox');saveView()}});
+  c.push({g:'มุมมอง',t:'คำขอรอตรวจสอบทั้งหมด',s:'กรองเฉพาะสถานะรอตรวจ',i:'clock',run:()=>{S.inbox.status='SUBMITTED';S.inbox.sel.clear();S.sec=null;go('inbox')}});
+  c.push({g:'มุมมอง',t:'คลังคำขอถาวร',s:'รายการที่เก็บถาวรแล้ว',i:'arch',run:()=>{S.inbox.status='ARCHIVED';S.sec=null;go('inbox')}});
+  c.push({g:'มุมมอง',t:'ฟอร์มที่ยังไม่เผยแพร่',s:'ฉบับร่างทั้งหมด',i:'lock',run:()=>{S.forms.status='draft';S.sec=null;go('forms')}});
   c.push({g:'ส่งออก',t:'ส่งออกคำขอเป็น CSV',s:'ตามตัวกรองปัจจุบัน',i:'csv',run:()=>csv([['เลขอ้างอิง','ผู้ยื่น','แบบฟอร์ม','สถานะ','ส่งเมื่อ'],...inboxList().map(s=>['#'+refOf(s),s.submitted_by_name,s.template_name,ST[s.status],fdate(s.created_at)])],'dontum-submissions.csv')});
   c.push({g:'ส่งออก',t:'ส่งออกบุคลากรเป็น CSV',s:'ทะเบียนทั้งหมด',i:'csv',run:()=>csv([['ชื่อ','ตำแหน่ง','หน่วยงาน','สถานะ'],...DB.staff.map(s=>[s.full_name,s.position,s.department,s.is_active?'ปฏิบัติงาน':'ระงับสิทธิ์'])],'dontum-staff.csv')});
+  c.push({g:'ข้อมูล',t:'ซิงก์ข้อมูลจากเซิร์ฟเวอร์',s:'ดึงฟอร์ม/คำขอ/บุคลากรล่าสุด',i:'refresh',run:()=>{toast('กำลังซิงก์…',{type:'info',ms:1500});syncAdmin().then(()=>{render();toast('ซิงก์แล้ว',{type:'ok'})})}});
  }
- c.push({g:'สลับมุมมอง',t:'ไปหน้าสาธารณะ (มุมมองประชาชน)',s:'Hero + กรอกออนไลน์ + ตรวจสอบคำขอ',i:'globe',run:()=>setShell('public')});
+ c.push({g:'สลับมุมมอง',t:'ไปหน้าสาธารณะ',s:'มุมมองประชาชน',i:'globe',run:()=>setShell('public')});
  if(S.shell==='public')c.push({g:'สลับมุมมอง',t:'เข้าคอนโซลผู้ดูแล',s:'ต้องเข้าสู่ระบบ',i:'lock',run:enterAdmin});
  c.push({g:'ตั้งค่า',t:'สลับธีมมืด/สว่าง',s:'Ctrl+J',i:'moon',run:toggleTheme});
  c.push({g:'ตั้งค่า',t:'สลับความหนาแน่นตาราง',s:'สบายตา / กระชับ',i:'rows',run:toggleDensity});
- c.push({g:'ตั้งค่า',t:S.live?'ตัดการเชื่อมต่อ API':'เชื่อมต่อ API จริง',s:S.live?'กลับไปใช้ข้อมูลตัวอย่าง':'ซิงก์กับ Apps Script + Supabase',i:'bolt',run:toggleLive});
- c.push({g:'ตั้งค่า',t:'รีเซ็ตข้อมูลตัวอย่าง',s:'ล้างการแก้ไขในเครื่องกลับค่าเริ่มต้น',i:'refresh',run:resetData});
+ c.push({g:'ตั้งค่า',t:S.live?'ตัดการเชื่อมต่อ API':'เชื่อมต่อ API จริง',s:S.live?'ใช้ข้อมูลตัวอย่าง':'ซิงก์ Apps Script + Supabase',i:'bolt',run:toggleLive});
+ c.push({g:'ตั้งค่า',t:'รีเซ็ตข้อมูลตัวอย่าง',s:'ล้างการแก้ไขในเครื่อง',i:'refresh',run:resetData});
  c.push({g:'ช่วยเหลือ',t:'ดูคีย์ลัดทั้งหมด',s:'ปุ่ม ?',i:'help',run:showHelp});
  DB.templates.slice(0,20).forEach(t=>c.push({g:'แบบฟอร์ม',t:t.name,s:(t.is_active?'เปิดใช้งาน':'ฉบับร่าง')+' · '+t.department,i:'forms',run:()=>{S.shell==='admin'?formDrawer(t.id):openPubFill(t.id)}}));
  if(S.shell==='admin'){
-  DB.staff.slice(0,20).forEach(s=>c.push({g:'บุคลากร',t:s.full_name,s:s.position+' · '+s.department,i:'users',run:()=>{go('staff');staffDrawer(s.id)}}));
-  DB.submissions.slice(0,20).forEach(s=>c.push({g:'คำขอ',t:'#'+refOf(s)+' · '+s.submitted_by_name,s:s.template_name,i:'inbox',run:()=>{go('inbox');subDrawer(s.id)}}));
+  DB.staff.slice(0,20).forEach(s=>c.push({g:'บุคลากร',t:s.full_name,s:s.position+' · '+s.department,i:'users',run:()=>{S.sec=null;go('staff');staffDrawer(s.id)}}));
+  DB.submissions.slice(0,20).forEach(s=>c.push({g:'คำขอ',t:'#'+refOf(s)+' · '+s.submitted_by_name,s:s.template_name,i:'inbox',run:()=>{S.sec=null;go('inbox');subDrawer(s.id)}}));
  }
  return c;
 }
@@ -1673,7 +1670,7 @@ function paintPalette(){
  let html='',g='';
  items.forEach((c,i)=>{if(c.g!==g){g=c.g;html+=`<div class="pgroup">${esc(g)}</div>`}
   html+=`<div class="pitem${i===S.palette.idx?' cur':''}" data-pi="${i}"><span class="pi">${ic(c.i,15)}</span><b>${esc(c.t)}</b><small>${esc(c.s)}</small></div>`});
- $('#paletteList').innerHTML=html||'<div class="empty" style="margin:12px;padding:26px"><h3>ไม่พบคำสั่ง</h3><p>ลองคำอื่น เช่น “อนุมัติ”, “ส่งออก”, “บุคลากร”</p></div>';
+ $('#paletteList').innerHTML=html||'<div class="empty" style="margin:12px;padding:26px"><h3>ไม่พบคำสั่ง</h3><p>ลองคำอื่น เช่น “อนุมัติ”, “ซิงก์”, “บุคลากร”</p></div>';
  $$('.pitem').forEach(e=>e.onclick=()=>{const c=S.palette.items[+e.dataset.pi];closePalette();c?.run()});
  $('.pitem.cur')?.scrollIntoView({block:'nearest'});
 }
@@ -1686,11 +1683,11 @@ $('#paletteInput').onkeydown=e=>{
 $('#paletteScrim').onclick=e=>{if(e.target.id==='paletteScrim')closePalette()};
 $('#omniBtn').onclick=openPalette;
 
-/* ============ HELP / NOTIF / PREFS ============ */
-const SHORTCUTS=[['Ctrl + K','เปิดคำสั่งด่วน (คอนโซล)'],['/','โฟกัสช่องค้นหา'],['?','คีย์ลัดทั้งหมด'],
- ['Ctrl + J','สลับธีมมืด/สว่าง'],['Ctrl + B','ย่อ/ขยายเมนู'],['Alt + 1…6','สลับหน้าคอนโซล'],
- ['Ctrl + S','บันทึกแบบฟอร์ม (หน้าออกแบบ)'],['Ctrl + Z','ย้อนกลับ'],['Ctrl + Shift + Z','ทำซ้ำ'],
- ['Delete','ลบฟิลด์ที่เลือก (เมื่อไม่พิมพ์ข้อความ)'],['ลูกศร','เลื่อนฟิลด์ 0.5 มม.'],['Shift + ลูกศร','เลื่อนฟิลด์ 5 มม.'],
+/* ============ HELP / PREFS ============ */
+const SHORTCUTS=[['Ctrl + K','เปิดคำสั่งด่วน'],['/','โฟกัสช่องค้นหา'],['?','คีย์ลัดทั้งหมด'],
+ ['Ctrl + J','สลับธีม'],['Ctrl + B','ย่อ/ขยายเมนู'],['Alt + 1…6','สลับหน้าคอนโซล'],
+ ['Ctrl + S','บันทึกแบบฟอร์ม'],['Ctrl + Z','ย้อนกลับ'],['Ctrl + Shift + Z','ทำซ้ำ'],
+ ['Delete','ลบฟิลด์ (เมื่อไม่พิมพ์ข้อความ)'],['ลูกศร','เลื่อนฟิลด์ 0.5 มม.'],['Shift + ลูกศร','เลื่อน 5 มม.'],
  ['Ctrl + D','ทำสำเนาฟิลด์'],['Esc','ปิดหน้าต่าง/ลิ้นชัก'],['ดับเบิลคลิก','แก้ข้อความบนกระดาษ']];
 function showHelp(){
  $('#helpBody').innerHTML=`<div class="help-grid">${SHORTCUTS.map(([k,d])=>
@@ -1712,19 +1709,18 @@ function toggleTheme(){DB.prefs.theme=DB.prefs.theme==='dark'?'light':'dark';per
 function toggleDensity(){DB.prefs.density=DB.prefs.density==='compact'?'cozy':'compact';persist();applyPrefs();toast('ความหนาแน่น: '+(DB.prefs.density==='compact'?'กระชับ':'สบายตา'))}
 function toggleLive(){
  S.live=!S.live;applyPrefs();
- if(S.live){toast('กำลังเชื่อมต่อ API จริง…');syncPublic().then(()=>{
-   renderPubHome();renderPubForms();
+ if(S.live){toast('กำลังเชื่อมต่อ API จริง…',{type:'info',ms:1800});
+  syncPublic().then(()=>{renderPubHome();renderPubForms();
    if(S.shell==='admin')syncAdmin().then(render);
-   toast('เชื่อมต่อข้อมูลจริงแล้ว',{type:'ok'});
-  }).catch(()=>{})}
- else toast('กลับไปใช้ข้อมูลตัวอย่างในเครื่อง',{type:'info'});
+   toast('เชื่อมต่อข้อมูลจริงแล้ว',{type:'ok'});});
+ }else toast('กลับไปใช้ข้อมูลตัวอย่างในเครื่อง',{type:'info'});
 }
 function resetData(){
- modal('รีเซ็ตข้อมูลตัวอย่าง','<p style="font-size:13.5px">การกระทำนี้จะล้างการแก้ไขในเครื่อง (ฟอร์ม/คำขอ/บุคลากร/การตั้งค่าบางส่วน) กลับเป็นชุดเริ่มต้น</p><p style="font-size:12.5px;color:var(--text3);margin-top:8px">ข้อมูลบนเซิร์ฟจริง (Supabase) ไม่ได้รับผลกระทบ</p>',
+ modal('รีเซ็ตข้อมูลตัวอย่าง','<p style="font-size:13.5px">ล้างการแก้ไขในเครื่องกลับเป็นชุดเริ่มต้น</p><p style="font-size:12.5px;color:var(--text3);margin-top:8px">ข้อมูลบน Supabase ไม่ได้รับผลกระทบ</p>',
   '<button class="btn" data-close-modal>ยกเลิก</button><button class="btn bad" id="rsGo">'+ic('refresh')+'รีเซ็ตทั้งหมด</button>');
  $$('[data-close-modal]',$('#modalScrim')).forEach(b=>b.onclick=closeModal);
  $('#rsGo').onclick=()=>{const p=DB.prefs;DB=seed();DB.prefs=p;persist();closeModal();applyPrefs();
-  if(S.shell==='admin')go('forms');else routePublic();toast('รีเซ็ตข้อมูลตัวอย่างแล้ว',{type:'ok'})};
+  if(S.shell==='admin'){S.sec=null;go('forms')}else routePublic();toast('รีเซ็ตข้อมูลตัวอย่างแล้ว',{type:'ok'})};
 }
 $('#themeBtn').onclick=toggleTheme;
 $('#densityBtn').onclick=toggleDensity;
@@ -1743,7 +1739,6 @@ $('#okCopy').innerHTML=ic('copy',13);
 $('#pfSearchIco').innerHTML=ic('search',15);
 $('#logoutBtn').insertAdjacentHTML('afterbegin',ic('logout',14));
 
-/* preview modal for builder */
 const pv=document.createElement('div');
 pv.className='modal-scrim';pv.id='previewScrim';pv.hidden=true;
 pv.innerHTML=`<div class="modal" style="width:min(940px,96vw)"><header><h3>ตัวอย่างการกรอกจริง</h3><button class="ico-btn" id="pvClose">${ic('x')}</button></header>
@@ -1753,7 +1748,7 @@ document.body.appendChild(pv);
 $('#pvClose').onclick=$('#pvClose2').onclick=()=>pv.hidden=true;
 pv.onclick=e=>{if(e.target===pv)pv.hidden=true};
 
-/* ============ KEYBOARD (B-22: Delete ไม่กินกล่องขณะพิมพ์) ============ */
+/* ============ KEYBOARD ============ */
 const ORDER=['forms','builder','inbox','mine','staff','brand'];
 document.addEventListener('keydown',e=>{
  const tag=(e.target.tagName||'').toLowerCase();
@@ -1772,10 +1767,9 @@ document.addEventListener('keydown',e=>{
  }
  if(mod&&k==='j'){e.preventDefault();return toggleTheme()}
  if(mod&&k==='b'&&S.shell==='admin'){e.preventDefault();return $('#railToggle').click()}
- if(S.shell==='admin'&&e.altKey&&/^[1-6]$/.test(e.key)){e.preventDefault();return go(ORDER[+e.key-1])}
- /* B-11: '/' ในหน้าสาธารณะไปหน้าฟอร์มก่อนค่อยโฟกัส */
+ if(S.shell==='admin'&&e.altKey&&/^[1-6]$/.test(e.key)){e.preventDefault();S.sec=null;return go(ORDER[+e.key-1])}
  if(!typing&&k==='/'){e.preventDefault();
-  if(S.shell==='public'&&S.pubView!=='forms'){showPubView('forms');renderPubForms();}
+  if(S.shell==='public'&&S.pubView!=='forms'){showPubView('forms');renderPubForms()}
   const s=S.shell==='admin'?$('.search input',$('#view')):$('#pfSearch');
   if(s){s.focus();s.select()}return}
  if(!typing&&(e.key==='?'||(e.shiftKey&&k==='/'))){e.preventDefault();return showHelp()}
@@ -1787,7 +1781,7 @@ document.addEventListener('keydown',e=>{
  if(mod&&k==='d'){e.preventDefault();return dupField(S.b.sel)}
  if(k==='delete'||k==='backspace'){
   const ae=document.activeElement;
-  if(ae&&ae!==document.body&&ae.tagName!=='DIV')return; // โฟกัสค้างปุ่ม/อื่น → ไม่ลบฟิลด์
+  if(ae&&ae!==document.body&&ae.tagName!=='DIV')return;
   e.preventDefault();return removeField(S.b.sel);
  }
  const dir={arrowleft:[-1,0],arrowright:[1,0],arrowup:[0,-1],arrowdown:[0,1]}[k];
@@ -1826,11 +1820,9 @@ $('#main').addEventListener('scroll',()=>{
  if(hasSession)$('#userName').textContent=S.meName;
  const wantAdmin=(location.hash==='#/admin');
  if(wantAdmin&&hasSession){setShell('admin');syncAdmin().then(render)}
- else if(wantAdmin&&!hasSession){setShell('public');routePublic();openLogin()}
+ else if(wantAdmin&&!hasSession){S.shell='public';applyPrefs();routePublic();openLogin()}
  else{S.shell='public';DB.prefs.shell='public';applyPrefs();routePublic()}
  syncPublic().then(()=>{if(S.shell==='public')routePublic()});
- if(!DB.activity.length){
-  logAct('ยินดีต้อนรับสู่ระบบ e-Form เวอร์ชันรวม — ประชาชนกรอกได้ทันที, ผู้ดูแลกด Ctrl+K','info');
- }
+ if(!DB.activity.length)logAct('ยินดีต้อนรับสู่ระบบ e-Form — ประชาชนกรอกได้ทันที, ผู้ดูแลกด Ctrl+K','info');
  requestAnimationFrame(()=>requestAnimationFrame(()=>document.body.classList.remove('boot')));
 })();
