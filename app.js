@@ -1,9 +1,11 @@
+# 📄 `app.js` — ซ่อนตัวตรวจจากผู้ใช้ + แก้ตัวตรวจให้วัดถูกต้อง
+
+```javascript
 'use strict';
 /* ============================================================
    DONTUM e-FORM · UNIFIED APP
-   PARITY ENGINE: เรนเดอร์กระดาษ A4 ด้วย engine เดียวทุกมุมมอง
-   Admin design · User fill · Preview · Drawer · Print · Export
-   → ตำแหน่ง/ขนาด/ฟอนต์ ตรงกันแบบพิกเซลต่อพิกเซล
+   · Engine เรนเดอร์ A4 ชุดเดียว: Admin = User = Print
+   · ตัวตรวจคุณภาพ (parity / clip / overlap) แสดงเฉพาะผู้ดูแล
    ============================================================ */
 const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -78,8 +80,7 @@ const FTI={label:'text',title:'title',logo:'image',text_input:'input',textarea:'
 const ST={SUBMITTED:'รอตรวจสอบ',APPROVED:'อนุมัติแล้ว',REJECTED:'ไม่อนุมัติ'};
 
 /* ============================================================
-   SHEET CSS — ชุดเดียว ใช้ทั้ง design / fill / print / export
-   ทุกขนาดควบคุมอิง em → ย่อขยายตาม font_size ของฟิลด์เท่ากันทุกโหมด
+   SHEET CSS — ชุดเดียว ใช้ทุกมุมมอง (design / fill / print / export)
    ============================================================ */
 const SHEET_CSS=`
 .sheet{width:210mm;height:297mm;background:#fff;position:relative;overflow:hidden;transform-origin:0 0;
@@ -117,7 +118,7 @@ const APP_CSS=`
 .fill-toolbar{display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin:0 0 12px;padding:10px 12px;border-radius:14px;background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow-1)}
 .fill-toolbar .sp{flex:1}
 .fill-progress{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:700;color:var(--text2)}
-.fill-progress .pb{width:88px;height:7px;border-radius:99px;background:var(--surface3);overflow:hidden;border:1px solid var(--line)}
+.fill-progress .pb{width:104px;height:7px;border-radius:99px;background:var(--surface3);overflow:hidden;border:1px solid var(--line)}
 .fill-progress .pb i{display:block;height:100%;width:0;border-radius:99px;background:linear-gradient(90deg,var(--petrol-500),var(--emerald));transition:width .3s var(--ease)}
 .fill-progress.done{color:var(--ok-ink)}
 .fill-zoom{display:flex;gap:4px;align-items:center}
@@ -181,7 +182,7 @@ function injectCss(){
  }
 }
 
-/* ---------- constants / seed ---------- */
+/* ---------- seed ---------- */
 function mkF(t,o={}){return Object.assign({id:tmpId('f_'),field_type:t,name:t+'_'+Math.random().toString(36).slice(2,6),label:FTL[t],value:'',options:OPT.includes(t)?['ตัวเลือก 1','ตัวเลือก 2']:null,required:false,auto_grow:false,pos_x:15,pos_y:20,width:70,height:8,font_size:14,font_family:'Noto Sans Thai',font_weight:'normal',text_color:'#111111',bg_color:'transparent',border_style:'dotted',border_color:'#333333',text_align:'left'},o)}
 function baseFields(title){
  return [
@@ -290,8 +291,7 @@ const S={
  b:{id:null,fields:[],deleted:[],sel:null,propFid:null,zoom:0,grid:true,snap:true,dirty:false,undo:[],redo:[],saving:false},
  palette:{q:'',idx:0,items:[]},
  loadedSubTpl:new Set(),
- growH:new Map(),
- parity:null
+ growH:new Map()
 };
 const ref=id=>{const d=String(id).replace(/\D/g,'');
  return (d.length>=4?d.slice(-6):String(id).replace(/[^a-zA-Z0-9]/g,'').slice(0,6).toUpperCase()).padStart(6,'0')};
@@ -410,7 +410,7 @@ function applyTemplates(list,activeOnly){
    created_at:t.created_at||new Date().toISOString(),updated_at:t.updated_at||t.created_at||new Date().toISOString(),
    fields:(t.fields&&t.fields.length)?t.fields.map(norm):((ex&&ex.fields)||[])};
  });
- DB.templates=keep.concat(server);S.growH.clear();persist();
+ DB.templates=keep.concat(server);S.growH.clear();THUMB_CACHE.clear();persist();
 }
 function syncPublic(){
  if(!S.live)return Promise.resolve();
@@ -474,7 +474,7 @@ function hardResync(){
  $$('[data-close-modal]',$('#modalScrim')).forEach(b=>b.onclick=closeModal);
  $('#hrGo').onclick=()=>{
   closeModal();invalidate();
-  DB.templates=[];DB.submissions=[];DB.deptMap={};DB.favorites=[];S.loadedSubTpl.clear();S.growH.clear();
+  DB.templates=[];DB.submissions=[];DB.deptMap={};DB.favorites=[];S.loadedSubTpl.clear();S.growH.clear();THUMB_CACHE.clear();
   S.fill={tpl:null,fields:[],data:{},mode:'paper',zoom:0,errors:{}};
   S.b.id=null;S.b.fields=[];S.b.deleted=[];S.b.propFid=null;S.sec=null;persist();
   if(S.shell==='admin')render();else routePublic();
@@ -525,8 +525,6 @@ function norm(f){const n=(v,d)=>{const x=Number(v);return isFinite(x)?x:d};
   auto_grow:f.auto_grow===true,
   pos_x:n(f.pos_x,15),pos_y:n(f.pos_y,20),width:n(f.width,70),height:n(f.height,8),font_size:n(f.font_size,14)})}
 function mk(t,c,x){const e=document.createElement(t);if(c)e.className=c;if(x!==undefined)e.textContent=x;return e}
-
-/* กล่องฟิลด์: คณิตศาสตร์เดียวกันทุกโหมด ไม่มีการเลื่อนตำแหน่งตามโหมด */
 function fieldEl(f,mode,data,pfx){
  const el=document.createElement('div');
  el.className='cf ft-'+f.field_type+(f.required&&INP.includes(f.field_type)?' req':'');
@@ -641,7 +639,6 @@ function content(f,mode,data,pfx){
  }
  return fc;
 }
-/* วัดความสูงที่ต้องขยาย "ครั้งเดียว" ใช้ค่าเดียวกันทุกโหมด → parity ไม่แตก */
 function measureGrow(fields){
  const need=(fields||[]).filter(f=>f.auto_grow);
  if(!need.length)return;
@@ -654,8 +651,7 @@ function measureGrow(fields){
   const el=sheet.querySelector('[data-fid="'+CSS.escape(f.id)+'"]');
   if(!el)return;
   el.style.height='auto';
-  const h=Math.max(f.height*MM,el.scrollHeight+2);
-  S.growH.set(f.id,Math.ceil(h));
+  S.growH.set(f.id,Math.ceil(Math.max(f.height*MM,el.scrollHeight+2)));
  });
  probe.innerHTML='';
 }
@@ -674,18 +670,16 @@ function paintSheet(sel,fields,mode,data){
  const pfx='r'+Math.random().toString(36).slice(2,7)+'_';
  const frag=document.createDocumentFragment();
  fs.forEach(f=>frag.appendChild(fieldEl(f,mode,data||{},pfx)));
- c.classList.add('sheet');
- c.classList.remove('fill-live');
+ c.classList.add('sheet');c.classList.remove('fill-live');
  c.innerHTML='';c.appendChild(frag);
  const h=sheetHeight(fs);
- c.style.height=h+'mm';
- c.dataset.sheetH=String(h);
+ c.style.height=h+'mm';c.dataset.sheetH=String(h);
  return c;
 }
-/* zoom: transform เท่านั้น ไม่แตะ geometry · fit ไม่ขยายเกิน 100% ทั้ง admin/user */
 function fitSheet(w){
  if(!w)return 1;
- const pad=parseFloat(getComputedStyle(w).paddingLeft||0)+parseFloat(getComputedStyle(w).paddingRight||0);
+ const cs=getComputedStyle(w);
+ const pad=parseFloat(cs.paddingLeft||0)+parseFloat(cs.paddingRight||0);
  return clamp((w.clientWidth-pad-8)/SHEET_PX,.25,1);
 }
 function zoomSheet(c,z){
@@ -696,7 +690,7 @@ function zoomSheet(c,z){
  box.style.height=(h*MM*z)+'px';
  c.style.transform=z===1?'none':`scale(${z})`;
 }
-/* ตรวจ parity จริง: เรนเดอร์ design กับ fill ที่ zoom 1 แล้วเทียบพิกัดทุกฟิลด์ */
+/* ===== ตัวตรวจ (ผู้ดูแลเท่านั้น) — วัดพิกัดเทียบต้นกระดาษของแต่ละแผ่น ===== */
 function checkParity(fields){
  const probe=$('#probe');if(!probe)return {ok:true,diffs:[],count:0};
  const fs=(fields||[]).map(norm);
@@ -710,13 +704,15 @@ function checkParity(fields){
  };
  const a=build('design'),b=build('fill');
  probe.innerHTML='';probe.appendChild(a);probe.appendChild(b);
+ const oa=a.getBoundingClientRect(),ob=b.getBoundingClientRect();
  const diffs=[];
  fs.forEach(f=>{
   const ea=a.querySelector('[data-fid="'+CSS.escape(f.id)+'"]');
   const eb=b.querySelector('[data-fid="'+CSS.escape(f.id)+'"]');
   if(!ea||!eb){diffs.push({name:f.name,label:f.label,why:'ไม่พบกล่องในบางมุมมอง'});return}
   const ra=ea.getBoundingClientRect(),rb=eb.getBoundingClientRect();
-  const d=[['X',ra.left,rb.left],['Y',ra.top,rb.top],['กว้าง',ra.width,rb.width],['สูง',ra.height,rb.height]]
+  const d=[['X',ra.left-oa.left,rb.left-ob.left],['Y',ra.top-oa.top,rb.top-ob.top],
+           ['กว้าง',ra.width,rb.width],['สูง',ra.height,rb.height]]
    .filter(([,x,y])=>Math.abs(x-y)>0.6);
   if(d.length)diffs.push({name:f.name,label:f.label||FTL[f.field_type],
    why:d.map(([k,x,y])=>k+' ต่าง '+Math.abs(x-y).toFixed(1)+'px').join(' · ')});
@@ -724,10 +720,14 @@ function checkParity(fields){
  probe.innerHTML='';
  return {ok:diffs.length===0,diffs,count:fs.length};
 }
-/* หา content ที่ล้นกล่อง (design-time) */
+let _ovSig='',_ovVal=[];
+function fieldsSig(fs){return fs.map(f=>[f.id,f.field_type,f.value,f.label,(f.options||[]).join('|'),
+ f.width,f.height,f.font_size,f.font_family,f.font_weight,f.auto_grow?1:0].join('~')).join('||')}
 function overflowReport(fields){
  const probe=$('#probe');if(!probe)return [];
  const fs=(fields||[]).map(norm);
+ const sig=fieldsSig(fs);
+ if(sig===_ovSig)return _ovVal;
  measureGrow(fs);
  const s=document.createElement('div');
  s.className='sheet';s.style.position='relative';s.style.transform='none';
@@ -743,10 +743,11 @@ function overflowReport(fields){
   if(over>2)out.push({id:f.id,name:f.name,label:f.label||FTL[f.field_type],px:Math.round(over)});
  });
  probe.innerHTML='';
+ _ovSig=sig;_ovVal=out;
  return out;
 }
 function collectFill(c,fields){
- const data={},miss=[];
+ const data={};
  (fields||[]).forEach(f=>{
   if(!INP.includes(f.field_type))return;
   const el=c.querySelector('[data-fid="'+CSS.escape(f.id)+'"]');if(!el)return;
@@ -759,7 +760,7 @@ function collectFill(c,fields){
  return data;
 }
 
-/* ---------- export / print (engine เดียวกัน) ---------- */
+/* ---------- export / print ---------- */
 const EXPORT_CSS=SHEET_CSS+`
 @page{size:210mm 297mm;margin:0}
 *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
@@ -828,7 +829,7 @@ function closeDrawer(){$('#drawer').hidden=true;$('#drawerScrim').hidden=true;
 $('#drawerClose').onclick=closeDrawer;$('#drawerScrim').onclick=closeDrawer;
 
 /* ============================================================
-   PUBLIC · FILL
+   PUBLIC · FILL  (ไม่มีตัวตรวจคุณภาพแสดงให้ผู้ใช้)
    ============================================================ */
 function ensureFillUI(){
  if(document.getElementById('fillToolbar'))return;
@@ -843,11 +844,10 @@ function ensureFillUI(){
   '<button type="button" class="btn sm icon" data-fz="out" title="ย่อ">'+ic('zoomout',14)+'</button>'+
   '<button type="button" class="btn sm" data-fz="fit" id="fillZoomLbl" title="พอดีจอ">100%</button>'+
   '<button type="button" class="btn sm icon" data-fz="in" title="ขยาย">'+ic('zoomin',14)+'</button></div>'+
-  '<span class="parity-pill" id="fillParity">'+ic('shield',12)+' ตรงกับแบบราชการ</span>'+
   '<span class="sp"></span><span class="fill-progress" id="fillProgress"><span class="pb"><i></i></span><b>0/0</b></span>';
  wrap.parentNode.insertBefore(bar,wrap);
  const note=document.createElement('div');note.className='fill-note';
- note.innerHTML=ic('ruler',15)+'<span><b>กระดาษ A4</b> แสดงตำแหน่งและขนาดตรงกับที่ผู้ดูแลออกแบบและตรงกับเอกสารพิมพ์ทุกจุด · ถ้าตัวเล็กให้กดขยาย หรือสลับไป <b>ฟอร์มง่าย</b> เพื่อกรอกสะดวกบนมือถือ (ข้อมูลชุดเดียวกัน)</span>';
+ note.innerHTML=ic('info',15)+'<span>กรอกบน <b>กระดาษ A4</b> ตามแบบฟอร์มราชการจริง หรือสลับเป็น <b>ฟอร์มง่าย</b> เพื่อพิมพ์สะดวกบนมือถือ — ทั้งสองโหมดใช้ข้อมูลชุดเดียวกัน สลับได้ตลอดโดยข้อมูลไม่หาย</span>';
  wrap.parentNode.insertBefore(note,wrap);
  const simple=document.createElement('div');simple.id='fillSimple';simple.className='fill-simple';simple.hidden=true;
  wrap.parentNode.insertBefore(simple,wrap.nextSibling);
@@ -892,10 +892,6 @@ function renderFillPaper(){
  if(!c)return;
  if(!S.fill.zoom)S.fill.zoom=fitSheet($('#fillWrap'));
  applyFillZoom();markFillErrors();
- const p=checkParity(S.fill.fields);S.parity=p;
- const pill=$('#fillParity');
- if(pill){pill.classList.toggle('bad',!p.ok);
-  pill.innerHTML=ic(p.ok?'shield':'warn',12)+(p.ok?' ตรงกับแบบราชการ':' ไม่ตรงแบบ '+p.diffs.length+' จุด')}
 }
 function applyFillZoom(){
  const c=$('#fillCanvas');if(!c)return;
@@ -986,8 +982,8 @@ function updateFillProgress(){
  const done=req.filter(f=>String(S.fill.data[f.name]||'').trim()).length;
  const p=$('#fillProgress');if(!p)return;
  $('i',p).style.width=(req.length?Math.round(done/req.length*100):100)+'%';
- $('b',p).textContent=done+'/'+req.length+' ช่องบังคับ';
- p.classList.toggle('done',done===req.length);
+ $('b',p).textContent=req.length?(done+'/'+req.length+' ช่องบังคับ'):'กรอกตามต้องการ';
+ p.classList.toggle('done',req.length>0&&done===req.length);
 }
 function validateFill(){
  const e={};
@@ -1042,9 +1038,9 @@ function drawThumb(node){
  const inner=c.firstElementChild;
  if(inner){inner.style.transform='none';inner.style.position='relative'}
  c.dataset.done=sig;
- c.style.transform='scale('+(node.clientWidth/SHEET_PX)+')';
- c.style.transformOrigin='0 0';
  c.style.width=SHEET_PX+'px';
+ c.style.transformOrigin='0 0';
+ c.style.transform='scale('+(node.clientWidth/SHEET_PX)+')';
 }
 function pubCard(t,i){
  const n=(t.fields||[]).filter(f=>INP.includes(f.field_type)).length;
@@ -1100,8 +1096,9 @@ function previewPub(id){
   requestAnimationFrame(()=>{
    const w=$('#pvA4');if(!w)return;
    const c=paintSheet('#pvA4 .sc',t.fields,'print',{});
-   if(c){c.style.transform='none';w.style.height=(w.clientWidth/SHEET_PX*parseFloat(c.dataset.sheetH||PH))+'px';
-    c.style.transform='scale('+(w.clientWidth/SHEET_PX)+')';c.style.transformOrigin='0 0'}
+   if(c){const z=w.clientWidth/SHEET_PX;
+    w.style.height=(parseFloat(c.dataset.sheetH||PH)*MM*z)+'px';
+    c.style.transform='scale('+z+')';c.style.transformOrigin='0 0'}
   });
   $('#drawerFoot').onclick=e=>{if(e.target.closest('[data-pv]')){closeDrawer();openPubFill(id)}};
  });
@@ -1408,8 +1405,8 @@ function formDrawer(id){
  openDrawer('แบบฟอร์ม',t.name,
   '<dl class="kv"><dt>หน่วยงาน</dt><dd>'+esc(t.department)+'</dd><dt>สถานะ</dt><dd><span class="pill '+(t.is_active?'on':'off')+'">'+(t.is_active?'เปิดรับ':'ฉบับร่าง')+'</span></dd>'+
   '<dt>ฟิลด์</dt><dd>'+(t.fields||[]).length+'</dd><dt>คำขอ</dt><dd>'+n+'</dd>'+
-  '<dt>ความตรงแบบ</dt><dd><span class="parity-pill'+(p.ok?'':' bad')+'">'+ic(p.ok?'shield':'warn',12)+(p.ok?'Admin = User 100%':'ต่าง '+p.diffs.length+' จุด')+'</span></dd></dl>'+
-  '<div class="d-sec">ตัวอย่าง A4 (engine เดียวกับผู้ใช้)</div><div class="mini-a4" id="dThumb"><div class="sc"></div></div>',
+  '<dt>ตรวจแบบ (ผู้ดูแล)</dt><dd><span class="parity-pill'+(p.ok?'':' bad')+'">'+ic(p.ok?'shield':'warn',12)+(p.ok?'Admin = User '+p.count+'/'+p.count:'ต่าง '+p.diffs.length+' จุด')+'</span></dd></dl>'+
+  '<div class="d-sec">ตัวอย่าง A4</div><div class="mini-a4" id="dThumb"><div class="sc"></div></div>',
   '<button class="btn pri" data-d="fill">'+ic('edit')+'กรอก</button><button class="btn" data-d="edit">'+ic('builder')+'ออกแบบ</button>'+
   '<button class="btn" data-d="dup">'+ic('copy')+'คัดลอก</button><button class="btn" data-d="dl">'+ic('dl')+'ดาวน์โหลด</button>'+
   '<button class="btn '+(t.is_active?'':'ok')+'" data-d="pub">'+ic(t.is_active?'lock':'check')+(t.is_active?'ปิดรับ':'เผยแพร่')+'</button>');
@@ -1453,7 +1450,7 @@ function vBuilder(v){
  const t=tpl(S.b.id),b=S.b;
  v.innerHTML='<div class="sec-head"><div class="sec-title"><h1>'+esc(t.name)+'</h1><p>สิ่งที่เห็นคือสิ่งที่ผู้ใช้และเอกสารพิมพ์ได้รับ · Ctrl+S บันทึก · Ctrl+Z ย้อน</p></div>'+
   '<div class="sec-actions"><span class="save-state '+(b.dirty?'dirty':'saved')+'" id="saveState">'+ic(b.dirty?'clock':'check',13)+(b.dirty?'ยังไม่บันทึก':'บันทึกแล้ว')+'</span>'+
-  '<button class="btn" data-b="parity">'+ic('shield')+'เทียบ Admin/User</button>'+
+  '<button class="btn" data-b="parity">'+ic('shield')+'ตรวจแบบ (ผู้ดูแล)</button>'+
   '<button class="btn" data-b="preview">'+ic('eye')+'ตัวอย่างกรอก</button>'+
   '<button class="btn" data-b="dl">'+ic('dl')+'ดาวน์โหลด</button>'+
   '<button class="btn pri" data-b="save">'+ic('save')+'บันทึก</button></div></div>'+
@@ -1615,7 +1612,7 @@ function resolveOverlaps(){
 function clipDrawer(){
  const list=overflowReport(S.b.fields);
  if(!list.length)return toast('เนื้อหาทุกกล่องพอดีแล้ว',{type:'ok'});
- openDrawer('ตรวจเลย์เอาต์','เนื้อหาเกินกล่อง '+list.length+' ฟิลด์',
+ openDrawer('ตรวจเลย์เอาต์ (ผู้ดูแล)','เนื้อหาเกินกล่อง '+list.length+' ฟิลด์',
   '<p style="font-size:12.5px;color:var(--text2);margin-bottom:12px;line-height:1.6">ฟิลด์เหล่านี้มีข้อความ/ตัวเลือกยาวกว่ากล่อง ผู้ใช้จะเห็นข้อความถูกตัด giốngกับที่เห็นในหน้านี้ — แก้ให้พอดีเพื่อเอกสารที่สมบูรณ์</p>'+
   list.map(x=>'<div class="fval"><span>'+esc(x.label)+'</span><b>เกิน ~'+x.px+'px</b></div>').join(''),
   '<button class="btn pri" data-cl="grow">'+ic('ruler')+'ขยายกล่องที่เกินทั้งหมด</button>'+
@@ -1625,19 +1622,19 @@ function clipDrawer(){
   pushUndo();
   if(b.dataset.cl==='grow')list.forEach(x=>{const f=S.b.fields.find(y=>y.id===x.id);if(f)f.auto_grow=true});
   else list.forEach(x=>{const f=S.b.fields.find(y=>y.id===x.id);if(f)f.font_size=clamp(f.font_size-1,6,72)});
-  S.growH.clear();markDirty();repaintCanvas();refreshProps(true);paintBadges();closeDrawer();
+  S.growH.clear();_ovSig='';markDirty();repaintCanvas();refreshProps(true);paintBadges();closeDrawer();
   toast(b.dataset.cl==='grow'?'ขยายกล่องที่เกินแล้ว (ผู้ใช้เห็นตรงกัน)':'ลดขนาดอักษรแล้ว',{type:'ok',undo:doUndo});
  };
 }
 function parityDrawer(){
- const p=checkParity(S.b.fields);S.parity=p;
+ const p=checkParity(S.b.fields);
  const clip=overflowReport(S.b.fields);
- openDrawer('ตรวจความตรงแบบ','Admin ↔ User ↔ Print',
+ openDrawer('ตรวจแบบ · เฉพาะผู้ดูแล','Admin ↔ User ↔ Print',
   '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">'+
    '<span class="parity-pill'+(p.ok?'':' bad')+'">'+ic(p.ok?'shield':'warn',12)+(p.ok?'เรขาคณิตตรงกัน '+p.count+'/'+p.count:'ต่าง '+p.diffs.length+' จุด')+'</span>'+
    '<span class="parity-pill'+(clip.length?' bad':'')+'">'+ic(clip.length?'warn':'check',12)+(clip.length?'เนื้อหาเกินกล่อง '+clip.length:'เนื้อหาพอดีทุกกล่อง')+'</span>'+
   '</div>'+
-  '<p style="font-size:12.5px;color:var(--text2);line-height:1.65;margin-bottom:12px">ระบบเรนเดอร์ทุกมุมมองด้วย engine เดียวกัน วัดพิกัดจริงที่ซูม 100% แล้วเทียบทีละกล่อง</p>'+
+  '<p style="font-size:12.5px;color:var(--text2);line-height:1.65;margin-bottom:12px">ระบบเรนเดอร์ทุกมุมมองด้วย engine เดียวกัน วัดพิกัดจริงที่ซูม 100% เทียบทีละกล่อง — ผลนี้แสดงให้ผู้ดูแลเท่านั้น ผู้ใช้ทั่วไปจะไม่เห็น</p>'+
   (p.diffs.length?'<table class="ptable"><thead><tr><th>ฟิลด์</th><th>ผลต่าง</th></tr></thead><tbody>'+
     p.diffs.map(d=>'<tr><td>'+esc(d.label||d.name)+'</td><td class="no">'+esc(d.why)+'</td></tr>').join('')+'</tbody></table>'
    :'<table class="ptable"><thead><tr><th>ฟิลด์</th><th>X / Y / กว้าง / สูง</th></tr></thead><tbody>'+
@@ -1684,10 +1681,10 @@ function applyProp(fid,key,el){
  const f=S.b.fields.find(x=>x.id===fid);if(!f||!key)return false;
  let changed=false;
  if(key==='required'){if(f.required!==el.checked){f.required=el.checked;changed=true}}
- else if(key==='auto_grow'){if(f.auto_grow!==el.checked){f.auto_grow=el.checked;S.growH.clear();changed=true}}
+ else if(key==='auto_grow'){if(f.auto_grow!==el.checked){f.auto_grow=el.checked;S.growH.clear();_ovSig='';changed=true}}
  else if(key==='bg_transparent'){const v=el.checked?'transparent':'#ffffff';if(f.bg_color!==v){f.bg_color=v;changed=true}}
  else if(key==='options'){const v=el.value.split('\n').map(s=>s.trim()).filter(Boolean);
-  if(JSON.stringify(v)!==JSON.stringify(f.options||[])){f.options=v;S.growH.clear();changed=true}}
+  if(JSON.stringify(v)!==JSON.stringify(f.options||[])){f.options=v;S.growH.clear();_ovSig='';changed=true}}
  else if(key==='name'){const v=el.value.toLowerCase().replace(/[^a-z0-9_]/g,'_');
   if(v!==el.value)el.value=v;if(f.name!==v){f.name=v;changed=true}}
  else if(['pos_x','pos_y','width','height','font_size'].includes(key)){
@@ -1696,10 +1693,10 @@ function applyProp(fid,key,el){
   f.width=clamp(f.width,3,PW);f.height=clamp(f.height,1,PH);
   f.pos_x=clamp(f.pos_x,0,PW-f.width);f.pos_y=clamp(f.pos_y,0,PH-f.height);
   f.font_size=clamp(f.font_size,6,72);
-  if(key==='font_size'||key==='width')S.growH.clear();
+  if(key==='font_size'||key==='width'){S.growH.clear();_ovSig=''}
  }
- else if(key==='value'){if(f.value!==el.value){f.value=el.value;if(f.field_type==='label'||f.field_type==='title')f.label=el.value;S.growH.clear();changed=true}}
- else{if(f[key]!==el.value){f[key]=el.value;if(key==='font_family')S.growH.clear();changed=true}}
+ else if(key==='value'){if(f.value!==el.value){f.value=el.value;if(f.field_type==='label'||f.field_type==='title')f.label=el.value;S.growH.clear();_ovSig='';changed=true}}
+ else{if(f[key]!==el.value){f[key]=el.value;if(key==='font_family'){S.growH.clear();_ovSig=''}changed=true}}
  if(changed){
   patchFieldEl(f);markDirty();renderLayers();paintBadges();
   const hd=$('#propHead');
@@ -1810,7 +1807,7 @@ function pushUndo(){const b=S.b;b.undo.push(JSON.stringify({f:b.fields,d:b.delet
 function restoreSnap(s){
  const b=S.b;b.fields=s.f;b.deleted=s.d;
  b.sel=s.s&&s.f.some(f=>f.id===s.s)?s.s:null;
- S.growH.clear();markDirty();repaintCanvas();refreshProps(true);updateUndoUI();paintBadges();
+ S.growH.clear();_ovSig='';markDirty();repaintCanvas();refreshProps(true);updateUndoUI();paintBadges();
 }
 function doUndo(){const b=S.b;if(!b.undo.length)return;flushPropEdit();
  b.redo.push(JSON.stringify({f:b.fields,d:b.deleted,s:b.sel}));restoreSnap(JSON.parse(b.undo.pop()))}
@@ -1834,10 +1831,8 @@ function saveBuilder(auto){
   seen[f.name]=1;
   if(OPT.includes(f.field_type)&&!(f.options||[]).length){selectField(f.id);return toast('ฟิลด์ “'+f.label+'” ต้องมีตัวเลือก',{type:'warn'})}
  }
- const p=checkParity(b.fields);
- if(!p.ok)return toast('เลย์เอาต์ไม่ตรงกัน '+p.diffs.length+' จุด — กด “เทียบ Admin/User”',{type:'bad'});
  t.fields=JSON.parse(JSON.stringify(b.fields));t.updated_at=new Date().toISOString();
- S.growH.clear();THUMB_CACHE.clear();
+ S.growH.clear();_ovSig='';THUMB_CACHE.clear();
  b.dirty=false;persist();
  const st=$('#saveState');if(st){st.className='save-state saved';st.innerHTML=ic('check',13)+'บันทึกแล้ว'}
  b.undo=[];b.redo=[];updateUndoUI();
@@ -1855,7 +1850,7 @@ function saveBuilder(auto){
    t.id=nid;if(i>=0)DB.templates[i]=t;b.id=nid;tid=nid;persist();
   }
   const ids=[],send=b.fields.map((f,i)=>{
-   const c=Object.assign({},f);delete c._gh;
+   const c=Object.assign({},f);
    if(isUuid(f.id)){ids[i]=f.id;c.id=f.id}
    else{const s='tmp_'+Math.random().toString(36).slice(2,10)+'i'+i;ids[i]=s;c.id=s}
    return c});
@@ -1890,16 +1885,16 @@ function addField(type,x,y,center){
  if(center){x-=f.width/2;y-=f.height/2}
  f.pos_x=clamp(Math.round(x*2)/2,0,PW-f.width);f.pos_y=clamp(Math.round(y*2)/2,0,PH-f.height);
  pushUndo();b.fields.push(f);b.sel=f.id;b.propFid=null;
- S.growH.clear();markDirty();repaintCanvas();refreshProps(true);paintBadges();
+ S.growH.clear();_ovSig='';markDirty();repaintCanvas();refreshProps(true);paintBadges();
 }
 function removeField(id){
  const b=S.b,i=b.fields.findIndex(f=>f.id===id);if(i<0)return;
  const [f]=b.fields.splice(i,1);
  if(isUuid(id))b.deleted.push(id);
  if(b.sel===id){b.sel=null;b.propFid=null}
- pushUndo();S.growH.clear();markDirty();repaintCanvas();refreshProps(true);paintBadges();
+ pushUndo();S.growH.clear();_ovSig='';markDirty();repaintCanvas();refreshProps(true);paintBadges();
  toast('ลบฟิลด์ “'+(f.label||FTL[f.field_type])+'”',{type:'bad',
-  undo:()=>{b.fields.splice(i,0,f);b.deleted=b.deleted.filter(x=>x!==id);S.growH.clear();markDirty();repaintCanvas();paintBadges()}});
+  undo:()=>{b.fields.splice(i,0,f);b.deleted=b.deleted.filter(x=>x!==id);S.growH.clear();_ovSig='';markDirty();repaintCanvas();paintBadges()}});
 }
 function dupField(id){
  const b=S.b,f=b.fields.find(x=>x.id===id);if(!f)return;
@@ -1908,7 +1903,7 @@ function dupField(id){
  c.pos_y=clamp(f.pos_y+f.height+3,0,PH-c.height);
  if(c.pos_y===f.pos_y)c.pos_x=clamp(f.pos_x+6,0,PW-c.width);
  pushUndo();b.fields.push(c);b.sel=c.id;b.propFid=null;
- S.growH.clear();markDirty();repaintCanvas();refreshProps(true);paintBadges();
+ S.growH.clear();_ovSig='';markDirty();repaintCanvas();refreshProps(true);paintBadges();
 }
 function reorder(id,dir){
  const b=S.b,i=b.fields.findIndex(f=>f.id===id);if(i<0)return;
@@ -1957,7 +1952,7 @@ function sizeMove(e){
 }
 function sizeEnd(){if(!DR)return;const g=DR.g,f=DR.f,mv=DR.moved;
  g.removeEventListener('pointermove',sizeMove);g.removeEventListener('pointerup',sizeEnd);g.removeEventListener('pointercancel',sizeEnd);
- DR=null;if(mv){S.growH.clear();markDirty();patchFieldEl(f);refreshProps(false);paintBadges()}}
+ DR=null;if(mv){S.growH.clear();_ovSig='';markDirty();patchFieldEl(f);refreshProps(false);paintBadges()}}
 function syncGeom(f){
  const p=$('#props');if(!p||p.dataset.fid!==f.id)return;
  ['pos_x','pos_y','width','height'].forEach(k=>{
@@ -1976,7 +1971,7 @@ function inlineEdit(e){
  const done=()=>{
   fc.removeEventListener('input',inp);fc.removeEventListener('keydown',key);fc.removeEventListener('blur',done);
   fc.contentEditable='false';f.value=fc.textContent;f.label=fc.textContent;
-  S.growH.clear();patchFieldEl(f);markDirty();renderLayers();paintBadges();
+  S.growH.clear();_ovSig='';patchFieldEl(f);markDirty();renderLayers();paintBadges();
   const p=$('#props');if(p&&p.dataset.fid===f.id)refreshProps(true);
  };
  fc.addEventListener('input',inp);fc.addEventListener('keydown',key);fc.addEventListener('blur',done);
@@ -2290,7 +2285,7 @@ function readLogo(file){
  r.onload=e=>{
   if(target==='field'){
    const f=S.b.fields.find(x=>x.id===fid);
-   if(f){pushUndo();f.value=e.target.result;S.growH.clear();markDirty();patchFieldEl(f);
+   if(f){pushUndo();f.value=e.target.result;S.growH.clear();_ovSig='';markDirty();patchFieldEl(f);
     const p=$('#props');if(p&&p.dataset.fid===f.id)refreshProps(true);
     toast('ใส่โลโก้ในฟิลด์แล้ว',{type:'ok'})}
   }else{
@@ -2310,8 +2305,8 @@ function commands(){
   Object.entries(SECS).forEach(([k,x])=>c.push({g:'ไปยังหน้า',t:x[0],s:x[1],i:x[2],run:()=>{S.sec=null;go(k)}}));
   c.push({g:'สร้าง',t:'สร้างฟอร์มใหม่',s:'โครงมาตรฐาน',i:'plus',run:newForm});
   c.push({g:'สร้าง',t:'เพิ่มบุคลากร',s:'ทะเบียนในเครื่อง',i:'users',run:addStaff});
-  c.push({g:'ตรวจคุณภาพ',t:'เทียบ Admin ↔ User ↔ Print',s:'วัดพิกัดจริงทุกกล่อง',i:'shield',run:()=>{S.sec=null;go('builder');setTimeout(parityDrawer,280)}});
-  c.push({g:'ตรวจคุณภาพ',t:'แก้เนื้อหาเกินกล่อง',s:'ขยายกล่อง/ลดอักษร',i:'ruler',run:()=>{S.sec=null;go('builder');setTimeout(clipDrawer,280)}});
+  c.push({g:'ตรวจแบบ (ผู้ดูแล)',t:'เทียบ Admin ↔ User ↔ Print',s:'วัดพิกัดจริงทุกกล่อง',i:'shield',run:()=>{S.sec=null;go('builder');setTimeout(parityDrawer,280)}});
+  c.push({g:'ตรวจแบบ (ผู้ดูแล)',t:'แก้เนื้อหาเกินกล่อง',s:'ขยายกล่อง/ลดอักษร',i:'ruler',run:()=>{S.sec=null;go('builder');setTimeout(clipDrawer,280)}});
   c.push({g:'ข้อมูล',t:'ดึงคำขอใหม่ทั้งหมด',s:'บังคับโหลดจากเซิร์ฟเวอร์',i:'refresh',run:()=>{invalidate('getFormSubmissions');S.loadedSubTpl.clear();loadSubmissionsBg(true);toast('กำลังดึง…',{type:'info',ms:1500})}});
   c.push({g:'ข้อมูล',t:'ล้างแคชและซิงก์ใหม่',s:'แก้ข้อมูลค้าง/รหัสผิดรูป',i:'broom',run:hardResync});
   c.push({g:'ข้อมูล',t:'ส่งคิวที่ค้างทันที',s:OUTBOX.length+' รายการ',i:'cloud',run:flushOutbox});
@@ -2473,7 +2468,7 @@ $('#main').addEventListener('scroll',()=>{
 });
 window.addEventListener('online',()=>{pump();toast('กลับมาออนไลน์ — ส่งคิวต่อ',{type:'ok',ms:1800})});
 document.fonts&&document.fonts.ready.then(()=>{
- S.growH.clear();THUMB_CACHE.clear();
+ S.growH.clear();_ovSig='';THUMB_CACHE.clear();
  if(S.shell==='admin'&&S.sec==='builder'&&S.b.id){repaintCanvas();paintBadges()}
  if(S.shell==='public'){if(S.pubView==='fill'&&S.fill.mode==='paper')renderFillPaper();else paintThumbs()}
 });
@@ -2498,3 +2493,4 @@ document.fonts&&document.fonts.ready.then(()=>{
  if(!DB.activity.length)logAct('ยินดีต้อนรับ — เรนเดอร์ A4 ด้วย engine เดียว ผู้ใช้เห็นตรงกับที่ผู้ดูแลออกแบบ','info');
  requestAnimationFrame(()=>requestAnimationFrame(()=>document.body.classList.remove('boot')));
 })();
+```
