@@ -757,7 +757,7 @@ background:linear-gradient(135deg,transparent 48%,#22D3EE 48%);touch-action:none
 <header><h3>เข้าสู่ระบบผู้ดูแล</h3><button class="ico-btn" data-close-login></button></header>
 <div class="modal-body">
 <div id="lgDiag"></div>
-<div class="fld"><label for="lgEmail">อีเมลราชการ</label><input id="lgEmail" type="email" autocomplete="username" placeholder="กรุณากรอกอีเมลล์"></div>
+<div class="fld"><label for="lgEmail">อีเมลราชการ</label><input id="lgEmail" type="email" autocomplete="username" placeholder="admin@dontum-hospital.go.th"></div>
 <div class="fld"><label for="lgPass">รหัสผ่าน</label><input id="lgPass" type="password" autocomplete="current-password" placeholder="••••••••••"></div>
 <p class="lg-note">เฉพาะบัญชี ADMIN · ตรวจสอบสิทธิ์กับ Supabase ผ่าน Apps Script</p>
 </div>
@@ -1537,7 +1537,7 @@ async function doLogin(){const email=$('#lgEmail').value.trim().toLowerCase(),pa
 if(!email||!pass)return lgDiag('err','กรอกข้อมูลไม่ครบ','กรุณากรอกทั้งอีเมลและรหัสผ่าน');
 if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email))return lgDiag('err','รูปแบบอีเมลไม่ถูกต้อง','ตัวอย่าง <code>admin@dontum-hospital.go.th</code>');
 const b=$('#lgGo');b.disabled=true;const old=b.innerHTML;b.innerHTML=ic('clock',15)+' กำลังเข้าสู่ระบบ…';
-lgDiag('wait','กำลังตรวจสอบสิทธิ์','ส่งคำขอ <code>loginWithPassword</code> → Apps Script → Supabase Auth');
+lgDiag('wait','กำลังตรวจสอบสิทธิ์…','ส่งคำขอ <code>loginWithPassword</code> → Apps Script → Supabase Auth');
 try{const r=await rawApi('loginWithPassword',{email:email,password:pass},false,{timeout:30000});
 if(!r||!r.accessToken)throw new Error('ไม่ได้รับ accessToken — ตรวจว่าบัญชีมี role = ADMIN และ active = true');
 token=r.accessToken;try{localStorage.setItem(TOK,token)}catch(e){}
