@@ -4,17 +4,18 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#04191E">
-<meta name="description" content="ระบบกรอกแบบฟอร์มออนไลน์ โรงพยาบาลดอนตูม — ยื่นคำขอไม่ต้องลงทะเบียน ตรวจสอบสถานะ และพิมพ์เอกสาร A4">
+<meta name="description" content="ระบบกรอกแบบฟอร์มออนไลน์ โรงพยาบาลดอนตูม — ยื่นคำขอไม่ต้องลงทะเบียน ตรวจสอบสถานะ พิมพ์เอกสาร A4">
 <title>ระบบกรอกแบบฟอร์มออนไลน์ | โรงพยาบาลดอนตูม</title>
 <script>
 (function(){try{
-var p=JSON.parse(localStorage.getItem('dontum.v4')||'null')||{},f=p.prefs||{};
+var p=JSON.parse(localStorage.getItem('dontum.v5')||'null')||{},f=p.prefs||{};
 var d=document.documentElement;
 d.dataset.theme=f.theme==='dark'?'dark':'light';
 d.dataset.density=f.density==='compact'?'compact':'cozy';
-d.dataset.shell=(location.hash==='#/admin'&&localStorage.getItem('dontum_token_v4'))?'admin':'public';
+var hasTok=false;try{hasTok=!!localStorage.getItem('dontum_token_v5')}catch(e){}
+d.dataset.shell=(location.hash==='#/admin'&&hasTok)?'admin':'public';
 if(f.rail==='mini')d.classList.add('pre-mini');
-}catch(e){}})();
+}catch(e){document.documentElement.dataset.shell='public'}})();
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -58,6 +59,17 @@ a{color:inherit}
 ::-webkit-scrollbar-thumb{background:linear-gradient(180deg,var(--petrol-400),var(--petrol-600));border-radius:99px;border:3px solid transparent;background-clip:padding-box}
 ::-webkit-scrollbar-thumb:hover{background:linear-gradient(180deg,var(--cyan),var(--petrol-500));background-clip:padding-box;border:2px solid transparent}
 ::-webkit-scrollbar-corner{background:transparent}
+
+/* ══════════ SHELL SWITCH — Single source of truth ══════════ */
+html[data-shell=public] #adminShell,
+html[data-shell=public] #railToggle,
+html[data-shell=public] #adminActions,
+html[data-shell=public] #omniBtn{display:none!important}
+html[data-shell=admin] #pubMain,
+html[data-shell=admin] #pubFooter,
+html[data-shell=admin] #pubNav,
+html[data-shell=admin] #pubActions{display:none!important}
+
 .bg-field{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
 .bg-grid{position:absolute;inset:-2px;background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);
 background-size:28px 28px;opacity:.22;mask-image:radial-gradient(ellipse 92% 72% at 50% 0%,#000 28%,transparent 80%)}
@@ -79,7 +91,7 @@ border-bottom:1px solid rgba(255,255,255,.08);box-shadow:0 6px 24px rgba(4,25,30
 background:linear-gradient(90deg,var(--cyan),var(--emerald),var(--amber),var(--crimson),var(--magenta),var(--violet),var(--cyan));
 background-size:220% 100%;animation:sp 16s linear infinite;opacity:.9}
 @keyframes sp{to{background-position:220% 0}}
-.rail-toggle{width:34px;height:34px;border-radius:var(--r1);display:grid;place-items:center;color:#BFE3E6;transition:.18s}
+.rail-toggle{width:34px;height:34px;border-radius:var(--r1);display:grid;place-items:center;color:#BFE3E6;transition:.18s;flex:none}
 .rail-toggle:hover{background:rgba(255,255,255,.13);color:#fff}
 .brand{display:flex;align-items:center;gap:10px;min-width:0}
 .brand-mark{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;font-weight:800;font-size:17px;flex:none;overflow:hidden;
@@ -110,7 +122,7 @@ background:rgba(148,163,184,.2);border:1px solid rgba(148,163,184,.45);color:#CB
 .conn .dot{width:7px;height:7px;border-radius:50%;background:currentColor;flex:none}
 .conn.wait .dot{animation:pl 1s infinite}
 @keyframes pl{50%{opacity:.25}}
-.ico-btn{width:34px;height:34px;border-radius:var(--r1);display:grid;place-items:center;color:#BFE3E6;position:relative;transition:.18s}
+.ico-btn{width:34px;height:34px;border-radius:var(--r1);display:grid;place-items:center;color:#BFE3E6;position:relative;transition:.18s;flex:none}
 .ico-btn:hover{background:rgba(255,255,255,.13);color:#fff;transform:translateY(-1px)}
 .ico-btn .dot{position:absolute;top:6px;right:6px;width:7px;height:7px;border-radius:50%;background:var(--crimson);box-shadow:0 0 0 2px var(--petrol-700)}
 .user-chip{display:flex;align-items:center;gap:8px;padding:4px 10px 4px 4px;border-radius:99px;background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.13)}
@@ -644,8 +656,8 @@ background:linear-gradient(135deg,transparent 48%,#22D3EE 48%);touch-action:none
 <button class="ico-btn" id="themeBtn" title="สลับธีม (Ctrl+J)"></button>
 <button class="ico-btn" id="bellBtn" title="การแจ้งเตือน"><span class="dot" id="bellDot" hidden></span></button>
 <button class="ico-btn" id="helpBtn" title="คีย์ลัด (?)"></button>
-<button class="topbtn" id="goPublicBtn" title="กลับหน้าสาธารณะ">🏠</button>
-<div class="user-chip"><span class="avatar">ผ</span><div><b id="userName">ผู้ดูแลระบบ</b><i>ADMIN</i></div></div>
+<button class="topbtn" id="goPublicBtn" title="กลับหน้าสาธารณะ">🏠 หน้าเว็บ</button>
+<div class="user-chip"><span class="avatar" id="userAv">ผ</span><div><b id="userName">ผู้ดูแลระบบ</b><i id="userRole">ADMIN</i></div></div>
 <button class="topbtn" id="logoutBtn">ออกจากระบบ</button>
 </div></div>
 </header>
@@ -785,7 +797,7 @@ background:linear-gradient(135deg,transparent 48%,#22D3EE 48%);touch-action:none
 <script>
 'use strict';
 const API_URL='https://script.google.com/macros/s/AKfycbwlBmF7UCDh1b-DlGy6uzT_Vot2J0Z02EoLoCRm5XFjtra1nDzCBD-cBHJ_8Yl6hX6oig/exec';
-const KEY='dontum.v4',TOK='dontum_token_v4',OUTBOX='dontum.outbox.v4',CACHE='dontum.cache.v4';
+const KEY='dontum.v5',TOK='dontum_token_v5',OUTBOX='dontum.outbox.v5',CACHE='dontum.cache.v5';
 const $=(s,r)=>(r||document).querySelector(s);
 const $$=(s,r)=>Array.prototype.slice.call((r||document).querySelectorAll(s));
 const esc=v=>String(v==null?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -803,7 +815,6 @@ const h=s.replace(/[^0-9a-f]/gi,'').toLowerCase();
 return h.length===32?h.slice(0,8)+'-'+h.slice(8,12)+'-'+h.slice(12,16)+'-'+h.slice(16,20)+'-'+h.slice(20):null}
 const err=e=>e&&e.message?e.message:'เกิดข้อผิดพลาด';
 const cssEsc=s=>(window.CSS&&CSS.escape)?CSS.escape(String(s)):String(s).replace(/["\\]/g,'\\$&');
-
 const P={forms:'M4 3h10l6 6v12H4z M14 3v6h6',inbox:'M3 12h5l2 3h4l2-3h5 M3 12l3-8h12l3 8v8H3z',
 builder:'M12 2l3 6 6 1-4.5 4.3 1 6.2L12 16.6 6.5 19.5l1-6.2L3 9l6-1z',mine:'M9 11l3 3 8-8 M20 12v7H4V5h9',
 users:'M16 20v-2a4 4 0 00-8 0v2 M12 11a4 4 0 100-8 4 4 0 000 8 M22 20v-2a4 4 0 00-3-3.9',
@@ -916,13 +927,13 @@ if(!DB.deptMap||typeof DB.deptMap!=='object')DB.deptMap={};
 .map(it=>{const r=fixUuid(it.id);if(r)it.id=r;return it});
 DB.templates=fix(DB.templates,'tpl_');DB.submissions=fix(DB.submissions,'sub_');DB.staff=fix(DB.staff,'stf_');
 DB.templates.forEach(t=>{t.fields=(Array.isArray(t.fields)?t.fields:[]).map(f=>{const r=fixUuid(f.id);if(r)f.id=r;else if(!isLocal(f.id))f.id=tmpId('f_');return f})});
-const ids={};DB.templates.forEach(t=>ids[t.id]=1);
+const ids={};DB.templates.forEach(t=>{ids[t.id]=1});
 DB.submissions=DB.submissions.filter(s=>ids[s.template_id]||String(s.id).indexOf('sub_')===0);
 DB.favorites=DB.favorites.filter(i=>ids[i])})();
 const persist=debounce(()=>idle(()=>{try{localStorage.setItem(KEY,JSON.stringify(Object.assign({},DB,
 {submissions:DB.submissions.slice(0,400),activity:DB.activity.slice(0,30)})))}catch(e){}}),500);
 let token=null;try{token=localStorage.getItem(TOK)}catch(e){}
-const S={shell:'public',sec:null,live:true,me:'',conn:'wait',connMsg:'',pubView:'home',pubQ:'',
+const S={shell:'public',sec:null,live:true,me:'',role:'',conn:'wait',connMsg:'',pubView:'home',pubQ:'',
 fill:{tpl:null,fields:[],data:{},mode:'paper',zoom:0,errors:{}},lastSub:null,
 forms:{q:'',status:'all',dept:'all',sort:'updated',view:'grid',fav:false},
 inbox:{tpl:'all',status:'ALL',q:'',sort:'newest',sel:new Set()},mine:{q:'',status:'all'},
@@ -1028,13 +1039,13 @@ return{id:String(t.id).toLowerCase(),name:t.name,description:t.description||'',
 department:DB.deptMap[t.id]||(ex&&ex.department)||'—',is_active:activeOnly?true:t.is_active===true,
 created_at:t.created_at||new Date().toISOString(),updated_at:t.updated_at||t.created_at||new Date().toISOString(),
 fields:(t.fields&&t.fields.length)?t.fields.map(norm):((ex&&ex.fields)||[])}});
-DB.templates=keep.concat(server);S.grow.clear();THUMBS.clear();persist()}
+DB.templates=keep.concat(server);S.grow.clear();THUMBS.clear();LAYOUT.sig='';persist()}
 function syncPublic(){if(!S.live)return Promise.resolve();
 return Promise.all([get('getPublicFormTemplates',{},{token:false,force:true}).catch(()=>null),
 get('getHeaderLogo',{},{token:false}).catch(()=>null)]).then(r=>{
 if(r[0])applyTemplates(r[0],true);
 if(r[1]&&Object.prototype.hasOwnProperty.call(r[1],'logo'))DB.logo=r[1].logo||null;
-persist();applyPrefs();paintCounts();if(S.shell==='public'&&S.pubView!=='fill')routePublic()})}
+persist();paintBrand();paintCounts();if(S.shell==='public'&&S.pubView!=='fill')routePublic()})}
 function syncAdmin(){if(!S.live||!token)return Promise.resolve();
 return Promise.all([get('getFormTemplates',{},{force:true}).catch(()=>null),
 get('getStaffDirectory',{},{force:true}).catch(()=>null),get('getHeaderLogo',{},{token:false}).catch(()=>null)]).then(r=>{
@@ -1044,7 +1055,7 @@ prefix:s.prefix||'',first_name:s.first_name||'',last_name:s.last_name||'',
 full_name:s.full_name||((s.prefix||'')+s.first_name+' '+s.last_name).trim(),position:s.position||'—',
 department:s.department||'—',employment_type:s.employment_type||'—',is_active:s.is_active!==false,email:s.email||'—',phone:s.phone||'—'}));
 if(r[2]&&Object.prototype.hasOwnProperty.call(r[2],'logo'))DB.logo=r[2].logo||null;
-persist();paintCounts();applyPrefs();if(S.shell==='admin'&&S.sec!=='builder')render();loadSubs()})}
+persist();paintCounts();paintBrand();if(S.shell==='admin'&&S.sec!=='builder')render();loadSubs()})}
 let subsBusy=false;
 function loadSubs(force){if(!S.live||!token||subsBusy)return;subsBusy=true;
 const list=DB.templates.filter(t=>isUuid(t.id)&&(force||!S.loaded.has(t.id)));let i=0;
@@ -1064,30 +1075,48 @@ function ensureFields(id){const t=tpl(id);if(!t)return Promise.resolve(null);
 if((t.fields||[]).length)return Promise.resolve(t);
 if(!isUuid(id))return Promise.resolve(t);
 return get(S.shell==='admin'?'getFormTemplate':'getPublicFormTemplate',{id:id},{token:S.shell==='admin'})
-.then(r=>{if(r&&r.fields){t.fields=r.fields.map(norm);S.grow.clear();THUMBS.clear();persist()}return t}).catch(()=>t)}
+.then(r=>{if(r&&r.fields){t.fields=r.fields.map(norm);S.grow.clear();THUMBS.clear();LAYOUT.sig='';persist()}return t}).catch(()=>t)}
 function hardResync(){modal('ล้างแคชและซิงก์ใหม่',
 '<p style="font-size:13.5px">ล้างแคชและข้อมูลค้างในเครื่อง แล้วดึงข้อมูลจริงใหม่จากเซิร์ฟเวอร์</p>'+
 '<p style="font-size:12.5px;color:var(--text3);margin-top:8px">ข้อมูลบน Supabase ไม่ถูกลบ · ฟอร์มร่างที่ยังไม่บันทึกจะหาย</p>',
 '<button class="btn" data-close-modal>ยกเลิก</button><button class="btn pri" id="hrGo">'+ic('broom')+'ล้างและซิงก์</button>');
 bindClose();
 $('#hrGo').onclick=()=>{closeModal();invalidate();
-DB.templates=[];DB.submissions=[];DB.deptMap={};DB.favorites=[];S.loaded.clear();S.grow.clear();THUMBS.clear();
+DB.templates=[];DB.submissions=[];DB.deptMap={};DB.favorites=[];S.loaded.clear();S.grow.clear();THUMBS.clear();LAYOUT.sig='';
 S.fill={tpl:null,fields:[],data:{},mode:'paper',zoom:0,errors:{}};S.b.id=null;S.b.fields=[];S.sec=null;persist();
 if(S.shell==='admin')render();else routePublic();
 toast('กำลังดึงข้อมูลใหม่…',{type:'info',ms:1600});
 testConn(true).then(()=>syncPublic()).then(()=>{if(token&&S.shell==='admin')syncAdmin()})}}
 
+/* ══════════ SHEET / VISUAL PREFS ══════════ */
+function paintBrand(){
+$('#brandMark').innerHTML=DB.logo?'<img src="'+esc(DB.logo)+'" alt="ตรา">':'ด';
+$('#brandSub').textContent=S.shell==='admin'?'DONTUM e-FORM · ADMIN CONSOLE':'DONTUM e-FORM · บริการประชาชน'}
 function applyPrefs(){const d=document.documentElement;
-d.dataset.theme=DB.prefs.theme;d.dataset.density=DB.prefs.density;d.dataset.shell=S.shell;
+d.dataset.theme=DB.prefs.theme;d.dataset.density=DB.prefs.density;
 document.body.classList.toggle('rail-mini',DB.prefs.rail==='mini');d.classList.remove('pre-mini');
 $('#themeBtn').innerHTML=ic(DB.prefs.theme==='dark'?'sun':'moon');
 $('#densityBtn').innerHTML=ic(DB.prefs.density==='compact'?'rows':'grid');
-$('#brandMark').innerHTML=DB.logo?'<img src="'+esc(DB.logo)+'" alt="ตรา">':'ด';
-$('#brandSub').textContent=S.shell==='admin'?'DONTUM e-FORM · ADMIN CONSOLE':'DONTUM e-FORM · บริการประชาชน';
-paintConn()}
-function setShell(sh){S.shell=sh;applyPrefs();
-if(sh==='admin'){history.replaceState(null,'','#/admin');S.sec=null;go(S._last||'forms');syncAdmin()}
-else{history.replaceState(null,'','#/');showPub('home');renderHome()}}
+paintBrand();paintConn()}
+function setShell(sh){
+S.shell=sh;
+const d=document.documentElement;d.dataset.shell=sh;
+const admin=sh==='admin';
+$('#adminShell').hidden=!admin;
+$('#railToggle').hidden=!admin;
+$('#adminActions').hidden=!admin;
+$('#omniBtn').hidden=!admin;
+$('#pubMain').hidden=admin;
+$('#pubFooter').hidden=admin;
+$('#pubNav').hidden=admin;
+$('#pubActions').hidden=admin;
+if(!admin){closeDrawer();closePalette();closeModal();$('#notif').hidden=true;$('#previewScrim').hidden=true;$('#helpScrim').hidden=true}
+paintBrand();
+if(admin){history.replaceState(null,'','#/admin');S.sec=null;go(S._last||'forms');syncAdmin()}
+else{history.replaceState(null,'','#/');pubGo('home')}}
+function paintUser(){$('#userName').textContent=S.me||'ผู้ดูแลระบบ';
+$('#userRole').textContent=S.role||'ADMIN';
+$('#userAv').textContent=(S.me||'ผ').replace(/^(นาย|นาง|นางสาว)/,'').trim()[0]||'ผ'}
 function paintBell(){$('#bellDot').hidden=DB.activity.filter(a=>!a.read).length===0}
 function paintCounts(){const pend=DB.submissions.filter(s=>s.status==='SUBMITTED'&&!s.archived_at).length;
 const map={forms:DB.templates.length,builder:DB.templates.length,inbox:pend,
@@ -1150,7 +1179,7 @@ else if(mode==='print')ln.textContent=val;
 sg.appendChild(ln);sg.appendChild(mk('div','sg-c',f.label?'('+f.label+')':''));fc.appendChild(sg);return fc}
 if(t==='checkbox_agree'){const r=mk('div','ag'),txt=f.value||f.label||'ยอมรับข้อตกลง';
 if(mode==='fill'){const c=document.createElement('input');c.type='checkbox';c.className='oi';c.dataset.fname=f.name;
-c.checked=!!val;c.id='ag_'+f.id;r.appendChild(c);const lb=mk('label','',txt);lb.htmlFor='ag_'+f.id;r.appendChild(lb)}
+c.checked=!!val;c.id='ag_'+pfx+f.id;r.appendChild(c);const lb=mk('label','',txt);lb.htmlFor='ag_'+pfx+f.id;r.appendChild(lb)}
 else{r.appendChild(mk('span','ob',mode==='print'&&val?'✓':''));r.appendChild(mk('span','',txt))}
 fc.appendChild(r);return fc}
 return fc}
@@ -1210,13 +1239,12 @@ if(f.name==='full_name')d[f.name]=n[0]+n[1]+' '+n[2];
 else if(f.name==='position')d[f.name]=POS[Math.floor(Math.random()*POS.length)];
 else if(f.field_type==='date')d[f.name]=new Date().toISOString().slice(0,10);
 else if(f.name==='phone')d[f.name]='08'+String(Math.floor(10000000+Math.random()*89999999));
-else if(f.field_type==='radio'||f.field_type==='select')d[f.name]=(f.options[0]||'ตัวเลือก 1');
-else if(f.field_type==='checkbox')d[f.name]=(f.options[0]||'ตัวเลือก 1');
+else if(f.field_type==='radio'||f.field_type==='select')d[f.name]=f.options[0]||'ตัวเลือก 1';
+else if(f.field_type==='checkbox')d[f.name]=f.options[0]||'ตัวเลือก 1';
 else if(f.field_type==='checkbox_agree')d[f.name]='ยอมรับ';
 else if(f.field_type==='signature')d[f.name]=n[1]+' '+n[2];
 else d[f.name]='ขอความอนุเคราะห์ดำเนินการตามรายละเอียดที่แนบมาพร้อมนี้ เพื่อสนับสนุนการปฏิบัติงานของหน่วยงาน'});
 return d}
-
 const EXPORT_CSS=SHEET_CSS+'\n@page{size:210mm 297mm;margin:0}\n*{-webkit-print-color-adjust:exact;print-color-adjust:exact}\n'+
 'html,body{margin:0;padding:0;font-family:"Noto Sans Thai","Sarabun",sans-serif;color:#111}\n.wrap{margin:0 auto;position:relative}\n'+
 '.bar{position:fixed;top:14px;right:14px;display:flex;gap:8px;z-index:99}\n'+
@@ -1304,8 +1332,7 @@ $('#pubFormGrid').innerHTML=act.length?act.slice(0,4).map(pubCard).join(''):
 (S.conn==='bad'?'เชื่อมต่อเซิร์ฟเวอร์ไม่ได้ — กดปุ่มสถานะด้านบนเพื่อทดสอบ':'กรุณาติดต่อเจ้าหน้าที่หรือลองใหม่ภายหลัง')+
 '</p><button class="btn pri" id="homeRetry">'+ic('refresh')+'โหลดใหม่</button></div>';
 const r=$('#homeRetry');if(r)r.onclick=()=>{testConn().then(()=>syncPublic())};
-paintThumbs($('#pvHome'));
-const hs=$('#homeSection');if(hs)hs.classList.add('in')}
+paintThumbs($('#pvHome'));const hs=$('#homeSection');if(hs)hs.classList.add('in')}
 function renderForms(){const q=S.pubQ.toLowerCase();
 const act=DB.templates.filter(t=>t.is_active&&(!q||(t.name+t.description+(t.department||'')).toLowerCase().indexOf(q)>=0));
 $('#pfCount').textContent=act.length+' ฟอร์ม';
@@ -1323,7 +1350,7 @@ let fillBusy=false;
 async function openFill(rawId){const id=fixUuid(rawId)||String(rawId||'');
 if(!id||(!isUuid(id)&&!isLocal(id))){toast('ลิงก์ฟอร์มไม่ถูกต้อง',{type:'warn'});pubGo('forms');return}
 if(fillBusy)return;fillBusy=true;
-try{if(S.shell!=='public'){S.shell='public';applyPrefs()}
+try{if(S.shell!=='public')setShell('public');
 const t=await ensureFields(id);
 if(!t){toast('ไม่พบแบบฟอร์มนี้',{type:'warn'});pubGo('forms');return}
 const fields=uniqueFields(t.fields||[]);
@@ -1553,9 +1580,10 @@ lgDiag('wait','กำลังตรวจสอบสิทธิ์…','ส�
 try{const r=await rawApi('loginWithPassword',{email:email,password:pass},false,{timeout:30000});
 if(!r||!r.accessToken)throw new Error('ไม่ได้รับ accessToken — ตรวจว่าบัญชีมี role = ADMIN และ active = true');
 token=r.accessToken;try{localStorage.setItem(TOK,token)}catch(e){}
-S.me=r.fullName||'ผู้ดูแลระบบ';$('#userName').textContent=S.me;
+S.me=r.fullName||'ผู้ดูแลระบบ';S.role=r.role||'ADMIN';paintUser();
 setConn('ok','เข้าสู่ระบบสำเร็จ');closeLogin();$('#lgPass').value='';lgDiag(null);
-toast('ยินดีต้อนรับ '+S.me,{type:'ok'});logAct('เข้าสู่ระบบผู้ดูแล '+S.me,'ok');enterAdmin()}
+toast('ยินดีต้อนรับ '+S.me,{type:'ok'});logAct('เข้าสู่ระบบผู้ดูแล '+S.me,'ok');
+setShell('admin')}
 catch(e){const m=e.message;setConn('bad',m);let hint='';
 if(/อีเมลหรือรหัสผ่านไม่ถูกต้อง/.test(m))hint='ตรวจอีเมลและรหัสผ่านอีกครั้ง — ตัวพิมพ์ใหญ่/เล็กของรหัสผ่านมีผล';
 else if(/ไม่มีสิทธิ์ Admin/.test(m))hint='บัญชีนี้ไม่ใช่ ADMIN — ตั้ง <code>profiles.role</code> เป็น <code>ADMIN</code>';
@@ -1567,12 +1595,16 @@ lgDiag('err','เข้าสู่ระบบไม่สำเร็จ',esc(
 toast('เข้าสู่ระบบไม่สำเร็จ: '+m,{type:'bad',ms:6000})}
 finally{b.disabled=false;b.innerHTML=old}}
 function restoreSession(){if(!token)return Promise.resolve(false);
-return rawApi('getSession',{},true,{timeout:20000}).then(s=>{S.me=s.fullName||'ผู้ดูแลระบบ';
-$('#userName').textContent=S.me;setConn('ok','เซสชันยังใช้งานได้');return true})
-.catch(()=>{token=null;try{localStorage.removeItem(TOK)}catch(e){}return false})}
-function enterAdmin(){if(!token)return openLogin();S._last=S._last||'forms';setShell('admin')}
+return rawApi('getSession',{},true,{timeout:20000}).then(s=>{S.me=s.fullName||'ผู้ดูแลระบบ';S.role=s.role||'ADMIN';
+paintUser();setConn('ok','เซสชันยังใช้งานได้');return true})
+.catch(()=>{clearAuth();return false})}
+function clearAuth(){token=null;S.me='';S.role='';
+try{localStorage.removeItem(TOK)}catch(e){}
+S.b={id:null,fields:[],deleted:[],sel:null,zoom:0,grid:true,snap:true,step:.5,guides:false,warnOvl:true,warnClip:true,dirty:false,undo:[],redo:[],saving:false};
+S.inbox.sel=new Set();S.staff.sel=new Set();S.loaded.clear();LAYOUT.sig='';
+paintUser()}
 $('#logoutBtn').onclick=()=>{if(!confirm('ออกจากระบบผู้ดูแล?'))return;
-token=null;try{localStorage.removeItem(TOK)}catch(e){}S.me='';S.sec=null;setShell('public');toast('ออกจากระบบแล้ว',{type:'info'})};
+clearAuth();setShell('public');toast('ออกจากระบบแล้ว — กลับสู่หน้าสาธารณะ',{type:'info'})};
 $('#goPublicBtn').onclick=()=>setShell('public');
 $('#connChip').onclick=()=>testConn();
 
@@ -1583,7 +1615,7 @@ mine:['คำขอของฉัน','คำขอที่ส่งในน�
 staff:['บุคลากร','ทะเบียนผู้ใช้งานและสิทธิ์การเข้าถึง','users'],
 brand:['ตราสัญลักษณ์','โลโก้ที่แสดงบนหัวเว็บและเอกสาร','image']};
 function go(sec){if(!SECS[sec])return;
-if(S.shell!=='admin')return enterAdmin();
+if(S.shell!=='admin'||!token){setShell('public');return openLogin()}
 if(S.sec===sec&&$('#view').dataset.sec===sec)return;
 if(S.sec==='builder'&&S.b.dirty&&sec!=='builder'&&!confirm('มีการแก้ไขที่ยังไม่บันทึก ต้องการออก?'))return;
 S.sec=sec;S._last=sec;
@@ -1717,11 +1749,11 @@ $('#drawerFoot').onclick=e=>{const b=e.target.closest('[data-d]');if(!b)return;c
 const acts={fill:()=>openFill(id),edit:()=>openBuilder(id),dup:()=>dupForm(id),dl:()=>dlForm(id),pub:()=>togglePub(id)};
 acts[b.dataset.d]()}}
 
-function openBuilder(id){if(S.shell!=='admin')return enterAdmin();
+function openBuilder(id){if(S.shell!=='admin'||!token){setShell('public');return openLogin()}
 ensureFields(id).then(t=>{if(!t)return;
 S.b=Object.assign({},S.b,{id:id,fields:JSON.parse(JSON.stringify(t.fields||[])).map(norm),deleted:[],sel:null,
 dirty:false,undo:[],redo:[],saving:false});
-S.sec=null;go('builder')})}
+LAYOUT.sig='';S.sec=null;go('builder')})}
 function vBuilder(v){if(!S.b.id){
 v.innerHTML=head('builder','<button class="btn pri" data-a="new">'+ic('plus')+'สร้างฟอร์มใหม่</button>')+
 '<div class="grid">'+DB.templates.map((t,i)=>'<article class="card" data-open="'+esc(t.id)+'" style="animation-delay:'+Math.min(i*28,220)+'ms">'+
@@ -1834,7 +1866,7 @@ body.innerHTML=ctlViewHTML()+ctlFieldHTML(f);
 body.oninput=onCtl;body.onchange=onCtl;
 if(keep){const el=keep.id?$('#'+keep.id):body.querySelector('[data-p="'+keep.p+'"]');
 if(el){el.focus();if(keep.pos!=null&&el.setSelectionRange){try{el.setSelectionRange(keep.pos,keep.pos)}catch(e){}}}}
-bindView()}
+bindView();updateUndoUI()}
 function bindView(){const b=S.b;
 const z=$('#cZoom');if(z)z.oninput=e=>{b.zoom=clamp(+e.target.value/100,.25,2);
 zoomSheet($('#canvas'),b.zoom);const l=$('#zVal');if(l)l.textContent=Math.round(b.zoom*100)+'%'};
@@ -1866,10 +1898,22 @@ if(key==='font_size'||key==='width')S.grow.clear()}
 else if(key==='value'){if(f.value!==el.value){f.value=el.value;
 if(f.field_type==='label'||f.field_type==='title')f.label=el.value;S.grow.clear();changed=true}}
 else{if(f[key]!==el.value){f[key]=el.value;if(key==='font_family')S.grow.clear();changed=true}}
-if(changed){patchField(f);markDirty();renderLayers();paintBadges();
+if(changed){LAYOUT.sig='';patchField(f);markDirty();renderLayers();paintBadges();
 const hd=$('#ctlId');if(hd&&S.b.sel===f.id){const bb=hd.querySelector('.nm b'),ss=hd.querySelector('.nm small');
 if(bb)bb.textContent=f.label||FTL[f.field_type];if(ss)ss.textContent=f.name+' · '+FTL[f.field_type]}}}
-function decorate(){const ov=S.b.warnOvl?overlapSet():new Set(),clip=S.b.warnClip?new Set(overflowReport(S.b.fields).map(x=>x.id)):new Set();
+let LAYOUT={sig:'',ov:new Set(),clip:[]};
+function layoutFlags(){
+const sig=S.b.fields.map(f=>[f.id,f.pos_x,f.pos_y,f.width,f.height,f.font_size,f.auto_grow?1:0,(f.value||'').length,(f.options||[]).join('|')].join(',')).join(';');
+if(LAYOUT.sig===sig)return LAYOUT;
+const set=new Set(),fs=S.b.fields;
+for(let i=0;i<fs.length;i++)for(let j=i+1;j<fs.length;j++){const a=fs[i],b=fs[j];
+const w=Math.min(a.pos_x+a.width,b.pos_x+b.width)-Math.max(a.pos_x,b.pos_x);
+const h=Math.min(a.pos_y+a.height,b.pos_y+b.height)-Math.max(a.pos_y,b.pos_y);
+if(w<=0||h<=0)continue;const sm=Math.min(a.width*a.height,b.width*b.height);
+if(sm>0&&(w*h)/sm>=.6){set.add(a.id);set.add(b.id)}}
+LAYOUT={sig:sig,ov:set,clip:overflowReport(S.b.fields)};return LAYOUT}
+function decorate(){const L=layoutFlags();
+const ov=S.b.warnOvl?L.ov:new Set(),clip=S.b.warnClip?new Set(L.clip.map(x=>x.id)):new Set();
 $$('#canvas .cf').forEach(el=>{const id=el.dataset.fid;
 el.classList.add('bf');el.classList.toggle('on',id===S.b.sel);
 el.classList.toggle('ovl',ov.has(id));el.classList.toggle('clip',clip.has(id));
@@ -1887,12 +1931,12 @@ PQ.clear();const c=$('#canvas');
 if(c){const h=sheetH(S.b.fields.map(norm));c.style.height=h+'mm';c.dataset.sheetH=String(h);zoomSheet(c,S.b.zoom||1)}
 decorate()})}
 function repaint(){paintSheet('#canvas',S.b.fields,'design',{});zoomSheet($('#canvas'),S.b.zoom||1);decorate();renderLayers()}
-function renderLayers(){const L=$('#layers');if(!L)return;
-const ov=overlapSet(),clip=new Set(overflowReport(S.b.fields).map(x=>x.id));
+function renderLayers(){const L=$('#layers');if(!L)return;const F=layoutFlags();
+const clip=new Set(F.clip.map(x=>x.id));
 L.innerHTML=S.b.fields.map((f,i)=>'<div class="layer'+(S.b.sel===f.id?' on':'')+'" draggable="true" data-lid="'+esc(f.id)+'" data-i="'+i+'">'+
 '<span class="grip">'+ic('grip',13)+'</span>'+ic(FTI[f.field_type],13)+
 '<span class="lt">'+esc(f.label||FTL[f.field_type])+'</span>'+
-(clip.has(f.id)?'<span class="cl" title="เนื้อหาเกินกล่อง">'+ic('warn',12)+'</span>':ov.has(f.id)?'<span class="ov" title="ซ้อนทับ">'+ic('layers',12)+'</span>':'')+
+(clip.has(f.id)?'<span class="cl" title="เนื้อหาเกินกล่อง">'+ic('warn',12)+'</span>':F.ov.has(f.id)?'<span class="ov" title="ซ้อนทับ">'+ic('layers',12)+'</span>':'')+
 '<button class="lx" data-lx="'+esc(f.id)+'" title="ลบฟิลด์">'+ic('x',12)+'</button></div>').join('')||
 '<p style="font-size:12px;color:var(--text3);padding:8px">ยังไม่มีฟิลด์ — ลากจากกล่องด้านบน</p>';
 let di=null;
@@ -1906,14 +1950,7 @@ pushUndo();const m=S.b.fields.splice(di,1)[0];S.b.fields.splice(to,0,m);markDirt
 l.addEventListener('click',e=>{if(e.target.closest('[data-lx]'))return;selectField(l.dataset.lid)});
 const x=l.querySelector('[data-lx]');
 if(x)x.addEventListener('click',e=>{e.stopPropagation();removeField(x.dataset.lx)})})}
-function overlapSet(){const set=new Set(),fs=S.b.fields;
-for(let i=0;i<fs.length;i++)for(let j=i+1;j<fs.length;j++){const a=fs[i],b=fs[j];
-const w=Math.min(a.pos_x+a.width,b.pos_x+b.width)-Math.max(a.pos_x,b.pos_x);
-const h=Math.min(a.pos_y+a.height,b.pos_y+b.height)-Math.max(a.pos_y,b.pos_y);
-if(w<=0||h<=0)continue;
-const sm=Math.min(a.width*a.height,b.width*b.height);
-if(sm>0&&(w*h)/sm>=.6){set.add(a.id);set.add(b.id)}}return set}
-function paintBadges(){const ov=overlapSet().size,cl=overflowReport(S.b.fields).length;
+function paintBadges(){const F=layoutFlags(),ov=F.ov.size,cl=F.clip.length;
 const a=$('#ovlChip'),b=$('#clipChip');
 if(a){a.classList.toggle('on',ov>0);a.classList.toggle('clean',ov===0);
 a.innerHTML=ic(ov?'layers':'check',13)+'<span>'+(ov?'ซ้อนทับ '+ov:'ไม่ซ้อนทับ')+'</span>';
@@ -1929,14 +1966,12 @@ const w=Math.min(p.pos_x+p.width,f.pos_x+f.width)-Math.max(p.pos_x,f.pos_x);
 const h=Math.min(p.pos_y+p.height,f.pos_y+f.height)-Math.max(p.pos_y,f.pos_y);
 if(w<=0||h<=0)return false;const sm=Math.min(p.width*p.height,f.width*f.height);
 return sm>0&&(w*h)/sm>=.6})[0];
-if(!hit)break;
-const ny=Math.round((hit.pos_y+hit.height+3)*2)/2;
+if(!hit)break;const ny=Math.round((hit.pos_y+hit.height+3)*2)/2;
 if(ny+f.height>PH-2){f.pos_x=clamp(f.pos_x+6,0,PW-f.width);f.pos_y=2}else f.pos_y=ny;moved++}
 placed.push(f)});return moved}
 function autoArrange(){const fs=S.b.fields.slice().sort((a,b)=>a.pos_y-b.pos_y||a.pos_x-b.pos_x);
-let y=18;fs.forEach(f=>{f.pos_x=clamp(f.pos_x,0,PW-f.width);f.pos_y=Math.round(y*2)/2;
-y+=Math.max(f.height,3)+3});return fs.length}
-function clipDrawer(){const list=overflowReport(S.b.fields);
+let y=18;fs.forEach(f=>{f.pos_x=clamp(f.pos_x,0,PW-f.width);f.pos_y=Math.round(y*2)/2;y+=Math.max(f.height,3)+3});return fs.length}
+function clipDrawer(){const list=layoutFlags().clip;
 if(!list.length)return toast('เนื้อหาทุกกล่องพอดีแล้ว',{type:'ok'});
 openDrawer('ตรวจเลย์เอาต์','เนื้อหาเกินกล่อง '+list.length+' ฟิลด์',
 '<p style="font-size:12.5px;color:var(--text2);margin-bottom:12px;line-height:1.6">ฟิลด์เหล่านี้มีข้อความหรือตัวเลือกยาวกว่ากล่อง ผู้ใช้จะเห็นข้อความถูกตัดเหมือนกับที่เห็นในหน้านี้ — แก้ให้พอดีเพื่อเอกสารที่สมบูรณ์</p>'+
@@ -1946,9 +1981,9 @@ list.map(x=>'<div class="fval"><span>'+esc(x.label)+'</span><b>เกิน ~'+x
 $('#drawerFoot').onclick=e=>{const b=e.target.closest('[data-cl]');if(!b)return;pushUndo();
 if(b.dataset.cl==='grow')list.forEach(x=>{const f=S.b.fields.filter(y=>y.id===x.id)[0];if(f)f.auto_grow=true});
 else list.forEach(x=>{const f=S.b.fields.filter(y=>y.id===x.id)[0];if(f)f.font_size=clamp(f.font_size-1,6,72)});
-S.grow.clear();markDirty();repaint();renderControls();paintBadges();closeDrawer();
+S.grow.clear();LAYOUT.sig='';markDirty();repaint();renderControls();paintBadges();closeDrawer();
 toast(b.dataset.cl==='grow'?'ขยายกล่องที่เกินแล้ว':'ลดขนาดอักษรแล้ว',{type:'ok',undo:doUndo})}}
-function parityDrawer(){const p=checkParity(S.b.fields),clip=overflowReport(S.b.fields);
+function parityDrawer(){const p=checkParity(S.b.fields),clip=layoutFlags().clip;
 openDrawer('ตรวจความตรงแบบ','Admin ↔ User ↔ Print',
 '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">'+
 '<span class="parity-pill'+(p.ok?'':' bad')+'">'+ic(p.ok?'shield':'warn',12)+(p.ok?'เรขาคณิตตรงกัน '+p.count+'/'+p.count:'ต่าง '+p.diffs.length+' จุด')+'</span>'+
@@ -1975,10 +2010,10 @@ if(k==='save')saveBuilder();
 else if(k==='parity')parityDrawer();
 else if(k==='clip')clipDrawer();
 else if(k==='close'){if(b.dirty&&!confirm('ยังไม่ได้บันทึก ปิดเลย?'))return;S.b.id=null;S.sec=null;go('builder')}
-else if(k==='ovl'){const n=overlapSet().size;if(!n)return toast('ไม่มีฟิลด์ซ้อนทับกันอยู่แล้ว',{type:'ok'});
-pushUndo();const m=resolveOverlaps();S.grow.clear();markDirty();repaint();renderControls();paintBadges();
+else if(k==='ovl'){const n=layoutFlags().ov.size;if(!n)return toast('ไม่มีฟิลด์ซ้อนทับกันอยู่แล้ว',{type:'ok'});
+pushUndo();const m=resolveOverlaps();S.grow.clear();LAYOUT.sig='';markDirty();repaint();renderControls();paintBadges();
 toast('แยกฟิลด์ที่ซ้อนทับ '+m+' ตำแหน่งแล้ว',{type:'ok',undo:doUndo})}
-else if(k==='arrange'){pushUndo();const n=autoArrange();S.grow.clear();markDirty();repaint();renderControls();paintBadges();
+else if(k==='arrange'){pushUndo();const n=autoArrange();S.grow.clear();LAYOUT.sig='';markDirty();repaint();renderControls();paintBadges();
 toast('จัดเรียง '+n+' ฟิลด์ตามลำดับแล้ว',{type:'ok',undo:doUndo})}
 else if(k==='random'){openPreview(sampleData(b.fields));toast('สุ่มข้อมูลตัวอย่างลงในมุมมองกรอกแล้ว',{type:'info'})}
 else if(k==='undo')doUndo();else if(k==='redo')doRedo();
@@ -1992,7 +2027,7 @@ const d=mkF(f.field_type,{id:f.id,name:f.name,label:f.label});
 Object.assign(f,{width:d.width,height:d.height,font_size:d.font_size,font_weight:d.font_weight,
 text_align:d.text_align,text_color:d.text_color,bg_color:d.bg_color,border_style:d.border_style,
 border_color:d.border_color,auto_grow:false});
-S.grow.clear();markDirty();repaint();renderControls();paintBadges();toast('คืนค่ารูปแบบฟิลด์แล้ว',{type:'ok',undo:doUndo})}
+S.grow.clear();LAYOUT.sig='';markDirty();repaint();renderControls();paintBadges();toast('คืนค่ารูปแบบฟิลด์แล้ว',{type:'ok',undo:doUndo})}
 else if(k==='align'){const f=b.fields.filter(x=>x.id===b.sel)[0];if(!f)return;pushUndo();
 const others=b.fields.filter(x=>x.id!==f.id);let guard=0;
 while(guard++<80){const hit=others.filter(p=>{
@@ -2002,9 +2037,9 @@ if(w<=0||h<=0)return false;const sm=Math.min(p.width*p.height,f.width*f.height);
 return sm>0&&(w*h)/sm>=.6})[0];
 if(!hit)break;f.pos_y=Math.round((hit.pos_y+hit.height+3)*2)/2;
 if(f.pos_y+f.height>PH-2){f.pos_y=2;f.pos_x=clamp(f.pos_x+6,0,PW-f.width)}}
-markDirty();patchField(f);renderControls();renderLayers();paintBadges();toast('จัดตำแหน่งไม่ให้ทับแล้ว',{type:'ok'})}
+LAYOUT.sig='';markDirty();patchField(f);renderControls();renderLayers();paintBadges();toast('จัดตำแหน่งไม่ให้ทับแล้ว',{type:'ok'})}
 else if(k==='center'){const f=b.fields.filter(x=>x.id===b.sel)[0];if(!f)return;pushUndo();
-f.pos_x=Math.round((PW-f.width)/2*2)/2;markDirty();patchField(f);renderControls();toast('จัดกึ่งกลางแนวนอนแล้ว',{type:'ok'})}};
+f.pos_x=Math.round((PW-f.width)/2*2)/2;LAYOUT.sig='';markDirty();patchField(f);renderControls();toast('จัดกึ่งกลางแนวนอนแล้ว',{type:'ok'})}};
 $$('.tool').forEach(t=>{t.addEventListener('dragstart',e=>e.dataTransfer.setData('text/plain','ft:'+t.dataset.ft));
 t.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();addField(t.dataset.ft)}})});
 const cv=$('#canvas');
@@ -2020,7 +2055,7 @@ function pushUndo(){const b=S.b;b.undo.push(JSON.stringify({f:b.fields,d:b.delet
 if(b.undo.length>60)b.undo.shift();b.redo=[];updateUndoUI()}
 function restoreSnap(s){const b=S.b;b.fields=s.f;b.deleted=s.d;
 b.sel=s.s&&s.f.some(f=>f.id===s.s)?s.s:null;
-S.grow.clear();markDirty();repaint();renderControls();updateUndoUI();paintBadges()}
+S.grow.clear();LAYOUT.sig='';markDirty();repaint();renderControls();paintBadges()}
 function doUndo(){const b=S.b;if(!b.undo.length)return;
 b.redo.push(JSON.stringify({f:b.fields,d:b.deleted,s:b.sel}));restoreSnap(JSON.parse(b.undo.pop()))}
 function doRedo(){const b=S.b;if(!b.redo.length)return;
@@ -2042,7 +2077,7 @@ if(OPT.indexOf(f.field_type)>=0&&!(f.options||[]).length){selectField(f.id);retu
 const p=checkParity(b.fields);
 if(!p.ok)return toast('เลย์เอาต์ไม่ตรงกัน '+p.diffs.length+' จุด — กด “ตรวจความตรงแบบ”',{type:'bad'});
 t.fields=JSON.parse(JSON.stringify(b.fields));t.updated_at=new Date().toISOString();
-S.grow.clear();THUMBS.clear();b.dirty=false;persist();
+S.grow.clear();THUMBS.clear();LAYOUT.sig='';b.dirty=false;persist();
 const st=$('#saveState');if(st){st.className='save-state saved';st.innerHTML=ic('check',13)+'บันทึกแล้ว'}
 b.undo=[];b.redo=[];updateUndoUI();
 if(!auto)toast('บันทึก “'+t.name+'” แล้ว — ผู้ใช้เห็นตรงกัน',{type:'ok'});
@@ -2060,9 +2095,8 @@ else{const s='tmp_'+Math.random().toString(36).slice(2,10)+'i'+i;ids[i]=s;c.id=s
 const res=await rawApi('saveFormLayout',{templateId:tid,meta:{name:t.name,description:t.description,is_active:t.is_active},
 fields:send,deletedIds:b.deleted.filter(isUuid)},true,{timeout:40000});
 const map=(res&&res.idMap)||{};
-b.fields.forEach((f,i)=>{const n=fixUuid(map[ids[i]]);
-if(n){if(b.sel===f.id)b.sel=n;f.id=n}});
-t.fields=JSON.parse(JSON.stringify(b.fields));b.deleted=[];persist();
+b.fields.forEach((f,i)=>{const n=fixUuid(map[ids[i]]);if(n){if(b.sel===f.id)b.sel=n;f.id=n}});
+t.fields=JSON.parse(JSON.stringify(b.fields));b.deleted=[];LAYOUT.sig='';persist();
 invalidate('getFormTemplate');invalidate('getFormTemplates');invalidate('getPublicFormTemplate');
 if(S.sec==='builder'&&S.b.id===t.id){repaint();renderControls();paintBadges()}}
 catch(e){b.dirty=true;if(st){st.className='save-state dirty';st.innerHTML=ic('warn',13)+'ส่งไม่สำเร็จ'}
@@ -2084,18 +2118,18 @@ if(x===undefined){x=20;y=b.fields.reduce((m,q)=>Math.max(m,q.pos_y+q.height),48)
 if(center){x-=f.width/2;y-=f.height/2}
 const sn=v=>b.snap?Math.round(v/b.step)*b.step:Math.round(v*100)/100;
 f.pos_x=clamp(sn(x),0,PW-f.width);f.pos_y=clamp(sn(y),0,PH-f.height);
-pushUndo();b.fields.push(f);b.sel=f.id;S.grow.clear();markDirty();repaint();renderControls();paintBadges()}
+pushUndo();b.fields.push(f);b.sel=f.id;S.grow.clear();LAYOUT.sig='';markDirty();repaint();renderControls();paintBadges()}
 function removeField(id){const b=S.b,i=b.fields.map(f=>f.id).indexOf(id);if(i<0)return;
 const f=b.fields.splice(i,1)[0];if(isUuid(id))b.deleted.push(id);
-if(b.sel===id)b.sel=null;pushUndo();S.grow.clear();markDirty();repaint();renderControls();paintBadges();
+if(b.sel===id)b.sel=null;pushUndo();S.grow.clear();LAYOUT.sig='';markDirty();repaint();renderControls();paintBadges();
 toast('ลบฟิลด์ “'+(f.label||FTL[f.field_type])+'”',{type:'bad',
-undo:()=>{b.fields.splice(i,0,f);b.deleted=b.deleted.filter(x=>x!==id);S.grow.clear();markDirty();repaint();renderControls();paintBadges()}})}
+undo:()=>{b.fields.splice(i,0,f);b.deleted=b.deleted.filter(x=>x!==id);S.grow.clear();LAYOUT.sig='';markDirty();repaint();renderControls();paintBadges()}})}
 function dupField(id){const b=S.b,f=b.fields.filter(x=>x.id===id)[0];if(!f)return;
 const c=JSON.parse(JSON.stringify(f));c.id=tmpId('f_');c.name=f.name+'_copy';
 let n=2;while(b.fields.some(x=>x.name===c.name))c.name=f.name+'_copy'+n++;
 c.pos_y=clamp(f.pos_y+f.height+3,0,PH-c.height);
 if(c.pos_y===f.pos_y)c.pos_x=clamp(f.pos_x+6,0,PW-c.width);
-pushUndo();b.fields.push(c);b.sel=c.id;S.grow.clear();markDirty();repaint();renderControls();paintBadges()}
+pushUndo();b.fields.push(c);b.sel=c.id;S.grow.clear();LAYOUT.sig='';markDirty();repaint();renderControls();paintBadges()}
 function reorder(id,dir){const b=S.b,i=b.fields.map(f=>f.id).indexOf(id);if(i<0)return;
 const j=clamp(i+dir,0,b.fields.length-1);if(i===j)return;
 pushUndo();const m=b.fields.splice(i,1)[0];b.fields.splice(j,0,m);markDirty();renderLayers()}
@@ -2116,7 +2150,7 @@ DR.f.pos_x=clamp(sn(DR.ox+dx),0,PW-DR.f.width);DR.f.pos_y=clamp(sn(DR.oy+dy),0,P
 DR.el.style.left=DR.f.pos_x+'mm';DR.el.style.top=DR.f.pos_y+'mm';syncGeom(DR.f)}
 function dragEnd(){if(!DR)return;const el=DR.el,mv=DR.moved;
 el.removeEventListener('pointermove',dragMove);el.removeEventListener('pointerup',dragEnd);el.removeEventListener('pointercancel',dragEnd);
-DR=null;if(mv){markDirty();decorate();paintBadges();renderControls()}}
+DR=null;if(mv){LAYOUT.sig='';markDirty();decorate();paintBadges();renderControls()}}
 function resizeStart(e){if(e.button)return;e.stopPropagation();e.preventDefault();
 const g=e.currentTarget,el=g.parentElement,f=S.b.fields.filter(x=>x.id===el.dataset.fid)[0];if(!f)return;
 selectField(f.id);
@@ -2131,7 +2165,7 @@ DR.f.width=clamp(sn(DR.ow+dx),3,PW-DR.f.pos_x);DR.f.height=clamp(sn(DR.oh+dy),1,
 DR.el.style.width=DR.f.width+'mm';DR.el.style.height=DR.f.height+'mm';syncGeom(DR.f)}
 function sizeEnd(){if(!DR)return;const g=DR.g,f=DR.f,mv=DR.moved;
 g.removeEventListener('pointermove',sizeMove);g.removeEventListener('pointerup',sizeEnd);g.removeEventListener('pointercancel',sizeEnd);
-DR=null;if(mv){S.grow.clear();markDirty();patchField(f);renderControls();paintBadges()}}
+DR=null;if(mv){S.grow.clear();LAYOUT.sig='';markDirty();patchField(f);renderControls();paintBadges()}}
 function syncGeom(f){const body=$('#ctlBody');if(!body)return;
 ['pos_x','pos_y','width','height'].forEach(k=>{const i=body.querySelector('[data-p="'+k+'"]');
 if(i&&document.activeElement!==i)i.value=f[k]})}
@@ -2140,12 +2174,12 @@ if(!f||(f.field_type!=='label'&&f.field_type!=='title'))return;
 const fc=$('.fc',el);if(!fc||fc.isContentEditable)return;
 selectField(f.id);pushUndo();fc.textContent=f.value||'';fc.contentEditable='true';fc.focus();
 const r=document.createRange();r.selectNodeContents(fc);const s=getSelection();s.removeAllRanges();s.addRange(r);
-const inp=()=>{f.value=fc.textContent;f.label=fc.textContent;markDirty();
+const inp=()=>{f.value=fc.textContent;f.label=fc.textContent;LAYOUT.sig='';markDirty();
 const t=$('#ctlBody [data-p="value"]');if(t&&document.activeElement!==t)t.value=f.value};
 const key=ev=>{ev.stopPropagation();if(ev.key==='Enter'||ev.key==='Escape'){ev.preventDefault();fc.blur()}};
 const done=()=>{fc.removeEventListener('input',inp);fc.removeEventListener('keydown',key);fc.removeEventListener('blur',done);
 fc.contentEditable='false';f.value=fc.textContent;f.label=fc.textContent;
-S.grow.clear();patchField(f);markDirty();renderLayers();paintBadges();renderControls()};
+S.grow.clear();LAYOUT.sig='';patchField(f);markDirty();renderLayers();paintBadges();renderControls()};
 fc.addEventListener('input',inp);fc.addEventListener('keydown',key);fc.addEventListener('blur',done)}
 
 function inboxList(){const f=S.inbox;
@@ -2392,17 +2426,17 @@ const d=$('#drop');
 d.addEventListener('dragover',e=>{e.preventDefault();d.classList.add('over')});
 d.addEventListener('dragleave',()=>d.classList.remove('over'));
 d.addEventListener('drop',e=>{e.preventDefault();d.classList.remove('over');const f=e.dataTransfer.files[0];if(f)readLogo(f)});
-const rm=$('#rmLogo');if(rm)rm.onclick=()=>{const o=DB.logo;DB.logo=null;persist();applyPrefs();render();
+const rm=$('#rmLogo');if(rm)rm.onclick=()=>{const o=DB.logo;DB.logo=null;persist();paintBrand();render();
 enqueue('deleteHeaderLogo',{},'ลบโลโก้');
-toast('ลบตราสัญลักษณ์แล้ว',{type:'bad',undo:()=>{DB.logo=o;persist();applyPrefs();render()}})}}
+toast('ลบตราสัญลักษณ์แล้ว',{type:'bad',undo:()=>{DB.logo=o;persist();paintBrand();render()}})}}
 function readLogo(file){if(!/^image\//.test(file.type))return toast('กรุณาเลือกไฟล์รูปภาพ',{type:'warn'});
 if(file.size>37*1024)return toast('ไฟล์ใหญ่เกิน 37 KB — กรุณาย่อขนาดก่อน',{type:'warn'});
 const inp=$('#logoFile'),target=inp.dataset.target,fid=inp.dataset.fid,r=new FileReader();
 r.onload=e=>{if(target==='field'){const f=S.b.fields.filter(x=>x.id===fid)[0];
-if(f){pushUndo();f.value=e.target.result;S.grow.clear();markDirty();patchField(f);renderControls();toast('ใส่โลโก้ในฟิลด์แล้ว',{type:'ok'})}}
-else{const o=DB.logo;DB.logo=e.target.result;persist();applyPrefs();render();
+if(f){pushUndo();f.value=e.target.result;S.grow.clear();LAYOUT.sig='';markDirty();patchField(f);renderControls();toast('ใส่โลโก้ในฟิลด์แล้ว',{type:'ok'})}}
+else{const o=DB.logo;DB.logo=e.target.result;persist();paintBrand();render();
 enqueue('uploadHeaderLogo',{base64Data:e.target.result},'อัปโหลดโลโก้');logAct('เปลี่ยนตราสัญลักษณ์โรงพยาบาล','ok');
-toast('อัปเดตตราสัญลักษณ์แล้ว',{type:'ok',undo:()=>{DB.logo=o;persist();applyPrefs();render()}})}};
+toast('อัปเดตตราสัญลักษณ์แล้ว',{type:'ok',undo:()=>{DB.logo=o;persist();paintBrand();render()}})}};
 r.readAsDataURL(file)}
 $('#logoFile').onchange=e=>{const f=e.target.files[0];if(f)readLogo(f);e.target.value=''};
 
@@ -2416,17 +2450,18 @@ c.push({g:'ข้อมูล',t:'ดึงคำขอใหม่ทั้ง�
 c.push({g:'ข้อมูล',t:'ล้างแคชและซิงก์ใหม่',s:'แก้ข้อมูลค้าง / รหัสผิดรูป',i:'broom',run:hardResync});
 c.push({g:'ข้อมูล',t:'ส่งคิวที่ค้างทันที',s:QUEUE.length+' รายการ',i:'cloud',run:flushQueue});
 c.push({g:'ส่งออก',t:'ส่งออกคำขอ CSV',s:'ตามตัวกรองปัจจุบัน',i:'csv',run:()=>csv([['อ้างอิง','ผู้ยื่น','ฟอร์ม','สถานะ']].concat(
-inboxList().map(s=>['#'+refOf(s),s.submitted_by_name,s.template_name,ST[s.status]||s.status])),'submissions.csv')})}
+inboxList().map(s=>['#'+refOf(s),s.submitted_by_name,s.template_name,ST[s.status]||s.status])),'submissions.csv')});
+c.push({g:'บัญชี',t:'ออกจากระบบผู้ดูแล',s:'กลับสู่หน้าสาธารณะ',i:'logout',run:()=>{clearAuth();setShell('public');toast('ออกจากระบบแล้ว',{type:'info'})}})}
 c.push({g:'เชื่อมต่อ',t:'ทดสอบการเชื่อมต่อเซิร์ฟเวอร์',s:'วินิจฉัยปัญหา login / API',i:'plug',run:()=>testConn()});
 c.push({g:'มุมมอง',t:'ไปหน้าสาธารณะ',s:'มุมมองประชาชน',i:'globe',run:()=>setShell('public')});
-if(S.shell==='public')c.push({g:'มุมมอง',t:'เข้าคอนโซลผู้ดูแล',s:'ต้องเข้าสู่ระบบ',i:'lock',run:enterAdmin});
+if(S.shell==='public')c.push({g:'มุมมอง',t:'เข้าคอนโซลผู้ดูแล',s:'ต้องเข้าสู่ระบบ',i:'lock',run:()=>{if(token)setShell('admin');else openLogin()}});
 c.push({g:'ตั้งค่า',t:'สลับธีมมืด/สว่าง',s:'Ctrl+J',i:'moon',run:toggleTheme});
 c.push({g:'ตั้งค่า',t:'สลับความหนาแน่นตาราง',s:'สบายตา / กระชับ',i:'rows',run:toggleDensity});
 c.push({g:'ช่วยเหลือ',t:'คีย์ลัดทั้งหมด',s:'ปุ่ม ?',i:'help',run:showHelp});
 DB.templates.slice(0,15).forEach(t=>c.push({g:'แบบฟอร์ม',t:t.name,s:(t.is_active?'เปิดใช้งาน':'ฉบับร่าง')+' · '+t.department,i:'forms',
 run:()=>{if(S.shell==='admin')formDrawer(t.id);else openFill(t.id)}}));
 DB.staff.slice(0,20).forEach(s=>c.push({g:'บุคลากร',t:s.full_name,s:s.position+' · '+s.department,i:'users',
-run:()=>{if(S.shell!=='admin')return enterAdmin();S.sec=null;go('staff');setTimeout(()=>staffDrawer(s.id),300)}}));
+run:()=>{if(S.shell!=='admin'){if(!token)return openLogin();setShell('admin')}S.sec=null;go('staff');setTimeout(()=>staffDrawer(s.id),300)}}));
 return c}
 function openPalette(){$('#paletteScrim').hidden=false;$('#paletteInput').value='';
 S.pal.q='';S.pal.idx=0;paintPalette();setTimeout(()=>$('#paletteInput').focus(),20)}
@@ -2525,7 +2560,7 @@ f.pos_x=clamp(+(f.pos_x+dir[0]*st).toFixed(2),0,PW-f.width);
 f.pos_y=clamp(+(f.pos_y+dir[1]*st).toFixed(2),0,PH-f.height);
 const el=$('#canvas [data-fid="'+cssEsc(f.id)+'"]');
 if(el){el.style.left=f.pos_x+'mm';el.style.top=f.pos_y+'mm'}
-syncGeom(f);markDirty();decorate();paintBadges()}});
+LAYOUT.sig='';syncGeom(f);markDirty();decorate();paintBadges()}});
 window.addEventListener('beforeunload',e=>{if(S.b.dirty||QUEUE.length){e.preventDefault();e.returnValue=''}});
 window.addEventListener('resize',debounce(()=>{
 if(S.shell==='admin'&&S.sec==='builder'&&S.b.id&&$('#canvas')){S.b.zoom=fitSheet($('#cwrap'));zoomSheet($('#canvas'),S.b.zoom);renderControls()}
@@ -2533,29 +2568,29 @@ if(S.shell==='public'&&S.pubView==='fill'&&S.fill.mode==='paper'){S.fill.zoom=fi
 $$('.thumb').forEach(n=>{const c=$('.thumb-c',n);if(c&&c.dataset.done)c.style.transform='scale('+(n.clientWidth/SHEET_PX)+')'});
 $$('.mini-a4').forEach(w=>{const c=w.querySelector('.sc');if(c&&c.dataset.sheetH){const z=w.clientWidth/SHEET_PX;
 w.style.height=(parseFloat(c.dataset.sheetH)*MM*z)+'px';c.style.transform='scale('+z+')'}})},200));
-window.addEventListener('hashchange',()=>{if(S.shell==='public')routePublic()});
+window.addEventListener('hashchange',()=>{
+if(location.hash==='#/admin'){if(token)setShell('admin');else{setShell('public');openLogin()}return}
+if(S.shell==='public')routePublic()});
 document.addEventListener('click',e=>{
 if(!$('#notif').hidden&&!e.target.closest('#notif')&&!e.target.closest('#bellBtn'))$('#notif').hidden=true});
 $('#main').addEventListener('scroll',()=>{const h=$('#view .sec-head');
 if(h)h.classList.toggle('scrolled',$('#main').scrollTop>8)},{passive:true});
 window.addEventListener('online',()=>{pump();testConn(true);toast('กลับมาออนไลน์ — ส่งคิวต่อ',{type:'ok',ms:1800})});
 window.addEventListener('offline',()=>{setConn('bad','อุปกรณ์ออฟไลน์');toast('ขาดการเชื่อมต่ออินเทอร์เน็ต',{type:'warn'})});
-if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{S.grow.clear();THUMBS.clear();
+if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{S.grow.clear();THUMBS.clear();LAYOUT.sig='';
 if(S.shell==='admin'&&S.sec==='builder'&&S.b.id){repaint();paintBadges()}
 if(S.shell==='public'){if(S.pubView==='fill'&&S.fill.mode==='paper')renderFillPaper();else paintThumbs()}});
 
 (function init(){
-applyPrefs();paintBell();paintCounts();
+applyPrefs();paintUser();paintBell();paintCounts();
 const wantAdmin=location.hash==='#/admin';
-if(wantAdmin&&token){S.shell='admin';applyPrefs();S.sec=null;go('forms')}
-else{S.shell='public';applyPrefs();routePublic()}
+if(wantAdmin&&token){setShell('admin')}
+else{setShell('public');if(wantAdmin&&!token)openLogin()}
 testConn(true).then(ok=>{if(!ok&&!navigator.onLine)setConn('bad','อุปกรณ์ออฟไลน์');return syncPublic()})
 .then(()=>{if(!token)return;
-return restoreSession().then(sessOk=>{
-if(sessOk){$('#userName').textContent=S.me;
-if(wantAdmin&&S.shell!=='admin'){S.shell='admin';applyPrefs();S.sec=null;go('forms')}
-if(S.shell==='admin')syncAdmin()}
-else if(wantAdmin){history.replaceState(null,'','#/');S.shell='public';applyPrefs();routePublic();openLogin()}})});
+return restoreSession().then(ok=>{
+if(ok){if(S.shell==='admin')syncAdmin()}
+else if(S.shell==='admin'){setShell('public');openLogin();toast('เซสชันหมดอายุ — กรุณาเข้าสู่ระบบใหม่',{type:'warn'})}})});
 pump();
 if(!DB.activity.length)logAct('ยินดีต้อนรับ — กด Ctrl+K เพื่อเริ่ม · ปุ่มสถานะด้านบนใช้ทดสอบการเชื่อมต่อ','info');
 requestAnimationFrame(()=>requestAnimationFrame(()=>document.body.classList.remove('boot')));
