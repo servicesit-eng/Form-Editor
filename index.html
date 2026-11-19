@@ -1621,7 +1621,7 @@ function selectField(id){if(S.b.sel===id){paintSel();return}
 S.b.sel=id;renderControls();paintSel();$$('.layer').forEach(function(l){l.classList.toggle('on',l.dataset.lid===id)})}
 function paintSel(){$$('#canvas .cf').forEach(function(e){e.classList.toggle('on',e.dataset.fid===S.b.sel)})}
 function openPreview(data){var c=paintSheet('#pvCanvas',S.b.fields,'fill',data||{});
-$('#previewScrim').hidden=false;requestAnimationFrame(function(){zoomSheet(c,fitSheet($('#pvWrap'))})}
+$('#previewScrim').hidden=false;requestAnimationFrame(function(){zoomSheet(c,fitSheet($('#pvWrap')));});}
 function bindBuilder(){var b=S.b,v=$('#view');
 $('#bName').oninput=function(e){var t=tpl(b.id);if(t){t.name=e.target.value;markDirty()}};
 v.onclick=function(e){var bt=e.target.closest('[data-b]'),tl=e.target.closest('.tool');
