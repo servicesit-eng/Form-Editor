@@ -288,6 +288,9 @@ td.num{font-family:var(--mo);font-size:12px}td.acts{text-align:right;white-space
 .tool svg{width:16px;height:16px;color:var(--p5)}
 .tool:hover{border-color:var(--p4);background:var(--sf);transform:translateY(-2px)}
 .layers{display:flex;flex-direction:column;gap:3px}
+.layer-group{display:flex;align-items:center;gap:6px;margin-top:7px;padding:5px 8px 2px;border-top:1px solid var(--ln);color:var(--p5);font-size:10px;font-weight:800;letter-spacing:.08em}
+.layer-group:first-child{margin-top:0;border-top:0}
+.layer-group b{margin-left:auto;color:var(--tx3);font-family:var(--mo);font-size:10px;letter-spacing:0}
 .layer{display:flex;align-items:center;gap:7px;padding:6px 8px;border-radius:var(--r1);font-size:11.5px;cursor:pointer;border:1px solid transparent}
 .layer:hover{background:var(--sf2);border-color:var(--ln)}
 .layer.on{background:color-mix(in srgb,var(--p5) 14%,var(--sf));border-color:var(--p4)}
@@ -638,7 +641,7 @@ var SHEET_CSS=$('#sheetCss').textContent;
 var EXPORT_CSS=SHEET_CSS+NL+$('#exportCss').textContent;
 function mkF(t,o){var d={id:tmpId('f_'),field_type:t,name:t+'_'+Math.random().toString(36).slice(2,6),label:FTL[t],value:'',
 options:OPT.indexOf(t)>=0?['ตัวเลือก 1','ตัวเลือก 2']:null,required:false,auto_grow:false,pos_x:15,pos_y:20,width:70,height:8,font_size:14,
-font_family:'Noto Sans Thai',font_weight:'normal',text_color:'#111111',bg_color:'transparent',border_style:'dotted',border_color:'#333333',text_align:'left'};
+font_family:'Noto Sans Thai',font_weight:'normal',text_color:'#111111',bg_color:'transparent',border_style:'dotted',border_color:'#333333',text_align:'left',field_group:''};
 var k;for(k in (o||{}))d[k]=o[k];return d}
 function baseFields(title){return[
 mkF('title',{name:'doc_title',label:'หัวเรื่อง',value:title,pos_x:20,pos_y:22,width:170,height:11,font_size:17,font_weight:'bold',text_align:'center',border_style:'none'}),
@@ -827,11 +830,12 @@ catch(e){t.textContent=now.toLocaleTimeString('th-TH');d.textContent=now.toLocal
 function norm(f){var n=function(v,d){var x=Number(v);return isFinite(x)?x:d};
 var o=f.options;if(typeof o==='string'){try{o=JSON.parse(o)}catch(e){o=o.split(',').map(function(s){return s.trim()}).filter(Boolean)}}
 var r=Object.assign({},f);r.options=Array.isArray(o)?o.map(String).filter(Boolean):[];r.auto_grow=f.auto_grow===true;
+r.field_group=typeof f.field_group==='string'?f.field_group.trim():(typeof f.group_name==='string'?f.group_name.trim():'');
 r.pos_x=n(f.pos_x,15);r.pos_y=n(f.pos_y,20);r.width=n(f.width,70);r.height=n(f.height,8);r.font_size=n(f.font_size,14);return r}
 function mk(t,c,x){var e=document.createElement(t);if(c)e.className=c;if(x!==undefined)e.textContent=x;return e}
 function fieldEl(f,mode,data,pfx){var el=document.createElement('div');
 el.className='cf ft-'+f.field_type+(f.required&&INP.indexOf(f.field_type)>=0?' req':'');
-el.dataset.fid=f.id;if(f.auto_grow)el.dataset.grow='1';
+el.dataset.fid=f.id;if(f.field_group)el.dataset.group=f.field_group;if(f.auto_grow)el.dataset.grow='1';
 var s=el.style,gh=f.auto_grow?S.grow.get(f.id):0;
 s.left=f.pos_x+'mm';s.top=f.pos_y+'mm';s.width=f.width+'mm';
 s.height=(gh?gh/MM:f.height)+'mm';s.minHeight=f.height+'mm';
@@ -1398,7 +1402,7 @@ var h=Math.min(a.pos_y+a.height,b.pos_y+b.height)-Math.max(a.pos_y,b.pos_y);
 if(w<=0||h<=0)continue;var sm=Math.min(a.width*a.height,b.width*b.height);
 if(sm>0&&(w*h)/sm>=.6){set.add(a.id);set.add(b.id)}}
 LAYOUT={sig:sig,ov:set,clip:overflowReport(S.b.fields)};return LAYOUT}
-var saveDraft=debounce(function(){if(!S.b.id)return;
+var saveDraft=debounce(function(){if(!S.b.id||!S.b.dirty)return;
 DB.drafts[S.b.id]={fields:JSON.parse(JSON.stringify(S.b.fields)),deleted:S.b.deleted.slice(),at:Date.now()};persist()},700);
 function openBuilder(id){if(S.shell!=='admin'||!token){setShell('public');openLogin();return}
 ensureFields(id).then(function(t){if(!t)return;
@@ -1468,6 +1472,8 @@ if(t==='text_input'||t==='textarea'||t==='date')h+=g('ค่าเริ่ม�
 if(t==='checkbox_agree')h+=g('ข้อความรับรอง','<textarea data-p="value" rows="2">'+esc(f.value)+'</textarea>');
 if(t==='logo')h+=g('รูปโลโก้','<button class="btn sm blk" data-p="picklogo">'+ic('image',13)+'เลือกรูป…</button>');
 if(OPT.indexOf(t)>=0)h+=g('ตัวเลือก (1 บรรทัด = 1 ข้อ)','<textarea data-p="options" rows="4">'+esc((f.options||[]).join(NL))+'</textarea>');
+var groupNames=[];S.b.fields.forEach(function(x){var gn=String(x.field_group||'').trim();if(gn&&groupNames.indexOf(gn)<0)groupNames.push(gn)});groupNames.sort();
+h+=g('กลุ่มฟิลด์','<input type="text" data-p="field_group" value="'+esc(f.field_group||'')+'" list="fieldGroupList" placeholder="เช่น ข้อมูลส่วนตัว"><datalist id="fieldGroupList">'+groupNames.map(function(gn){return '<option value="'+esc(gn)+'">'}).join('')+'</datalist>','ฟิลด์ที่ใช้ชื่อกลุ่มเดียวกันจะแสดงรวมในรายการด้านซ้าย');
 if(isIn)h+=g('ชื่อฟิลด์ (name)','<input type="text" data-p="name" value="'+esc(f.name)+'">','อังกฤษ ตัวเลข _ เท่านั้น')+
 '<label class="tg"><input type="checkbox" data-p="required"'+(f.required?' checked':'')+'>จำเป็นต้องกรอก</label>';
 h+='</div><div class="cs"><h4>'+ic('ruler',13)+'ตำแหน่งและขนาด</h4><div class="c2">'+
@@ -1552,8 +1558,12 @@ decorate()})}
 function repaint(){paintSheet('#canvas',S.b.fields,'design',{});zoomSheet($('#canvas'),S.b.zoom||1);decorate();renderLayers()}
 function renderLayers(){var L=$('#layers');if(!L)return;var F=layoutFlags();
 var clip=new Set(F.clip.map(function(x){return x.id}));
-L.innerHTML=S.b.fields.map(function(f,i){
-return '<div class="layer'+(S.b.sel===f.id?' on':'')+'" draggable="true" data-lid="'+esc(f.id)+'" data-i="'+i+'">'+
+var lastGroup=null;
+L.innerHTML=S.b.fields.map(function(f,i){var group=String(f.field_group||'').trim(),head='';
+if(group&&group!==lastGroup){var count=S.b.fields.filter(function(x){return String(x.field_group||'').trim()===group}).length;
+head='<div class="layer-group">'+ic('layers',12)+'<span>'+esc(group)+'</span><b>'+count+'</b></div>'}
+lastGroup=group;
+return head+'<div class="layer'+(S.b.sel===f.id?' on':'')+'" draggable="true" data-lid="'+esc(f.id)+'" data-i="'+i+'">'+
 '<span>'+ic('grip',13)+'</span>'+ic(FTI[f.field_type],13)+'<span class="lt">'+esc(f.label||FTL[f.field_type])+'</span>'+
 (clip.has(f.id)||F.ov.has(f.id)?'<span class="warn">'+ic('warn',12)+'</span>':'')+
 '<button class="lx" data-lx="'+esc(f.id)+'">'+ic('x',12)+'</button></div>'}).join('')||
@@ -1689,18 +1699,13 @@ if(!f.name){toast('มีฟิลด์ที่ยังไม่มีชื�
 if(seen[f.name]){selectField(f.id);toast('ชื่อฟิลด์ซ้ำ: '+f.name,{type:'warn'});return Promise.resolve()}
 seen[f.name]=1;
 if(OPT.indexOf(f.field_type)>=0&&!(f.options||[]).length){selectField(f.id);toast('ฟิลด์ '+f.label+' ต้องมีตัวเลือกอย่างน้อย 1 ข้อ',{type:'warn'});return Promise.resolve()}}
-var p=checkParity(b.fields),mismatch=false;
-if(!p.ok){if(auto)return Promise.resolve();
-mismatch=true;
-if(!confirm('ตรวจพบเลย์เอาต์ไม่ตรงกัน '+p.diffs.length+' จุด ระหว่างมุมมองผู้ดูแลและมุมมองผู้ใช้'+NL+NL+'ระบบจะบันทึกเป็น ฉบับร่าง (ไม่เผยแพร่) จนกว่าเลย์เอาต์จะตรงกันและคุณกดเปิดใช้งานภายหลัง'+NL+NL+'ต้องการบันทึกต่อหรือไม่?')){
-toast('ยังไม่ได้บันทึกลงเซิร์ฟเวอร์ — ฟอร์มถูกเก็บเป็นฉบับร่างในเครื่องแล้ว ไม่หาย',{type:'warn',ms:5000});return Promise.resolve()}}
-var isActive=mismatch?false:t.is_active;
+var isActive=auto?t.is_active:true;
 t.fields=JSON.parse(JSON.stringify(b.fields));t.is_active=isActive;t.updated_at=new Date().toISOString();
 S.grow.clear();THUMBS.clear();LAYOUT.sig='';b.dirty=false;persist();
-var st=$('#saveState');if(st){st.className='ss saved';st.innerHTML=ic('check',13)+(mismatch?'บันทึกเป็นฉบับร่าง':'บันทึกแล้ว')}
+var st=$('#saveState');if(st){st.className='ss saved';st.innerHTML=ic('check',13)+'บันทึกแล้ว · ผู้ใช้ใช้งานได้'}
 b.undo=[];b.redo=[];updateUndoUI();
-if(!auto)toast(mismatch?'บันทึกเป็นฉบับร่างแล้ว (เลย์เอาต์ยังไม่ตรงกัน)':'บันทึก '+t.name+' แล้ว — ผู้ใช้เห็นและกรอกตรงกัน',{type:mismatch?'warn':'ok'});
-if(!token)return Promise.resolve();
+if(!auto)toast('บันทึก '+t.name+' แล้ว — ผู้ใช้ใช้งานได้ทันที',{type:'ok'});
+if(!token){delete DB.drafts[b.id];persist();return Promise.resolve();}
 b.saving=true;var tid=t.id;
 var create=isUuid(tid)?Promise.resolve(tid):rawApi('createFormTemplate',{data:{name:t.name,description:t.description}},true,{timeout:30000}).then(function(c){
 var nid=fixUuid(c&&c.id);if(!nid)throw new Error('รหัสฟอร์มกลับไม่ถูกต้อง');
@@ -1717,7 +1722,9 @@ b.fields.forEach(function(f,i){var n=fixUuid(map[ids[i]]);if(n){if(b.sel===f.id)
 t.fields=JSON.parse(JSON.stringify(b.fields));b.deleted=[];LAYOUT.sig='';
 delete DB.drafts[tid];persist();
 invalidate('getFormTemplate');invalidate('getFormTemplates');invalidate('getPublicFormTemplate');
-if(S.sec==='builder'&&S.b.id===t.id){repaint();renderControls();paintBadges()}})
+if(S.sec==='builder'&&S.b.id===t.id){repaint();renderControls();paintBadges()}
+if(!auto&&isActive)return rawApi('publishFormTemplate',{id:tid},true,{timeout:30000});
+return null})
 .catch(function(e){b.dirty=true;var s2=$('#saveState');
 if(s2){s2.className='ss dirty';s2.innerHTML=ic('warn',13)+'ส่งไม่สำเร็จ (ร่างยังอยู่ในเครื่อง)'}
 setConn('bad',e.message);toast('บันทึกขึ้นเซิร์ฟเวอร์ไม่สำเร็จ: '+e.message+' — ฉบับร่างยังอยู่ในเครื่อง',{type:'bad',ms:7000})})
