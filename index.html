@@ -757,7 +757,7 @@ background:linear-gradient(135deg,transparent 48%,#22D3EE 48%);touch-action:none
 <header><h3>เข้าสู่ระบบผู้ดูแล</h3><button class="ico-btn" data-close-login></button></header>
 <div class="modal-body">
 <div id="lgDiag"></div>
-<div class="fld"><label for="lgEmail">อีเมลราชการ</label><input id="lgEmail" type="email" autocomplete="username" placeholder="admin@dontum-hospital.go.th"></div>
+<div class="fld"><label for="lgEmail">อีเมลราชการ</label><input id="lgEmail" type="email" autocomplete="username" placeholder="อีเมลผู้ดูแลระบบ"></div>
 <div class="fld"><label for="lgPass">รหัสผ่าน</label><input id="lgPass" type="password" autocomplete="current-password" placeholder="••••••••••"></div>
 <p class="lg-note">เฉพาะบัญชี ADMIN · ตรวจสอบสิทธิ์กับ Supabase ผ่าน Apps Script</p>
 </div>
@@ -873,7 +873,7 @@ mkF('signature',{name:'sig_req',label:'ผู้ยื่นคำขอ',requir
 mkF('signature',{name:'sig_head',label:'หัวหน้าหน่วยงาน',pos_x:118,pos_y:198,width:72,height:20,border_style:'none'}),
 mkF('label',{name:'foot',label:'ท้ายเอกสาร',value:'เอกสารฉบับนี้สร้างจากระบบแบบฟอร์มอิเล็กทรอนิกส์ โรงพยาบาลดอนตูม',pos_x:20,pos_y:272,width:170,height:6,font_size:10,text_align:'center',border_style:'none',text_color:'#666666'})]}
 
-/* ✅ ไม่มีข้อมูลตัวอย่าง — เริ่มว่างเปล่า แสดงเฉพาะสิ่งที่ Admin สร้าง/ซิงก์จากเซิร์ฟเวอร์จริง */
+/* ไม่มีข้อมูลตัวอย่าง — แสดงเฉพาะสิ่งที่ Admin สร้าง/ซิงก์จากเซิร์ฟเวอร์จริง */
 function seed(){return{templates:[],submissions:[],staff:[],logo:null,favorites:[],savedViews:[],activity:[],deptMap:{},
 prefs:{theme:'light',density:'cozy',rail:'expanded'}}}
 
@@ -1526,7 +1526,7 @@ $('#lgTest').onclick=async()=>{const b=$('#lgTest');b.disabled=true;
 lgDiag('wait','กำลังทดสอบการเชื่อมต่อ…','ส่งคำขอ <code>getHeaderLogo</code> ไปยัง Apps Script');
 const t0=performance.now();
 try{await rawApi('getHeaderLogo',{},false,{timeout:20000});
-const ms=Math.round(performance.now()-t0);setConn('ok','เชื่อมต่อสำเร็จ ('+ms+' ms)');
+const ms=Math.round(performance.now()-t0);setConn('ok','เชื่อมต่อ Apps Script สำเร็จ ('+ms+' ms)');
 lgDiag('ok','เชื่อมต่อเซิร์ฟเวอร์สำเร็จ','ตอบกลับใน <b>'+ms+' ms</b> — กรอกอีเมลและรหัสผ่านเพื่อเข้าระบบได้เลย');syncPublic()}
 catch(e){setConn('bad',e.message);
 lgDiag('err','เชื่อมต่อไม่สำเร็จ',esc(e.message)+'<br><br><b>ตรวจตามนี้:</b><br>1. Apps Script → Deploy → Manage deployments<br>'+
@@ -1535,7 +1535,7 @@ lgDiag('err','เชื่อมต่อไม่สำเร็จ',esc(e.mess
 finally{b.disabled=false}};
 async function doLogin(){const email=$('#lgEmail').value.trim().toLowerCase(),pass=$('#lgPass').value;
 if(!email||!pass)return lgDiag('err','กรอกข้อมูลไม่ครบ','กรุณากรอกทั้งอีเมลและรหัสผ่าน');
-if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email))return lgDiag('err','รูปแบบอีเมลไม่ถูกต้อง','ตัวอย่าง <code>admin@dontum-hospital.go.th</code>');
+if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email))return lgDiag('err','รูปแบบอีเมลไม่ถูกต้อง','กรุณาตรวจสอบตัวสะกดของอีเมลก่อนเข้าสู่ระบบ');
 const b=$('#lgGo');b.disabled=true;const old=b.innerHTML;b.innerHTML=ic('clock',15)+' กำลังเข้าสู่ระบบ…';
 lgDiag('wait','กำลังตรวจสอบสิทธิ์…','ส่งคำขอ <code>loginWithPassword</code> → Apps Script → Supabase Auth');
 try{const r=await rawApi('loginWithPassword',{email:email,password:pass},false,{timeout:30000});
@@ -1967,7 +1967,7 @@ function selectField(id){if(S.b.sel===id){paintSel();return}
 S.b.sel=id;renderControls();paintSel();$$('.layer').forEach(l=>l.classList.toggle('on',l.dataset.lid===id))}
 function paintSel(){$$('#canvas .cf').forEach(e=>e.classList.toggle('on',e.dataset.fid===S.b.sel))}
 function openPreview(data){const c=paintSheet('#pvCanvas',S.b.fields,'fill',data||{});
-$('#previewScrim').hidden=false;requestAnimationFrame(()=>zoomSheet(c,fitSheet($('#pvWrap')))}
+$('#previewScrim').hidden=false;requestAnimationFrame(()=>zoomSheet(c,fitSheet($('#pvWrap'))))}
 function bindBuilder(){const b=S.b,v=$('#view');
 $('#bName').oninput=e=>{const t=tpl(b.id);if(t){t.name=e.target.value;markDirty()}};
 v.onclick=e=>{const bt=e.target.closest('[data-b]'),tl=e.target.closest('.tool');
@@ -2352,7 +2352,7 @@ function addStaff(){modal('เพิ่มบุคลากร',
 '<div class="fld"><label>ตำแหน่ง</label><select id="sfPos">'+POS.map(p=>'<option>'+esc(p)+'</option>').join('')+'</select></div>'+
 '<div class="fld"><label>หน่วยงาน</label><select id="sfD">'+DEPTS.map(d=>'<option>'+esc(d)+'</option>').join('')+'</select></div>'+
 '<div class="fld"><label>ประเภทการจ้าง</label><select id="sfE"><option>ข้าราชการ</option><option>พนักงานราชการ</option><option>ลูกจ้างชั่วคราว</option></select></div>'+
-'<div class="fld"><label>อีเมลราชการ</label><input id="sfM" type="email" placeholder="name@dontum.go.th"></div>',
+'<div class="fld"><label>อีเมลราชการ</label><input id="sfM" type="email" placeholder="ชื่อ.นามสกุล@หน่วยงาน.go.th"></div>',
 '<button class="btn" data-close-modal>ยกเลิก</button><button class="btn pri" id="sfGo">'+ic('plus')+'เพิ่มบุคลากร</button>');
 bindClose();$('#sfF').focus();
 $('#sfGo').onclick=()=>{const f=$('#sfF').value.trim(),l=$('#sfL').value.trim();
