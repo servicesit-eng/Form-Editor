@@ -57,18 +57,14 @@ html[data-shell=admin] #pubMain,html[data-shell=admin] #pubFooter,html[data-shel
 .bgf{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
 .bgg{position:absolute;inset:-2px;background-image:linear-gradient(var(--ln) 1px,transparent 1px),linear-gradient(90deg,var(--ln) 1px,transparent 1px);background-size:28px 28px;opacity:.2;mask-image:radial-gradient(ellipse 92% 72% at 50% 0%,#000 28%,transparent 80%)}
 .au{position:absolute;border-radius:50%;filter:blur(70px)}
-.a1{width:54vw;height:54vw;left:-14vw;top:-20vw;background:radial-gradient(circle,#7FC9BC,transparent 66%);opacity:.3;animation:d1 26s var(--ez) infinite alternate}
-.a2{width:46vw;height:46vw;right:-12vw;top:6vh;background:radial-gradient(circle,#9ADFD4,transparent 66%);opacity:.24;animation:d2 32s var(--ez) infinite alternate}
-.a3{width:42vw;height:42vw;left:32vw;bottom:-24vw;background:radial-gradient(circle,#BFE8DE,transparent 70%);opacity:.18;animation:d3 38s var(--ez) infinite alternate}
+.a1{width:54vw;height:54vw;left:-14vw;top:-20vw;background:radial-gradient(circle,#7FC9BC,transparent 66%);opacity:.3}
+.a2{width:46vw;height:46vw;right:-12vw;top:6vh;background:radial-gradient(circle,#9ADFD4,transparent 66%);opacity:.24}
+.a3{width:42vw;height:42vw;left:32vw;bottom:-24vw;background:radial-gradient(circle,#BFE8DE,transparent 70%);opacity:.18}
 [data-theme=dark] .au{opacity:.16;mix-blend-mode:screen}
-@keyframes d1{to{transform:translate3d(8vw,6vh,0) scale(1.14)}}
-@keyframes d2{to{transform:translate3d(-7vw,10vh,0) scale(1.2)}}
-@keyframes d3{to{transform:translate3d(5vw,-8vh,0) scale(1.1)}}
 .gr{position:absolute;inset:0;opacity:.04;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E")}
 .skip{position:fixed;left:-999px;top:0;z-index:999;background:var(--p6);color:#fff;padding:12px 18px;font-weight:700}.skip:focus{left:0}
 .topbar{position:fixed;inset:0 0 auto 0;height:var(--top);z-index:60;display:flex;align-items:center;gap:12px;padding:0 14px;background:linear-gradient(100deg,var(--p9),var(--p7) 46%,var(--p6));color:#EAF6F7;box-shadow:0 6px 24px rgba(4,25,30,.3)}
-.topbar:after{content:'';position:absolute;left:0;right:0;bottom:-1px;height:2px;background:linear-gradient(90deg,var(--cy),var(--em),var(--am),var(--cr),var(--mg),var(--vi),var(--cy));background-size:220% 100%;animation:sp 16s linear infinite}
-@keyframes sp{to{background-position:220% 0}}
+.topbar:after{content:'';position:absolute;left:0;right:0;bottom:-1px;height:2px;background:linear-gradient(90deg,var(--cy),var(--em),var(--am),var(--cr),var(--mg),var(--vi),var(--cy))}
 .rtg{width:34px;height:34px;border-radius:var(--r1);display:grid;place-items:center;color:#BFE3E6;flex:none}
 .rtg:hover{background:rgba(255,255,255,.13);color:#fff}
 .brand{display:flex;align-items:center;gap:10px;min-width:0}
@@ -92,7 +88,6 @@ kbd{font-family:var(--mo);font-size:10px;padding:2px 6px;border-radius:5px;backg
 .conn.bad{background:rgba(244,63,94,.2);border-color:rgba(244,63,94,.55);color:#FDA4AF}
 .conn.wait{background:rgba(34,211,238,.18);border-color:rgba(34,211,238,.5);color:#9BEBF5}
 .conn i{width:7px;height:7px;border-radius:50%;background:currentColor;flex:none}
-.conn.wait i{animation:pl 1s infinite}@keyframes pl{50%{opacity:.25}}
 .ib{width:34px;height:34px;border-radius:var(--r1);display:grid;place-items:center;color:#BFE3E6;position:relative;flex:none}
 .ib:hover{background:rgba(255,255,255,.13);color:#fff}
 .ib .dot{position:absolute;top:6px;right:6px;width:7px;height:7px;border-radius:50%;background:var(--cr);box-shadow:0 0 0 2px var(--p7)}
@@ -126,7 +121,7 @@ body.mini .rail-item,html.pre-mini .rail-item{justify-content:center;padding:0}
 .rfoot{margin-top:auto;padding:10px 6px 4px}
 .clock{padding:12px;border-radius:var(--r3);background:linear-gradient(160deg,var(--sf2),var(--sf3));border:1px solid var(--ln);text-align:center}
 .clock .d{display:flex;align-items:center;justify-content:center;gap:6px;font-size:10.5px;font-weight:700;color:var(--tx2)}
-.clock .lv{width:7px;height:7px;border-radius:50%;background:var(--em);animation:pl 2s infinite}
+.clock .lv{width:7px;height:7px;border-radius:50%;background:var(--em)}
 .clock .t{font-family:var(--mo);font-size:26px;font-weight:600;letter-spacing:.06em;line-height:1.25;font-variant-numeric:tabular-nums}
 .clock .z{font-size:9.5px;letter-spacing:.12em;color:var(--tx3)}
 .main{flex:1;overflow-y:auto;overflow-x:hidden;padding:0 26px 60px}
@@ -210,8 +205,7 @@ td.num{font-family:var(--mo);font-size:12px}td.acts{text-align:right;white-space
 .empty{padding:52px 24px;text-align:center;border:2px dashed var(--ln2);border-radius:var(--r3);background:var(--sf2);grid-column:1/-1}
 .empty .ei{width:56px;height:56px;margin:0 auto 14px;border-radius:var(--r3);display:grid;place-items:center;background:linear-gradient(150deg,var(--sf3),var(--sf));border:1px solid var(--ln);color:var(--p5)}
 .empty h3{font-size:16px;margin-bottom:5px}.empty p{font-size:13px;color:var(--tx2);max-width:440px;margin:0 auto 15px}
-.skel{background:linear-gradient(90deg,var(--sf3) 25%,var(--sf2) 37%,var(--sf3) 63%);background-size:400% 100%;animation:sh 1.25s ease-in-out infinite;border-radius:var(--r3);height:300px}
-@keyframes sh{0%{background-position:100% 50%}100%{background-position:0 50%}}
+.skel{background:var(--sf3);border-radius:var(--r3);height:300px}
 .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(156px,1fr));gap:12px;margin-bottom:16px}
 .stat{padding:14px 16px;border-radius:var(--r3);background:var(--sf);border:1px solid var(--ln);box-shadow:var(--s1);position:relative;overflow:hidden}
 .stat:after{content:'';position:absolute;right:-18px;top:-18px;width:74px;height:74px;border-radius:50%;opacity:.14}
@@ -502,10 +496,10 @@ html,body{margin:0;padding:0;font-family:'Noto Sans Thai','Sarabun',sans-serif;c
 <section class="pv active" id="pvHome">
 <div class="hero"><div>
 <span class="eyeb">DONTUM HOSPITAL · e-FORM SERVICE</span>
-<h1>ยื่นคำขอออนไลน์<br><em>ไม่ต้องลงทะเบียน</em></h1>
+<h1>ยื่นคำขอออนไลน์</h1>
 <p>กรอกแบบฟอร์มราชการของโรงพยาบาลดอนตูมผ่านเว็บ ส่งคำขอได้ทันที รับเลขอ้างอิง ใช้ตรวจสอบสถานะ และพิมพ์เอกสารขนาด A4 ที่ตรงกับแบบราชการทุกจุด</p>
 <div class="hcta"><button class="btn pri lg" data-pnav="forms">ดูฟอร์มทั้งหมด</button><button class="btn lg" data-pnav="status">ตรวจสอบคำขอของฉัน</button></div>
-<ul class="hpts"><li>กรอกได้ตลอด 24 ชม.</li><li>พิมพ์/บันทึก PDF ขนาด A4</li><li>เลขบัตรประชาชนเข้ารหัส</li></ul>
+<ul class="hpts"><li>กรอกได้ตลอด 24 ชม.</li><li>พิมพ์/บันทึก PDF ขนาด A4</li></ul>
 </div><div class="hart" id="heroArt" aria-hidden="true"><div class="ash s1"></div><div class="ash s2"></div><div class="ash s3"></div><div class="stamp">A4</div></div></div>
 <div class="psec" id="homeSec"><div class="psh"><h2>ฟอร์มที่เปิดรับขณะนี้</h2><p>เลือกฟอร์มเพื่อเริ่มกรอกออนไลน์</p><span class="cpill" id="pubCount">—</span></div>
 <div id="pubGrid" class="grid"><div class="skel"></div><div class="skel"></div><div class="skel"></div></div></div>
@@ -520,7 +514,7 @@ html,body{margin:0;padding:0;font-family:'Noto Sans Thai','Sarabun',sans-serif;c
 <div class="subm"><h3>📝 ข้อมูลผู้กรอก (บังคับ)</h3><div class="sgrid">
 <div class="fld" style="margin:0"><label for="fillName">ชื่อ-นามสกุล</label><input id="fillName" maxlength="200" placeholder="เช่น นายสมชาย ใจดี"></div>
 <div class="fld" style="margin:0"><label for="fillCid">เลขบัตรประชาชน 13 หลัก</label><input id="fillCid" inputmode="numeric" maxlength="13" placeholder="1234567890123"></div>
-</div><p class="note" style="margin-top:9px">🔒 เลขบัตรถูกแปลงเป็นค่าแฮชก่อนจัดเก็บ ใช้ตรวจสอบคำขอของท่านภายหลังเท่านั้น</p></div>
+</div></div>
 <div class="ftb" id="fillToolbar">
 <div class="seg" id="fillSeg"><button type="button" data-fm="paper">📄 กระดาษ A4</button><button type="button" data-fm="simple">📋 ฟอร์มง่าย</button></div>
 <div class="fzm" id="fillZoom"><button type="button" class="btn sm ic" data-fz="out">−</button><button type="button" class="btn sm" data-fz="fit" id="fillZoomLbl">100%</button><button type="button" class="btn sm ic" data-fz="in">+</button></div>
