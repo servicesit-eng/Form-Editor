@@ -786,6 +786,8 @@ background:linear-gradient(135deg,transparent 48%,#22D3EE 48%);touch-action:none
 
 <script>
 'use strict';
+/* ค่าคงที่อักขระควบคุม — สร้างจาก fromCharCode เพื่อไม่ให้มี escape ที่พังได้เมื่อ copy ไฟล์ */
+const NL=String.fromCharCode(10),CR=String.fromCharCode(13),CRLF=CR+NL,BOM=String.fromCharCode(0xFEFF);
 const API_URL='https://script.google.com/macros/s/AKfycbwlBmF7UCDh1b-DlGy6uzT_Vot2J0Z02EoLoCRm5XFjtra1nDzCBD-cBHJ_8Yl6hX6oig/exec';
 const KEY='dontum.v7',TOK='dontum_token_v7',OUTBOX='dontum.outbox.v7',CACHE='dontum.cache.v7';
 const $=(s,r)=>(r||document).querySelector(s);
@@ -804,7 +806,7 @@ const h=s.replace(/[^0-9a-f]/gi,'').toLowerCase();
 return h.length===32?h.slice(0,8)+'-'+h.slice(8,12)+'-'+h.slice(12,16)+'-'+h.slice(16,20)+'-'+h.slice(20):null}
 const tmpId=p=>'tmp_'+uid(p||'f_');
 const err=e=>e&&e.message?e.message:'เกิดข้อผิดพลาด';
-const cssEsc=s=>(window.CSS&&CSS.escape)?CSS.escape(String(s)):String(s).replace(/["\\]/g,'\\$&');
+const cssEsc=s=>(window.CSS&&CSS.escape)?CSS.escape(String(s)):String(s);
 const P={forms:'M4 3h10l6 6v12H4z M14 3v6h6',inbox:'M3 12h5l2 3h4l2-3h5 M3 12l3-8h12l3 8v8H3z',
 builder:'M12 2l3 6 6 1-4.5 4.3 1 6.2L12 16.6 6.5 19.5l1-6.2L3 9l6-1z',mine:'M9 11l3 3 8-8 M20 12v7H4V5h9',
 users:'M16 20v-2a4 4 0 00-8 0v2 M12 11a4 4 0 100-8 4 4 0 000 8 M22 20v-2a4 4 0 00-3-3.9',
@@ -875,20 +877,22 @@ mkF('label',{name:'foot',label:'ท้ายเอกสาร',value:'เอก
 function seed(){return{templates:[],submissions:[],staff:[],logo:null,favorites:[],savedViews:[],activity:[],deptMap:{},drafts:{},
 prefs:{theme:'light',density:'cozy',rail:'expanded'}}}
 
-let DB;try{DB=JSON.parse(localStorage.getItem(KEY))||seed()}catch(e){DB=seed()}
-if(!DB||!Array.isArray(DB.templates))DB=seed();
+let DB=null;
+try{DB=JSON.parse(localStorage.getItem(KEY)||'null')}catch(e){DB=null}
+if(!DB||typeof DB!=='object')DB=seed();
 DB.prefs=Object.assign({theme:'light',density:'cozy',rail:'expanded'},DB.prefs||{});
-['favorites','savedViews','activity','submissions','staff','templates'].forEach(k=>{if(!Array.isArray(DB[k]))DB[k]=[]});
+['favorites','savedViews','activity','submissions','staff','templates'].forEach(k=>{DB[k]=Array.isArray(DB[k])?DB[k].filter(x=>x&&typeof x==='object'):[]});
 if(!DB.deptMap||typeof DB.deptMap!=='object')DB.deptMap={};
 if(!DB.drafts||typeof DB.drafts!=='object')DB.drafts={};
-(function(){const fix=(arr,p)=>arr.filter(it=>it&&it.id&&(fixUuid(it.id)||String(it.id).indexOf(p)===0))
-.map(it=>{const r=fixUuid(it.id);if(r)it.id=r;return it});
+try{
+const fix=(arr,p)=>arr.filter(it=>it&&it.id&&(fixUuid(it.id)||String(it.id).indexOf(p)===0)).map(it=>{const r=fixUuid(it.id);if(r)it.id=r;return it});
 DB.templates=fix(DB.templates,'tpl_');DB.submissions=fix(DB.submissions,'sub_');DB.staff=fix(DB.staff,'stf_');
-DB.templates.forEach(t=>{t.fields=(Array.isArray(t.fields)?t.fields:[]).map(f=>{const r=fixUuid(f.id);if(r)f.id=r;else if(!isLocal(f.id))f.id=tmpId('f_');return f})});
+DB.templates.forEach(t=>{t.fields=(Array.isArray(t.fields)?t.fields:[]).filter(f=>f&&typeof f==='object').map(f=>{const r=fixUuid(f.id);if(r)f.id=r;else if(!isLocal(f.id))f.id=tmpId('f_');return f})});
 const ids={};DB.templates.forEach(t=>{ids[t.id]=1});
-DB.submissions=DB.submissions.filter(s=>ids[s.template_id]||String(s.id).indexOf('sub_')===0);
+DB.submissions=DB.submissions.filter(s=>s&&(ids[s.template_id]||String(s.id).indexOf('sub_')===0));
 DB.favorites=DB.favorites.filter(i=>ids[i]);
-Object.keys(DB.drafts).forEach(k=>{if(!ids[k])delete DB.drafts[k]})})();
+Object.keys(DB.drafts).forEach(k=>{if(!ids[k])delete DB.drafts[k]});
+}catch(e){DB=seed();try{localStorage.removeItem(KEY)}catch(_){}}
 const persist=debounce(()=>idle(()=>{try{localStorage.setItem(KEY,JSON.stringify(Object.assign({},DB,
 {submissions:DB.submissions.slice(0,400),activity:DB.activity.slice(0,30)})))}catch(e){}}),500);
 let token=null;try{token=localStorage.getItem(TOK)}catch(e){}
@@ -1210,15 +1214,7 @@ else if(f.field_type==='signature')d[f.name]=n[1]+' '+n[2];
 else d[f.name]='ขอความอนุเคราะห์ดำเนินการตามรายละเอียดที่แนบมาพร้อมนี้ เพื่อสนับสนุนการปฏิบัติงานของหน่วยงาน'});
 return d}
 
-const EXPORT_CSS=SHEET_CSS+'\n@page{size:210mm 297mm;margin:0}\n*{-webkit-print-color-adjust:exact;print-color-adjust:exact}\n'+
-'html,body{margin:0;padding:0;font-family:"Noto Sans Thai","Sarabun",sans-serif;color:#111}\n.wrap{margin:0 auto;position:relative}\n'+
-'.bar{position:fixed;top:14px;right:14px;display:flex;gap:8px;z-index:99}\n'+
-'.bar button{border:0;border-radius:8px;padding:10px 17px;font:600 13px "Noto Sans Thai",sans-serif;background:#0B4F55;color:#fff;cursor:pointer;box-shadow:0 6px 16px rgba(4,25,30,.3)}\n'+
-'.bar button:hover{background:#0E7C86}\n'+
-'@media screen{html,body{background:linear-gradient(135deg,#EDF5F2,#DCE7E9);min-height:100vh}body{padding:30px 0 54px}'+
-'.sheet{border:1px solid #cbd5e1;box-shadow:0 12px 34px rgba(4,25,30,.2);transform:scale(var(--fit,1))}}\n'+
-'@media print{html,body{width:210mm;background:#fff;overflow:hidden;padding:0}'+
-'.wrap{width:210mm}.sheet{border:0;box-shadow:none;transform:none}.bar{display:none}}\n';
+const EXPORT_CSS=SHEET_CSS+NL+'@page{size:210mm 297mm;margin:0}'+NL+'*{-webkit-print-color-adjust:exact;print-color-adjust:exact}'+NL+'html,body{margin:0;padding:0;font-family:"Noto Sans Thai","Sarabun",sans-serif;color:#111}'+NL+'.wrap{margin:0 auto;position:relative}'+NL+'.bar{position:fixed;top:14px;right:14px;display:flex;gap:8px;z-index:99}'+NL+'.bar button{border:0;border-radius:8px;padding:10px 17px;font:600 13px "Noto Sans Thai",sans-serif;background:#0B4F55;color:#fff;cursor:pointer;box-shadow:0 6px 16px rgba(4,25,30,.3)}'+NL+'.bar button:hover{background:#0E7C86}'+NL+'@media screen{html,body{background:linear-gradient(135deg,#EDF5F2,#DCE7E9);min-height:100vh}body{padding:30px 0 54px}.sheet{border:1px solid #cbd5e1;box-shadow:0 12px 34px rgba(4,25,30,.2);transform:scale(var(--fit,1))}}'+NL+'@media print{html,body{width:210mm;background:#fff;overflow:hidden;padding:0}.wrap{width:210mm}.sheet{border:0;box-shadow:none;transform:none}.bar{display:none}}'+NL;
 function sheetHTML(fields,data,title,autoPrint){const fs=(fields||[]).map(norm);measureGrow(fs);
 const holder=document.createElement('div');holder.className='sheet';holder.style.height=sheetH(fs)+'mm';
 fs.forEach(f=>holder.appendChild(fieldEl(f,'print',data||{},'x_')));
@@ -1229,7 +1225,7 @@ const fit='(function(){var w=document.getElementById("w"),c=w.firstElementChild,
 return '<!doctype html><html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'+
 '<title>'+esc(title)+'</title><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;600;700&family=Sarabun:wght@400;700&display=swap">'+
 '<style>'+EXPORT_CSS+'</style></head><body><div class="bar"><button onclick="window.print()">🖨️ พิมพ์ / บันทึก PDF</button></div>'+
-'<div class="wrap" id="w">'+holder.outerHTML+'</div><script>'+fit+'<\/script></body></html>'}
+'<div class="wrap" id="w">'+holder.outerHTML+'</div><'+'script>'+fit+'</'+'script></body></html>'}
 function download(content,name,mime){const b=new Blob([content],{type:mime||'text/html;charset=utf-8'});
 const u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;a.download=name;
 document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(u);a.remove()},800)}
@@ -1238,7 +1234,7 @@ function printSheet(fields,data,title){if(!(fields||[]).length)return toast('ไ
 const w=window.open('','_blank');if(!w)return toast('เบราว์เซอร์บล็อกป๊อปอัป — กรุณาอนุญาตแล้วลองใหม่',{type:'warn'});
 w.document.write(sheetHTML(fields,data,title,true));w.document.close()}
 function csv(rows,name){const q=v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"';
-download('\uFEFF'+rows.map(r=>r.map(q).join(',')).join('\r\n'),name,'text/csv;charset=utf-8');
+download(BOM+rows.map(r=>r.map(q).join(',')).join(CRLF),name,'text/csv;charset=utf-8');
 toast('ส่งออก '+name+' แล้ว',{type:'ok'})}
 
 function modal(title,body,foot){$('#modalTitle').textContent=title;$('#modalBody').innerHTML=body;
@@ -1528,7 +1524,7 @@ $('#lgTest').onclick=async()=>{const b=$('#lgTest');b.disabled=true;
 lgDiag('wait','กำลังทดสอบการเชื่อมต่อ…','ส่งคำขอ <code>getHeaderLogo</code> ไปยัง Apps Script');
 const t0=performance.now();
 try{await rawApi('getHeaderLogo',{},false,{timeout:20000});
-const ms=Math.round(performance.now()-t0);setConn('ok','เชื่อมต่อ Apps Script สำเร็จ ('+ms+' ms)');
+const ms=Math.round(performance.now()-t0);setConn('ok','เชื่อมต่อสำเร็จ ('+ms+' ms)');
 lgDiag('ok','เชื่อมต่อเซิร์ฟเวอร์สำเร็จ','ตอบกลับใน <b>'+ms+' ms</b> — กรอกอีเมลและรหัสผ่านเพื่อเข้าระบบได้เลย');syncPublic()}
 catch(e){setConn('bad',e.message);
 lgDiag('err','เชื่อมต่อไม่สำเร็จ',esc(e.message)+'<br><br><b>ตรวจตามนี้:</b><br>1. Apps Script → Deploy → Manage deployments<br>'+
@@ -1726,7 +1722,6 @@ if(w<=0||h<=0)continue;const sm=Math.min(a.width*a.height,b.width*b.height);
 if(sm>0&&(w*h)/sm>=.6){set.add(a.id);set.add(b.id)}}
 LAYOUT={sig:sig,ov:set,clip:overflowReport(S.b.fields)};return LAYOUT}
 
-/* ✅ ฉบับร่างอัตโนมัติ — เก็บทุกการแก้ไขที่ยังไม่กดบันทึก ลง localStorage ไม่หาย */
 const saveDraft=debounce(()=>{if(!S.b.id)return;
 DB.drafts[S.b.id]={fields:JSON.parse(JSON.stringify(S.b.fields)),deleted:S.b.deleted.slice(),at:Date.now()};
 persist()},700);
@@ -1736,8 +1731,7 @@ function openBuilder(id){if(S.shell!=='admin'||!token){setShell('public');return
 ensureFields(id).then(t=>{if(!t)return;
 S.b=Object.assign({},S.b,{id:id,fields:JSON.parse(JSON.stringify(t.fields||[])).map(norm),deleted:[],sel:null,
 dirty:false,undo:[],redo:[],saving:false});
-const dr=DB.drafts[id];
-let restored=false;
+const dr=DB.drafts[id];let restored=false;
 if(dr&&Array.isArray(dr.fields)&&dr.fields.length){
 S.b.fields=JSON.parse(JSON.stringify(dr.fields)).map(norm);
 S.b.deleted=(dr.deleted||[]).slice();
@@ -1813,7 +1807,7 @@ if(t==='text_input'||t==='textarea'||t==='date')h+=g('ค่าเริ่ม�
 if(t==='checkbox_agree')h+=g('ข้อความรับรอง','<textarea data-p="value" rows="2">'+esc(f.value)+'</textarea>');
 if(t==='logo')h+=g('รูปโลโก้','<button class="btn sm block" data-p="picklogo">'+ic('image',13)+'เลือกรูป…</button>'+
 (f.value?'<img src="'+esc(f.value)+'" alt="" style="max-width:100%;margin-top:6px;border:1px solid var(--line);border-radius:6px;background:#fff">':''));
-if(OPT.indexOf(t)>=0)h+=g('ตัวเลือก (1 บรรทัด = 1 ข้อ)','<textarea data-p="options" rows="4">'+esc((f.options||[]).join('\n'))+'</textarea>');
+if(OPT.indexOf(t)>=0)h+=g('ตัวเลือก (1 บรรทัด = 1 ข้อ)','<textarea data-p="options" rows="4">'+esc((f.options||[]).join(NL))+'</textarea>');
 if(isIn)h+=g('ชื่อฟิลด์ (name)','<input type="text" data-p="name" value="'+esc(f.name)+'">','อังกฤษ ตัวเลข _ เท่านั้น')+
 '<label class="tgl"><input type="checkbox" data-p="required"'+(f.required?' checked':'')+'>จำเป็นต้องกรอก</label>';
 h+='</div><div class="ctl-sec"><h4>'+ic('ruler',13)+'ตำแหน่งและขนาด</h4>'+
@@ -1878,7 +1872,7 @@ function applyProp(f,key,el){let changed=false;
 if(key==='required'){if(f.required!==el.checked){f.required=el.checked;changed=true}}
 else if(key==='auto_grow'){if(f.auto_grow!==el.checked){f.auto_grow=el.checked;S.grow.clear();changed=true}}
 else if(key==='bg_transparent'){const v=el.checked?'transparent':'#ffffff';if(f.bg_color!==v){f.bg_color=v;changed=true}}
-else if(key==='options'){const v=el.value.split('\n').map(s=>s.trim()).filter(Boolean);
+else if(key==='options'){const v=el.value.split(NL).map(s=>s.trim()).filter(Boolean);
 if(JSON.stringify(v)!==JSON.stringify(f.options||[])){f.options=v;S.grow.clear();changed=true}}
 else if(key==='name'){const v=el.value.toLowerCase().replace(/[^a-z0-9_]/g,'_');
 if(v!==el.value)el.value=v;if(f.name!==v){f.name=v;changed=true}}
@@ -2057,13 +2051,12 @@ if(!f.name)return toast('มีฟิลด์ที่ยังไม่มี�
 if(seen[f.name]){selectField(f.id);return toast('ชื่อฟิลด์ซ้ำ: '+f.name,{type:'warn'})}
 seen[f.name]=1;
 if(OPT.indexOf(f.field_type)>=0&&!(f.options||[]).length){selectField(f.id);return toast('ฟิลด์ “'+f.label+'” ต้องมีตัวเลือกอย่างน้อย 1 ข้อ',{type:'warn'})}}
-/* ✅ เลย์เอาต์ไม่ตรงกัน: ไม่บล็อกอีกต่อไป — ถามความยินยอม แล้วบันทึกเป็นฉบับร่าง */
 const p=checkParity(b.fields);
 let mismatch=false;
 if(!p.ok){
-if(auto)return; /* autosave ไม่ดันเลย์เอาต์ที่ไม่ตรงขึ้นเซิร์ฟเวอร์ — ร่างคงอยู่ในเครื่อง */
+if(auto)return;
 mismatch=true;
-if(!confirm('ตรวจพบเลย์เอาต์ไม่ตรงกัน '+p.diffs.length+' จุด ระหว่างมุมมองผู้ดูแลและมุมมองผู้ใช้\n\nระบบจะบันทึกเป็น “ฉบับร่าง” (ไม่เผยแพร่ให้ประชาชน) จนกว่าเลย์เอาต์จะตรงกันและคุณกดเปิดใช้งานภายหลัง\n\nต้องการบันทึกต่อหรือไม่?')){
+if(!confirm('ตรวจพบเลย์เอาต์ไม่ตรงกัน '+p.diffs.length+' จุด ระหว่างมุมมองผู้ดูแลและมุมมองผู้ใช้'+NL+NL+'ระบบจะบันทึกเป็น "ฉบับร่าง" (ไม่เผยแพร่) จนกว่าเลย์เอาต์จะตรงกันและคุณกดเปิดใช้งานภายหลัง'+NL+NL+'ต้องการบันทึกต่อหรือไม่?')){
 return toast('ยังไม่ได้บันทึกลงเซิร์ฟเวอร์ — ฟอร์มถูกเก็บเป็นฉบับร่างในเครื่องแล้ว ไม่หาย',{type:'warn',ms:5000})}
 }
 const isActive=mismatch?false:t.is_active;
@@ -2443,9 +2436,9 @@ if(S.shell==='admin'){Object.keys(SECS).forEach(k=>c.push({g:'ไปยังห
 c.push({g:'สร้าง',t:'สร้างฟอร์มใหม่',s:'โครงมาตรฐานหรือกระดาษเปล่า',i:'plus',run:newForm});
 c.push({g:'สร้าง',t:'เพิ่มบุคลากร',s:'ลงทะเบียนบุคลากร',i:'users',run:addStaff});
 c.push({g:'ตรวจคุณภาพ',t:'ตรวจความตรงแบบ Admin ↔ User',s:'วัดพิกัดจริงทุกกล่อง',i:'shield',run:()=>{S.sec=null;go('builder');setTimeout(parityDrawer,280)}});
-c.push({g:'ตรวจคุณภาพ',t:'แก้เนื้อหาเกินกล่อง',s:'ขยายกล่อง / ลดขนาดอักษร',i:'ruler',run:()=>{S.sec=null;go('builder');setTimeout(clipDrawer,280)}});
+c.push({g:'ตรวจคุณภาพ',t:'แก้เนื้อหาเกินกล่อง',s:'ขยายกล่อง/ลดอักษร',i:'ruler',run:()=>{S.sec=null;go('builder');setTimeout(clipDrawer,280)}});
 c.push({g:'ข้อมูล',t:'ดึงคำขอใหม่ทั้งหมด',s:'บังคับโหลดจากเซิร์ฟเวอร์',i:'refresh',run:()=>{invalidate('getFormSubmissions');S.loaded.clear();loadSubs(true);toast('กำลังดึง…',{type:'info',ms:1500})}});
-c.push({g:'ข้อมูล',t:'ล้างแคชและซิงก์ใหม่',s:'แก้ข้อมูลค้าง / รหัสผิดรูป',i:'broom',run:hardResync});
+c.push({g:'ข้อมูล',t:'ล้างแคชและซิงก์ใหม่',s:'แก้ข้อมูลค้าง/รหัสผิดรูป',i:'broom',run:hardResync});
 c.push({g:'ข้อมูล',t:'ส่งคิวที่ค้างทันที',s:QUEUE.length+' รายการ',i:'cloud',run:flushQueue});
 c.push({g:'ส่งออก',t:'ส่งออกคำขอ CSV',s:'ตามตัวกรองปัจจุบัน',i:'csv',run:()=>csv([['อ้างอิง','ผู้ยื่น','ฟอร์ม','สถานะ']].concat(
 inboxList().map(s=>['#'+refOf(s),s.submitted_by_name,s.template_name,ST[s.status]||s.status])),'submissions.csv')});
