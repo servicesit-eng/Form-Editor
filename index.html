@@ -152,12 +152,11 @@ color:var(--text2);font-weight:600;font-size:13.5px;transition:.18s var(--ease);
 .cnt.hot{background:var(--warn-bg);color:var(--warn-ink)}
 .rail-item.on .cnt.hot{background:var(--amber);color:#3A2400}
 .rail-foot{margin-top:auto;padding:10px 6px 4px}
-.quota{padding:12px;border-radius:var(--r3);background:linear-gradient(160deg,var(--surface2),var(--surface3));border:1px solid var(--line)}
-.quota-top{display:flex;justify-content:space-between;align-items:baseline;font-size:11px;color:var(--text2);font-weight:600}
-.quota-top b{font-family:var(--mono);font-size:17px;color:var(--text)}
-.quota-bar{height:6px;border-radius:99px;background:var(--line);overflow:hidden;margin:8px 0 6px}
-.quota-bar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--emerald),var(--cyan));transition:width .8s var(--ease)}
-.quota small{font-size:10px;color:var(--text3)}
+.clock-card{padding:12px;border-radius:var(--r3);background:linear-gradient(160deg,var(--surface2),var(--surface3));border:1px solid var(--line);text-align:center}
+.clock-top{display:flex;align-items:center;justify-content:center;gap:6px;font-size:10.5px;font-weight:700;color:var(--text2)}
+.clock-live{width:7px;height:7px;border-radius:50%;background:var(--emerald);animation:pl 2s infinite;flex:none}
+.clock-time{font-family:var(--mono);font-size:26px;font-weight:600;letter-spacing:.06em;color:var(--text);line-height:1.25;margin-top:2px;font-variant-numeric:tabular-nums}
+.clock-tz{font-size:9.5px;letter-spacing:.12em;color:var(--text3);text-transform:uppercase;margin-top:2px}
 .main{flex:1;overflow-y:auto;overflow-x:hidden;padding:0 26px 60px}
 .crumbs{display:flex;align-items:center;gap:7px;font-size:11.5px;font-weight:600;margin:0 -26px 14px;padding:9px 26px;position:sticky;top:0;z-index:32;
 background:linear-gradient(90deg,#D9ECE5,#E4F1EC 60%,#EAF4F0);border-bottom:1px solid #CBE2DA;color:#5E807A}
@@ -515,7 +514,6 @@ border:1px solid color-mix(in srgb,var(--blue) 34%,var(--line))}
 .fill-progress .pb i{display:block;height:100%;width:0;border-radius:99px;background:linear-gradient(90deg,var(--petrol-500),var(--emerald));transition:width .3s var(--ease)}
 .fill-progress.done{color:var(--ok-ink)}
 .fill-zoom{display:flex;gap:4px;align-items:center}
-.fill-note{font-size:12px;color:var(--text2);background:var(--info-bg);border:1px solid color-mix(in srgb,var(--blue) 26%,var(--line));border-radius:var(--r2);padding:9px 12px;margin-bottom:12px;display:flex;gap:8px;line-height:1.55}
 .fill-wrap{border-radius:var(--r3);border:1px solid var(--line);background:var(--surface3);padding:20px;overflow:auto;max-height:66vh;display:flex;justify-content:center}
 .fill-simple{display:flex;flex-direction:column;gap:12px}
 .fs-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r3);padding:16px 17px;box-shadow:var(--sh1)}
@@ -569,7 +567,7 @@ body.boot *,body.boot *::before,body.boot *::after{animation-duration:0ms!import
 @page{size:210mm 297mm;margin:0}
 body{overflow:visible;background:#fff}
 .topbar,.rail,.bg-field,.toasts,.drawer,.drawer-scrim,.palette-scrim,.modal-scrim,.notif,.sec-head,.toolbar,.bulk,.crumbs,
-.pub-footer,.hero,.submitter,.fill-acts,.ok-acts,.status-box,.fill-toolbar,.fill-note,.pub-section-head{display:none!important}
+.pub-footer,.hero,.submitter,.fill-acts,.ok-acts,.status-box,.fill-toolbar,.pub-section-head{display:none!important}
 .shell{position:static}.main,.pub-main{overflow:visible;padding:0;position:static}
 .sheet{box-shadow:none;border:0;transform:none!important}
 }
@@ -658,7 +656,7 @@ background:linear-gradient(135deg,transparent 48%,#22D3EE 48%);touch-action:none
 <div class="hero">
 <div class="hero-copy">
 <span class="hero-eyebrow">DONTUM HOSPITAL · e-FORM SERVICE</span>
-<h1>ยื่นคำขอออนไลน์<br><em>ไม่ต้องลงทะเบียน</em></h1>
+<h1>ยื่นคำขอออนไลน์<br><em>แบบฟอร์มออนไลน์</em></h1>
 <p>กรอกแบบฟอร์มราชการของโรงพยาบาลดอนตูมผ่านเว็บ ส่งคำขอได้ทันที รับเลขอ้างอิง ใช้ตรวจสอบสถานะ และพิมพ์เอกสารขนาด A4 ที่ตรงกับแบบราชการทุกจุด</p>
 <div class="hero-cta"><button class="btn pri lg" data-pnav="forms">ดูฟอร์มทั้งหมด</button><button class="btn lg" data-pnav="status">ตรวจสอบคำขอของฉัน</button></div>
 <ul class="hero-points"><li>กรอกได้ตลอด 24 ชม.</li><li>พิมพ์/บันทึก PDF ขนาด A4</li><li>เลขบัตรประชาชนเข้ารหัส</li></ul>
@@ -691,10 +689,8 @@ background:linear-gradient(135deg,transparent 48%,#22D3EE 48%);touch-action:none
 <button type="button" class="btn sm icon" data-fz="out" title="ย่อ">−</button>
 <button type="button" class="btn sm" data-fz="fit" id="fillZoomLbl" title="พอดีจอ">100%</button>
 <button type="button" class="btn sm icon" data-fz="in" title="ขยาย">+</button></div>
-<span class="parity-pill" id="fillParity">ตรงกับแบบราชการ</span>
 <span class="sp"></span><span class="fill-progress" id="fillProgress"><span class="pb"><i></i></span><b>0/0</b></span>
 </div>
-<div class="fill-note" id="fillNote"></div>
 <div class="fill-wrap" id="fillWrap"><div class="zoom-box"><div class="sheet" id="fillCanvas"></div></div></div>
 <div class="fill-simple" id="fillSimple" hidden></div>
 <div class="fill-acts"><button class="btn pri lg" id="fillSend">📤 ส่งคำขอ</button><button class="btn lg" id="fillClear">ล้างฟอร์ม</button></div>
@@ -731,8 +727,11 @@ background:linear-gradient(135deg,transparent 48%,#22D3EE 48%);touch-action:none
 <button class="rail-item" data-go="brand"><i></i><span>ตราสัญลักษณ์</span></button></div>
 <div class="rail-group"><span class="rail-label">มุมมอง</span>
 <button class="rail-item" data-go="public"><i></i><span>หน้าสาธารณะ</span></button></div>
-<div class="rail-foot"><div class="quota"><div class="quota-top"><span>คำขอ 30 วัน</span><b id="quotaNum">0</b></div>
-<div class="quota-bar"><i id="quotaBar"></i></div><small id="quotaHint"></small></div></div>
+<div class="rail-foot"><div class="clock-card">
+<div class="clock-top"><span class="clock-live"></span><span id="clockDate">—</span></div>
+<div class="clock-time" id="clockTime">--:--:--</div>
+<div class="clock-tz">เวลาประเทศไทย · UTC+7</div>
+</div></div>
 </nav>
 <main class="main" id="main"><div class="crumbs" id="crumbs"></div><div id="view"></div></main>
 </div>
@@ -873,8 +872,7 @@ mkF('signature',{name:'sig_req',label:'ผู้ยื่นคำขอ',requir
 mkF('signature',{name:'sig_head',label:'หัวหน้าหน่วยงาน',pos_x:118,pos_y:198,width:72,height:20,border_style:'none'}),
 mkF('label',{name:'foot',label:'ท้ายเอกสาร',value:'เอกสารฉบับนี้สร้างจากระบบแบบฟอร์มอิเล็กทรอนิกส์ โรงพยาบาลดอนตูม',pos_x:20,pos_y:272,width:170,height:6,font_size:10,text_align:'center',border_style:'none',text_color:'#666666'})]}
 
-/* ไม่มีข้อมูลตัวอย่าง — แสดงเฉพาะสิ่งที่ Admin สร้าง/ซิงก์จากเซิร์ฟเวอร์จริง */
-function seed(){return{templates:[],submissions:[],staff:[],logo:null,favorites:[],savedViews:[],activity:[],deptMap:{},
+function seed(){return{templates:[],submissions:[],staff:[],logo:null,favorites:[],savedViews:[],activity:[],deptMap:{},drafts:{},
 prefs:{theme:'light',density:'cozy',rail:'expanded'}}}
 
 let DB;try{DB=JSON.parse(localStorage.getItem(KEY))||seed()}catch(e){DB=seed()}
@@ -882,13 +880,15 @@ if(!DB||!Array.isArray(DB.templates))DB=seed();
 DB.prefs=Object.assign({theme:'light',density:'cozy',rail:'expanded'},DB.prefs||{});
 ['favorites','savedViews','activity','submissions','staff','templates'].forEach(k=>{if(!Array.isArray(DB[k]))DB[k]=[]});
 if(!DB.deptMap||typeof DB.deptMap!=='object')DB.deptMap={};
+if(!DB.drafts||typeof DB.drafts!=='object')DB.drafts={};
 (function(){const fix=(arr,p)=>arr.filter(it=>it&&it.id&&(fixUuid(it.id)||String(it.id).indexOf(p)===0))
 .map(it=>{const r=fixUuid(it.id);if(r)it.id=r;return it});
 DB.templates=fix(DB.templates,'tpl_');DB.submissions=fix(DB.submissions,'sub_');DB.staff=fix(DB.staff,'stf_');
 DB.templates.forEach(t=>{t.fields=(Array.isArray(t.fields)?t.fields:[]).map(f=>{const r=fixUuid(f.id);if(r)f.id=r;else if(!isLocal(f.id))f.id=tmpId('f_');return f})});
 const ids={};DB.templates.forEach(t=>{ids[t.id]=1});
 DB.submissions=DB.submissions.filter(s=>ids[s.template_id]||String(s.id).indexOf('sub_')===0);
-DB.favorites=DB.favorites.filter(i=>ids[i])})();
+DB.favorites=DB.favorites.filter(i=>ids[i]);
+Object.keys(DB.drafts).forEach(k=>{if(!ids[k])delete DB.drafts[k]})})();
 const persist=debounce(()=>idle(()=>{try{localStorage.setItem(KEY,JSON.stringify(Object.assign({},DB,
 {submissions:DB.submissions.slice(0,400),activity:DB.activity.slice(0,30)})))}catch(e){}}),500);
 let token=null;try{token=localStorage.getItem(TOK)}catch(e){}
@@ -1041,7 +1041,7 @@ function hardResync(){modal('ล้างแคชและซิงก์ให
 '<button class="btn" data-close-modal>ยกเลิก</button><button class="btn pri" id="hrGo">'+ic('broom')+'ล้างและซิงก์</button>');
 bindClose();
 $('#hrGo').onclick=()=>{closeModal();invalidate();
-DB.templates=[];DB.submissions=[];DB.deptMap={};DB.favorites=[];S.loaded.clear();S.grow.clear();THUMBS.clear();LAYOUT.sig='';
+DB.templates=[];DB.submissions=[];DB.deptMap={};DB.favorites=[];DB.drafts={};S.loaded.clear();S.grow.clear();THUMBS.clear();LAYOUT.sig='';
 S.fill={tpl:null,fields:[],data:{},mode:'paper',zoom:0,errors:{}};S.b.id=null;S.b.fields=[];S.sec=null;persist();
 if(S.shell==='admin')render();else routePublic();
 toast('กำลังดึงข้อมูลใหม่…',{type:'info',ms:1600});
@@ -1079,10 +1079,16 @@ function paintBell(){$('#bellDot').hidden=DB.activity.filter(a=>!a.read).length=
 function paintCounts(){const pend=DB.submissions.filter(s=>s.status==='SUBMITTED'&&!s.archived_at).length;
 const map={forms:DB.templates.length,builder:DB.templates.length,inbox:pend,
 mine:DB.submissions.filter(s=>s.submitted_by_name===(S.me||'ผู้ดูแลระบบ')).length,staff:DB.staff.filter(s=>s.is_active).length};
-$$('[data-cnt]').forEach(e=>{const v=map[e.dataset.cnt];e.textContent=v==null?'':v;e.hidden=v==null||v===0});
-const m=DB.submissions.filter(s=>Date.now()-new Date(s.created_at)<30*864e5).length;
-$('#quotaNum').textContent=m;$('#quotaBar').style.width=clamp(m/60*100,4,100)+'%';
-$('#quotaHint').textContent=m?'เป้าหมาย 60 ฉบับ · '+Math.round(m/60*100)+'%':'ยังไม่มีคำขอใน 30 วัน'}
+$$('[data-cnt]').forEach(e=>{const v=map[e.dataset.cnt];e.textContent=v==null?'':v;e.hidden=v==null||v===0})}
+function tickClock(){const now=new Date();
+const t=$('#clockTime'),dd=$('#clockDate');if(!t||!dd)return;
+try{
+t.textContent=new Intl.DateTimeFormat('th-TH',{timeZone:'Asia/Bangkok',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).format(now);
+dd.textContent=new Intl.DateTimeFormat('th-TH',{timeZone:'Asia/Bangkok',weekday:'short',day:'numeric',month:'short',year:'numeric'}).format(now);
+}catch(e){
+t.textContent=now.toLocaleTimeString('th-TH');
+dd.textContent=now.toLocaleDateString('th-TH',{weekday:'short',day:'numeric',month:'short',year:'numeric'})}}
+tickClock();setInterval(tickClock,1000);
 
 function norm(f){const n=(v,d)=>{const x=Number(v);return isFinite(x)?x:d};
 let o=f.options;if(typeof o==='string'){try{o=JSON.parse(o)}catch(e){o=o.split(',').map(s=>s.trim()).filter(Boolean)}}
@@ -1319,7 +1325,6 @@ S.fill={tpl:t.id,fields:fields,data:{},mode:window.innerWidth<820?'simple':'pape
 initFillData();
 $('#fillTitle').textContent=t.name;$('#fillDesc').textContent=t.description||'';
 $('#fillName').value='';$('#fillCid').value='';
-$('#fillNote').innerHTML=ic('ruler',15)+'<span><b>กระดาษ A4</b> แสดงตำแหน่งและขนาดตรงกับที่ผู้ดูแลออกแบบและเอกสารพิมพ์ทุกจุด · ถ้าตัวเล็กให้กดขยาย หรือสลับไป <b>ฟอร์มง่าย</b> เพื่อกรอกสะดวกบนมือถือ (ข้อมูลชุดเดียวกัน)</span>';
 showPub('fill');history.replaceState(null,'','#/fill/'+t.id);
 setFillMode(S.fill.mode);
 requestAnimationFrame(()=>{if(S.fill.mode==='paper'){S.fill.zoom=fitSheet($('#fillWrap'));applyFillZoom()}})}
@@ -1331,10 +1336,7 @@ $('#fillWrap').hidden=!paper;$('#fillZoom').style.display=paper?'flex':'none';$(
 if(paper)renderFillPaper();else renderFillSimple();
 updateProgress()}
 function renderFillPaper(){const c=paintSheet('#fillCanvas',S.fill.fields,'fill',S.fill.data);if(!c)return;
-if(!S.fill.zoom)S.fill.zoom=fitSheet($('#fillWrap'));applyFillZoom();markErrors();
-const p=checkParity(S.fill.fields),pill=$('#fillParity');
-if(pill){pill.classList.toggle('bad',!p.ok);
-pill.innerHTML=ic(p.ok?'shield':'warn',12)+(p.ok?' ตรงกับแบบราชการ':' ไม่ตรงแบบ '+p.diffs.length+' จุด')}}
+if(!S.fill.zoom)S.fill.zoom=fitSheet($('#fillWrap'));applyFillZoom();markErrors()}
 function applyFillZoom(){const c=$('#fillCanvas');if(!c)return;zoomSheet(c,S.fill.zoom||1);
 const l=$('#fillZoomLbl');if(l)l.textContent=Math.round((S.fill.zoom||1)*100)+'%'}
 function renderFillSimple(){const box=$('#fillSimple');if(!box)return;
@@ -1571,7 +1573,7 @@ $('#goPublicBtn').onclick=()=>setShell('public');
 $('#connChip').onclick=()=>testConn();
 
 const SECS={forms:['คลังแบบฟอร์ม','แสดงเฉพาะแบบฟอร์มที่ผู้ดูแลสร้างและเผยแพร่','forms'],
-builder:['ออกแบบฟอร์ม','วางฟิลด์บนกระดาษ A4 — ผู้ใช้และเอกสารพิมพ์เห็นตรงกันทุกจุด','builder'],
+builder:['ออกแบบฟอร์ม','วางฟิลด์บนกระดาษ A4','builder'],
 inbox:['กล่องคำขอ','ตรวจพิจารณา อนุมัติ และจัดเก็บคำขอถาวร','inbox'],
 mine:['คำขอของฉัน','คำขอที่ส่งในนามบัญชีผู้ดูแลระบบ','mine'],
 staff:['บุคลากร','ทะเบียนผู้ใช้งานและสิทธิ์การเข้าถึง','users'],
@@ -1579,7 +1581,7 @@ brand:['ตราสัญลักษณ์','โลโก้ที่แสด
 function go(sec){if(!SECS[sec])return;
 if(S.shell!=='admin'||!token){setShell('public');return openLogin()}
 if(S.sec===sec&&$('#view').dataset.sec===sec)return;
-if(S.sec==='builder'&&S.b.dirty&&sec!=='builder'&&!confirm('มีการแก้ไขที่ยังไม่บันทึก ต้องการออก?'))return;
+if(S.sec==='builder'&&S.b.dirty&&sec!=='builder'&&!confirm('มีการแก้ไขที่ยังไม่บันทึก — ระบบเก็บไว้เป็นฉบับร่างอัตโนมัติแล้ว ต้องการออกหรือไม่?'))return;
 S.sec=sec;S._last=sec;
 $$('.rail-item').forEach(b=>{const on=b.dataset.go===sec;b.classList.toggle('on',on);
 if(on)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current')});
@@ -1665,7 +1667,7 @@ else if(base!=='blank'){const s=tpl(base);if(s)fields=JSON.parse(JSON.stringify(
 const t={id:uid('tpl_'),name:name,description:$('#nfDesc').value.trim(),department:$('#nfDept').value,is_active:false,
 created_at:new Date().toISOString(),updated_at:new Date().toISOString(),fields:fields};
 DB.deptMap[t.id]=t.department;DB.templates.unshift(t);persist();closeModal();
-toast('สร้างฟอร์มแล้ว — กดบันทึกเพื่อขึ้นเซิร์ฟเวอร์และเผยแพร่ให้ผู้ใช้กรอก',{type:'ok'});openBuilder(t.id)}}
+toast('สร้างฟอร์มแล้ว (ฉบับร่าง) — กดบันทึกเพื่อขึ้นเซิร์ฟเวอร์และเผยแพร่ให้ผู้ใช้กรอก',{type:'ok'});openBuilder(t.id)}}
 async function dupForm(id){const s=tpl(id);if(!s)return;
 if(S.live&&isUuid(id)&&token){try{
 const r=await rawApi('duplicateFormTemplate',{id:id,newName:s.name+' (สำเนา)'},true,{timeout:30000});
@@ -1682,7 +1684,7 @@ t.created_at=t.updated_at=new Date().toISOString();t.fields=(t.fields||[]).map(f
 DB.deptMap[t.id]=t.department;DB.templates.unshift(t);persist();render();
 toast('คัดลอก “'+t.name+'” แล้ว',{type:'ok',undo:()=>{DB.templates=DB.templates.filter(x=>x.id!==t.id);persist();render()}})}
 function delForm(id){const i=DB.templates.map(t=>t.id).indexOf(id);if(i<0)return;
-const t=DB.templates[i];DB.templates.splice(i,1);persist();render();
+const t=DB.templates[i];DB.templates.splice(i,1);delete DB.drafts[id];persist();render();
 enqueue('deleteFormTemplate',{id:id},'ลบฟอร์ม');
 toast('ลบ “'+t.name+'” แล้ว',{type:'bad',undo:()=>{DB.templates.splice(i,0,t);persist();render()}})}
 function togglePub(id){const t=tpl(id);if(!t)return;
@@ -1723,11 +1725,25 @@ const h=Math.min(a.pos_y+a.height,b.pos_y+b.height)-Math.max(a.pos_y,b.pos_y);
 if(w<=0||h<=0)continue;const sm=Math.min(a.width*a.height,b.width*b.height);
 if(sm>0&&(w*h)/sm>=.6){set.add(a.id);set.add(b.id)}}
 LAYOUT={sig:sig,ov:set,clip:overflowReport(S.b.fields)};return LAYOUT}
+
+/* ✅ ฉบับร่างอัตโนมัติ — เก็บทุกการแก้ไขที่ยังไม่กดบันทึก ลง localStorage ไม่หาย */
+const saveDraft=debounce(()=>{if(!S.b.id)return;
+DB.drafts[S.b.id]={fields:JSON.parse(JSON.stringify(S.b.fields)),deleted:S.b.deleted.slice(),at:Date.now()};
+persist()},700);
+function dropDraft(id){if(!id)return;delete DB.drafts[id];persist()}
+
 function openBuilder(id){if(S.shell!=='admin'||!token){setShell('public');return openLogin()}
 ensureFields(id).then(t=>{if(!t)return;
 S.b=Object.assign({},S.b,{id:id,fields:JSON.parse(JSON.stringify(t.fields||[])).map(norm),deleted:[],sel:null,
 dirty:false,undo:[],redo:[],saving:false});
-LAYOUT.sig='';S.sec=null;go('builder')})}
+const dr=DB.drafts[id];
+let restored=false;
+if(dr&&Array.isArray(dr.fields)&&dr.fields.length){
+S.b.fields=JSON.parse(JSON.stringify(dr.fields)).map(norm);
+S.b.deleted=(dr.deleted||[]).slice();
+S.b.dirty=true;restored=true}
+LAYOUT.sig='';S.sec=null;go('builder');
+if(restored)toast('กู้คืนฉบับร่างที่ค้างไว้ ('+fdate(new Date(dr.at).toISOString())+') — ยังไม่ถูกบันทึกลงเซิร์ฟเวอร์',{type:'info',ms:5000})})}
 function vBuilder(v){if(!S.b.id){
 const list=DB.templates;
 v.innerHTML=head('builder','<button class="btn pri" data-a="new">'+ic('plus')+'สร้างฟอร์มใหม่</button>')+
@@ -1743,8 +1759,8 @@ if(a&&a.dataset.a==='new')return newForm();
 if(a&&a.dataset.a==='dup')return dupForm(a.dataset.id);
 if(o)openBuilder(o.dataset.open)};return}
 const t=tpl(S.b.id),b=S.b;
-v.innerHTML='<div class="sec-head"><div class="sec-title"><h1>'+esc(t.name)+'</h1><p>สิ่งที่เห็นคือสิ่งที่ผู้ใช้และเอกสารพิมพ์ได้รับ · Ctrl+S บันทึก · Ctrl+Z ย้อน</p></div>'+
-'<div class="sec-actions"><span class="save-state '+(b.dirty?'dirty':'saved')+'" id="saveState">'+ic(b.dirty?'clock':'check',13)+(b.dirty?'ยังไม่บันทึก':'บันทึกแล้ว')+'</span>'+
+v.innerHTML='<div class="sec-head"><div class="sec-title"><h1>'+esc(t.name)+'</h1></div>'+
+'<div class="sec-actions"><span class="save-state '+(b.dirty?'dirty':'saved')+'" id="saveState">'+ic(b.dirty?'clock':'check',13)+(b.dirty?'ยังไม่บันทึก (เก็บเป็นร่างอัตโนมัติ)':'บันทึกแล้ว')+'</span>'+
 '<button class="btn qa" data-b="parity">'+ic('shield')+'ตรวจความตรงแบบ</button>'+
 '<button class="btn" data-b="preview">'+ic('eye')+'ตัวอย่างกรอก</button>'+
 '<button class="btn pri" data-b="save">'+ic('save')+'บันทึก</button></div></div>'+
@@ -1967,15 +1983,15 @@ function selectField(id){if(S.b.sel===id){paintSel();return}
 S.b.sel=id;renderControls();paintSel();$$('.layer').forEach(l=>l.classList.toggle('on',l.dataset.lid===id))}
 function paintSel(){$$('#canvas .cf').forEach(e=>e.classList.toggle('on',e.dataset.fid===S.b.sel))}
 function openPreview(data){const c=paintSheet('#pvCanvas',S.b.fields,'fill',data||{});
-$('#previewScrim').hidden=false;requestAnimationFrame(()=>zoomSheet(c,fitSheet($('#pvWrap'))))}
+$('#previewScrim').hidden=false;requestAnimationFrame(()=>zoomSheet(c,fitSheet($('#pvWrap')))}
 function bindBuilder(){const b=S.b,v=$('#view');
 $('#bName').oninput=e=>{const t=tpl(b.id);if(t){t.name=e.target.value;markDirty()}};
 v.onclick=e=>{const bt=e.target.closest('[data-b]'),tl=e.target.closest('.tool');
 if(tl)return addField(tl.dataset.ft);if(!bt)return;const k=bt.dataset.b;
-if(k==='save')saveBuilder();
+if(k==='save')saveBuilder(false);
 else if(k==='parity')parityDrawer();
 else if(k==='clip')clipDrawer();
-else if(k==='close'){if(b.dirty&&!confirm('ยังไม่ได้บันทึก ปิดเลย?'))return;S.b.id=null;S.sec=null;go('builder')}
+else if(k==='close'){S.b.id=null;S.sec=null;go('builder')}
 else if(k==='ovl'){const n=layoutFlags().ov.size;if(!n)return toast('ไม่มีฟิลด์ซ้อนทับกันอยู่แล้ว',{type:'ok'});
 pushUndo();const m=resolveOverlaps();S.grow.clear();LAYOUT.sig='';markDirty();repaint();renderControls();paintBadges();
 toast('แยกฟิลด์ที่ซ้อนทับ '+m+' ตำแหน่งแล้ว',{type:'ok',undo:doUndo})}
@@ -2029,7 +2045,8 @@ b.undo.push(JSON.stringify({f:b.fields,d:b.deleted,s:b.sel}));restoreSnap(JSON.p
 function updateUndoUI(){$$('[data-b="undo"]').forEach(u=>{u.disabled=!S.b.undo.length});
 $$('[data-b="redo"]').forEach(r=>{r.disabled=!S.b.redo.length})}
 function markDirty(){S.b.dirty=true;LAYOUT.sig='';const s=$('#saveState');
-if(s){s.className='save-state dirty';s.innerHTML=ic('clock',13)+'ยังไม่บันทึก'}autoSave()}
+if(s){s.className='save-state dirty';s.innerHTML=ic('clock',13)+'ยังไม่บันทึก (เก็บเป็นร่างอัตโนมัติ)'}
+saveDraft();autoSave()}
 const autoSave=debounce(()=>{if(!S.b.dirty||!S.b.id||S.b.saving)return;
 const a=document.activeElement;
 if(a&&(a.id==='bName'||(a.closest&&a.closest('#ctlBody,.bld-bar'))))return;saveBuilder(true)},2600);
@@ -2040,13 +2057,21 @@ if(!f.name)return toast('มีฟิลด์ที่ยังไม่มี�
 if(seen[f.name]){selectField(f.id);return toast('ชื่อฟิลด์ซ้ำ: '+f.name,{type:'warn'})}
 seen[f.name]=1;
 if(OPT.indexOf(f.field_type)>=0&&!(f.options||[]).length){selectField(f.id);return toast('ฟิลด์ “'+f.label+'” ต้องมีตัวเลือกอย่างน้อย 1 ข้อ',{type:'warn'})}}
+/* ✅ เลย์เอาต์ไม่ตรงกัน: ไม่บล็อกอีกต่อไป — ถามความยินยอม แล้วบันทึกเป็นฉบับร่าง */
 const p=checkParity(b.fields);
-if(!p.ok)return toast('เลย์เอาต์ไม่ตรงกัน '+p.diffs.length+' จุด — กด “ตรวจความตรงแบบ” เพื่อดูรายละเอียด',{type:'bad'});
-t.fields=JSON.parse(JSON.stringify(b.fields));t.updated_at=new Date().toISOString();
+let mismatch=false;
+if(!p.ok){
+if(auto)return; /* autosave ไม่ดันเลย์เอาต์ที่ไม่ตรงขึ้นเซิร์ฟเวอร์ — ร่างคงอยู่ในเครื่อง */
+mismatch=true;
+if(!confirm('ตรวจพบเลย์เอาต์ไม่ตรงกัน '+p.diffs.length+' จุด ระหว่างมุมมองผู้ดูแลและมุมมองผู้ใช้\n\nระบบจะบันทึกเป็น “ฉบับร่าง” (ไม่เผยแพร่ให้ประชาชน) จนกว่าเลย์เอาต์จะตรงกันและคุณกดเปิดใช้งานภายหลัง\n\nต้องการบันทึกต่อหรือไม่?')){
+return toast('ยังไม่ได้บันทึกลงเซิร์ฟเวอร์ — ฟอร์มถูกเก็บเป็นฉบับร่างในเครื่องแล้ว ไม่หาย',{type:'warn',ms:5000})}
+}
+const isActive=mismatch?false:t.is_active;
+t.fields=JSON.parse(JSON.stringify(b.fields));t.is_active=isActive;t.updated_at=new Date().toISOString();
 S.grow.clear();THUMBS.clear();LAYOUT.sig='';b.dirty=false;persist();
-const st=$('#saveState');if(st){st.className='save-state saved';st.innerHTML=ic('check',13)+'บันทึกแล้ว'}
+const st=$('#saveState');if(st){st.className='save-state saved';st.innerHTML=ic('check',13)+(mismatch?'บันทึกเป็นฉบับร่าง':'บันทึกแล้ว')}
 b.undo=[];b.redo=[];updateUndoUI();
-if(!auto)toast('บันทึก “'+t.name+'” แล้ว — ผู้ใช้เห็นและกรอกตรงกัน',{type:'ok'});
+if(!auto)toast(mismatch?'บันทึกเป็นฉบับร่างแล้ว (เลย์เอาต์ยังไม่ตรงกัน — ยังไม่เผยแพร่)':'บันทึก “'+t.name+'” แล้ว — ผู้ใช้เห็นและกรอกตรงกัน',{type:mismatch?'warn':'ok'});
 if(!S.live||!token)return;
 b.saving=true;
 try{let tid=t.id;
@@ -2059,16 +2084,17 @@ t.id=nid;if(i>=0)DB.templates[i]=t;b.id=nid;tid=nid;persist()}
 const ids=[],send=b.fields.map((f,i)=>{const c=Object.assign({},f);
 if(isUuid(f.id)){ids[i]=f.id;c.id=f.id}
 else{const s='tmp_'+Math.random().toString(36).slice(2,10)+'i'+i;ids[i]=s;c.id=s}return c});
-const res=await rawApi('saveFormLayout',{templateId:tid,meta:{name:t.name,description:t.description,is_active:t.is_active},
+const res=await rawApi('saveFormLayout',{templateId:tid,meta:{name:t.name,description:t.description,is_active:isActive},
 fields:send,deletedIds:b.deleted.filter(isUuid)},true,{timeout:40000});
 const map=(res&&res.idMap)||{};
 b.fields.forEach((f,i)=>{const n=fixUuid(map[ids[i]]);if(n){if(b.sel===f.id)b.sel=n;f.id=n}});
-t.fields=JSON.parse(JSON.stringify(b.fields));b.deleted=[];LAYOUT.sig='';persist();
+t.fields=JSON.parse(JSON.stringify(b.fields));b.deleted=[];LAYOUT.sig='';
+dropDraft(tid);persist();
 invalidate('getFormTemplate');invalidate('getFormTemplates');invalidate('getPublicFormTemplate');
 if(S.sec==='builder'&&S.b.id===t.id){repaint();renderControls();paintBadges()}}
 catch(e){b.dirty=true;const s2=$('#saveState');
-if(s2){s2.className='save-state dirty';s2.innerHTML=ic('warn',13)+'ส่งไม่สำเร็จ'}
-setConn('bad',e.message);toast('บันทึกขึ้นเซิร์ฟเวอร์ไม่สำเร็จ: '+e.message,{type:'bad',ms:7000})}
+if(s2){s2.className='save-state dirty';s2.innerHTML=ic('warn',13)+'ส่งไม่สำเร็จ (ร่างยังอยู่ในเครื่อง)'}
+setConn('bad',e.message);toast('บันทึกขึ้นเซิร์ฟเวอร์ไม่สำเร็จ: '+e.message+' — ฉบับร่างยังอยู่ในเครื่องไม่หาย',{type:'bad',ms:7000})}
 finally{b.saving=false}}
 function addField(type,x,y,center){const b=S.b;if(!b.id)return;
 const d={title:{width:150,height:11,font_size:18,font_weight:'bold',text_align:'center',border_style:'none',value:'หัวข้อเรื่อง'},
@@ -2165,7 +2191,7 @@ v.innerHTML=head('inbox',resyncBtn+'<button class="btn" data-i="csv">'+ic('csv')
 '<div class="stats"><div class="stat s1"><span>รอตรวจสอบ</span><b>'+cnt('SUBMITTED')+'</b></div>'+
 '<div class="stat s2"><span>อนุมัติ</span><b>'+cnt('APPROVED')+'</b></div><div class="stat s3"><span>ไม่อนุมัติ</span><b>'+cnt('REJECTED')+'</b></div>'+
 '<div class="stat s4"><span>คลังถาวร</span><b>'+cnt('ARCHIVED')+'</b></div><div class="stat s5"><span>ทั้งหมด</span><b>'+DB.submissions.length+'</b></div></div>'+
-'<div class="toolbar"><div class="search">'+ic('search')+'<input id="iq" value="'+esc(f.q)+'" placeholder="ค้นหาชื่อผู้ยื่น / เลขอ้างอิง / ฟอร์ม…"><kbd>/</kbd></div>'+
+'<div class="toolbar"><div class="search">'+ic('search')+'<input id="iq" value="'+esc(f.q)+'" placeholder="ค้นหา…"><kbd>/</kbd></div>'+
 '<select class="sel" id="itpl"><option value="all">ทุกแบบฟอร์ม</option>'+DB.templates.map(t=>'<option value="'+esc(t.id)+'"'+(f.tpl===t.id?' selected':'')+'>'+esc(t.name)+'</option>').join('')+'</select>'+
 '<select class="sel" id="isort"><option value="newest">ใหม่สุด</option><option value="oldest"'+(f.sort==='oldest'?' selected':'')+'>เก่าสุด</option><option value="name"'+(f.sort==='name'?' selected':'')+'>ชื่อ ก–ฮ</option></select></div>'+
 '<div class="chipbar">'+[['ALL','ทั้งหมด'],['SUBMITTED','รอตรวจ'],['APPROVED','อนุมัติ'],['REJECTED','ไม่อนุมัติ'],['ARCHIVED','คลังถาวร']].map(c=>
@@ -2220,14 +2246,13 @@ if(k==='print')return printSub(id);
 if(k==='arch')return setArch([id],true);
 if(k==='unarch')return setArch([id],false)}
 if(row&&!e.target.closest('button,input'))subDrawer(row.dataset.sid)}}
-function saveView(){modal('บันทึกมุมมองปัจจุบัน',
-'<p style="font-size:13px;color:var(--text2);margin-bottom:12px">บันทึกชุดตัวกรอง (ฟอร์ม · สถานะ · คำค้น · การเรียง) ไว้เรียกใช้ซ้ำด้วยคลิกเดียว</p>'+
+function saveView(){modal('บันทึกมุมมอง',
 '<div class="fld"><label>ชื่อมุมมอง</label><input id="svName" placeholder="เช่น รอตรวจ — งานพัสดุ"></div>',
 '<button class="btn" data-close-modal>ยกเลิก</button><button class="btn pri" id="svGo">'+ic('bolt')+'บันทึก</button>');
 bindClose();$('#svName').focus();
-$('#svGo').onclick=()=>{const n=$('#svName').value.trim();if(!n)return toast('กรุณาตั้งชื่อมุมมอง',{type:'warn'});
+$('#svGo').onclick=()=>{const n=$('#svName').value.trim();if(!n)return toast('กรุณาตั้งชื่อ',{type:'warn'});
 DB.savedViews.push({id:uid('sv_'),name:n,state:{tpl:S.inbox.tpl,status:S.inbox.status,q:S.inbox.q,sort:S.inbox.sort}});
-persist();closeModal();render();toast('บันทึกมุมมอง “'+n+'” แล้ว',{type:'ok'})}}
+persist();closeModal();render();toast('บันทึกมุมมองแล้ว',{type:'ok'})}}
 function bulk(k,list){const ids=Array.from(S.inbox.sel);if(!ids.length)return;
 if(k==='clear'){S.inbox.sel.clear();return render()}
 if(k==='ok')return setStatus(ids,'APPROVED');
@@ -2418,9 +2443,9 @@ if(S.shell==='admin'){Object.keys(SECS).forEach(k=>c.push({g:'ไปยังห
 c.push({g:'สร้าง',t:'สร้างฟอร์มใหม่',s:'โครงมาตรฐานหรือกระดาษเปล่า',i:'plus',run:newForm});
 c.push({g:'สร้าง',t:'เพิ่มบุคลากร',s:'ลงทะเบียนบุคลากร',i:'users',run:addStaff});
 c.push({g:'ตรวจคุณภาพ',t:'ตรวจความตรงแบบ Admin ↔ User',s:'วัดพิกัดจริงทุกกล่อง',i:'shield',run:()=>{S.sec=null;go('builder');setTimeout(parityDrawer,280)}});
-c.push({g:'ตรวจคุณภาพ',t:'แก้เนื้อหาเกินกล่อง',s:'ขยายกล่อง/ลดอักษร',i:'ruler',run:()=>{S.sec=null;go('builder');setTimeout(clipDrawer,280)}});
+c.push({g:'ตรวจคุณภาพ',t:'แก้เนื้อหาเกินกล่อง',s:'ขยายกล่อง / ลดขนาดอักษร',i:'ruler',run:()=>{S.sec=null;go('builder');setTimeout(clipDrawer,280)}});
 c.push({g:'ข้อมูล',t:'ดึงคำขอใหม่ทั้งหมด',s:'บังคับโหลดจากเซิร์ฟเวอร์',i:'refresh',run:()=>{invalidate('getFormSubmissions');S.loaded.clear();loadSubs(true);toast('กำลังดึง…',{type:'info',ms:1500})}});
-c.push({g:'ข้อมูล',t:'ล้างแคชและซิงก์ใหม่',s:'แก้ข้อมูลค้าง/รหัสผิดรูป',i:'broom',run:hardResync});
+c.push({g:'ข้อมูล',t:'ล้างแคชและซิงก์ใหม่',s:'แก้ข้อมูลค้าง / รหัสผิดรูป',i:'broom',run:hardResync});
 c.push({g:'ข้อมูล',t:'ส่งคิวที่ค้างทันที',s:QUEUE.length+' รายการ',i:'cloud',run:flushQueue});
 c.push({g:'ส่งออก',t:'ส่งออกคำขอ CSV',s:'ตามตัวกรองปัจจุบัน',i:'csv',run:()=>csv([['อ้างอิง','ผู้ยื่น','ฟอร์ม','สถานะ']].concat(
 inboxList().map(s=>['#'+refOf(s),s.submitted_by_name,s.template_name,ST[s.status]||s.status])),'submissions.csv')});
@@ -2518,7 +2543,7 @@ const s=S.shell==='admin'?$('.search input',$('#view')):$('#pfSearch');
 if(s){s.focus();s.select()}return}
 if(!typing&&(e.key==='?'||(e.shiftKey&&k==='/'))){e.preventDefault();return showHelp()}
 if(S.shell!=='admin'||S.sec!=='builder'||!S.b.id)return;
-if(mod&&k==='s'){e.preventDefault();return saveBuilder()}
+if(mod&&k==='s'){e.preventDefault();return saveBuilder(false)}
 if(typing)return;
 if(mod&&k==='z'){e.preventDefault();return e.shiftKey?doRedo():doUndo()}
 if(!S.b.sel)return;
