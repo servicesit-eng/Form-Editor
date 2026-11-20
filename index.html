@@ -1284,7 +1284,8 @@ else if(/อนุญาต/.test(m))hint='บัญชีถูกระงั�
 else if(/Unknown action/.test(m))hint='Backend ยังไม่มี action นี้ — Deploy Code.gs เวอร์ชันล่าสุด';
 lgDiag('err','เข้าสู่ระบบไม่สำเร็จ',esc(m)+'<br><br>'+hint);toast('เข้าสู่ระบบไม่สำเร็จ: '+m,{type:'bad',ms:6000})})
 .then(function(){b.disabled=false;b.innerHTML=old})}
-function clearAuth(){token=null;S.me='';S.role='';try{localStorage.removeItem(TOK)}catch(e){}
+function clearAuth(){if(S.b&&S.b.id&&S.b.dirty){try{writeDraftNow();if(persist&&persist.flush)persist.flush()}catch(e){}}
+token=null;S.me='';S.role='';try{localStorage.removeItem(TOK)}catch(e){}
 if(saveDraft&&saveDraft.cancel)saveDraft.cancel();if(autoSave&&autoSave.cancel)autoSave.cancel();NET.cache.clear();cacheSave();
 S.b={id:null,fields:[],deleted:[],sel:null,selIds:[],zoom:0,grid:true,snap:true,step:.5,guides:false,warnOvl:true,warnClip:true,dirty:false,undo:[],redo:[],saving:false,saveQueued:false,remoteReady:false,saveBlocked:false};
 S.inbox.sel=new Set();S.staff.sel=new Set();S.loaded.clear();LAYOUT.sig='';paintUser()}
@@ -1806,9 +1807,13 @@ $$('[data-b="redo"]').forEach(function(r){r.disabled=!S.b.redo.length})}
 function markDirty(){S.b.dirty=true;if(S.b.saving)S.b.saveQueued=true;LAYOUT.sig='';var s=$('#saveState');
 if(s){s.className='ss dirty';s.innerHTML=ic('clock',13)+'ยังไม่บันทึก (เก็บเป็นร่างอัตโนมัติ)'}
 saveDraft();autoSave()}
+var isBuilderEditorFocus=function(a){return !!(a&&(a.id==='bName'||(a.closest&&a.closest('#ctlBody'))||a.isContentEditable))};
 var autoSave=debounce(function(){if(!S.b.dirty||!S.b.id)return;if(S.b.saving){S.b.saveQueued=true;return}
-var a=document.activeElement;
-if(a&&(a.id==='bName'||(a.closest&&a.closest('#ctlBody,.bbar'))))return;saveBuilder(true)},2600);
+if(isBuilderEditorFocus(document.activeElement))return;saveBuilder(true)},2600);
+document.addEventListener('focusout',function(e){if(S.sec!=='builder'||!S.b.dirty)return;
+var t=e.target,isName=t&&t.id==='bName',isControl=t&&t.closest&&t.closest('#ctlBody'),isInline=t&&t.closest&&t.closest('#canvas .fc');
+if(!isName&&!isControl&&!isInline)return;
+setTimeout(function(){if(S.sec==='builder'&&S.b.dirty&&!isBuilderEditorFocus(document.activeElement))autoSave()},0)});
 function mappedFieldId(res,key,index){var map=res&&res.idMap,value=null;
 if(typeof map==='string'){try{map=JSON.parse(map)}catch(e){map=null}}
 if(Array.isArray(map)){var hit=map.filter(function(x){return x&&typeof x==='object'&&String(x.tempId||x.clientId||x.client_id||x.localId||'')===String(key)})[0];value=hit!==undefined?hit:map[index]}
