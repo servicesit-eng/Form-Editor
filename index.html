@@ -828,11 +828,18 @@ function tickClock(){var now=new Date(),t=$('#clockTime'),d=$('#clockDate');if(!
 try{t.textContent=new Intl.DateTimeFormat('th-TH',{timeZone:'Asia/Bangkok',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).format(now);
 d.textContent=new Intl.DateTimeFormat('th-TH',{timeZone:'Asia/Bangkok',weekday:'short',day:'numeric',month:'short',year:'numeric'}).format(now)}
 catch(e){t.textContent=now.toLocaleTimeString('th-TH');d.textContent=now.toLocaleDateString('th-TH')}}
-function norm(f){var n=function(v,d){var x=Number(v);return isFinite(x)?x:d};
+function norm(f){f=f||{};
+var n=function(v,d){if(v===null||v===undefined||v==='')return d;var x=Number(v);return isFinite(x)?x:d};
+var pick=function(a){for(var i=0;i<a.length;i++){if(f[a[i]]!==null&&f[a[i]]!==undefined&&f[a[i]]!=='')return f[a[i]]}return null};
 var o=f.options;if(typeof o==='string'){try{o=JSON.parse(o)}catch(e){o=o.split(',').map(function(s){return s.trim()}).filter(Boolean)}}
-var r=Object.assign({},f);r.options=Array.isArray(o)?o.map(String).filter(Boolean):[];r.auto_grow=f.auto_grow===true;
+var r=Object.assign({},f),w=clamp(n(pick(['width','w']),70),3,PW),h=clamp(n(pick(['height','h']),8),1,PH);
+r.options=Array.isArray(o)?o.map(String).filter(Boolean):[];
+r.auto_grow=f.auto_grow===true||f.auto_grow===1||String(f.auto_grow||'').toLowerCase()==='true';
 r.field_group=typeof f.field_group==='string'?f.field_group.trim():(typeof f.group_name==='string'?f.group_name.trim():'');
-r.pos_x=n(f.pos_x,15);r.pos_y=n(f.pos_y,20);r.width=n(f.width,70);r.height=n(f.height,8);r.font_size=n(f.font_size,14);return r}
+r.width=w;r.height=h;
+r.pos_x=clamp(n(pick(['pos_x','position_x','x','left']),15),0,PW-w);
+r.pos_y=clamp(n(pick(['pos_y','position_y','y','top']),20),0,PH-h);
+r.font_size=clamp(n(f.font_size,14),6,72);return r}
 function mk(t,c,x){var e=document.createElement(t);if(c)e.className=c;if(x!==undefined)e.textContent=x;return e}
 function fieldEl(f,mode,data,pfx){var el=document.createElement('div');
 el.className='cf ft-'+f.field_type+(f.required&&INP.indexOf(f.field_type)>=0?' req':'');
@@ -881,7 +888,9 @@ r.appendChild(cb);var lb=mk('label','',txt);lb.htmlFor='ag_'+pfx+f.id;r.appendCh
 else{r.appendChild(mk('span','ob',mode==='print'&&val?'✓':''));r.appendChild(mk('span','',txt))}
 fc.appendChild(r);return fc}
 return fc}
-function measureGrow(fields){var need=(fields||[]).filter(function(f){return f.auto_grow});if(!need.length)return;
+function measureGrow(fields){var need=(fields||[]).filter(function(f){return f.auto_grow});
+var active={};need.forEach(function(f){active[f.id]=1});S.grow.forEach(function(v,k){if(!active[k])S.grow.delete(k)});
+if(!need.length)return;
 var probe=$('#probe');if(!probe)return;
 var sh=document.createElement('div');sh.className='sheet';sh.style.position='relative';
 need.forEach(function(f){sh.appendChild(fieldEl(f,'design',{},'m_'))});
@@ -1403,15 +1412,29 @@ var h=Math.min(a.pos_y+a.height,b.pos_y+b.height)-Math.max(a.pos_y,b.pos_y);
 if(w<=0||h<=0)continue;var sm=Math.min(a.width*a.height,b.width*b.height);
 if(sm>0&&(w*h)/sm>=.6){set.add(a.id);set.add(b.id)}}
 LAYOUT={sig:sig,ov:set,clip:overflowReport(S.b.fields)};return LAYOUT}
+function layoutNeedsRepair(fields){var fs=fields||[],ids=new Set();
+if(fs.length<4)return false;
+for(var i=0;i<fs.length;i++)for(var j=i+1;j<fs.length;j++){var a=fs[i],b=fs[j];
+var w=Math.min(a.pos_x+a.width,b.pos_x+b.width)-Math.max(a.pos_x,b.pos_x);
+var h=Math.min(a.pos_y+a.height,b.pos_y+b.height)-Math.max(a.pos_y,b.pos_y);
+if(w<=0||h<=0)continue;var sm=Math.min(a.width*a.height,b.width*b.height);
+if(sm>0&&(w*h)/sm>=.6){ids.add(a.id);ids.add(b.id)}}
+return ids.size>=4&&ids.size>=Math.ceil(fs.length*.6)}
 var saveDraft=debounce(function(){if(!S.b.id||!S.b.dirty)return;
 DB.drafts[S.b.id]={fields:JSON.parse(JSON.stringify(S.b.fields)),deleted:S.b.deleted.slice(),at:Date.now()};persist()},700);
 function openBuilder(id){if(S.shell!=='admin'||!token){setShell('public');openLogin();return}
 ensureFields(id).then(function(t){if(!t)return;
 S.b=Object.assign({},S.b,{id:id,fields:JSON.parse(JSON.stringify(t.fields||[])).map(norm),deleted:[],sel:null,selIds:[],dirty:false,undo:[],redo:[],saving:false});
-var dr=DB.drafts[id],restored=false;
-if(dr&&Array.isArray(dr.fields)&&dr.fields.length){S.b.fields=JSON.parse(JSON.stringify(dr.fields)).map(norm);S.b.deleted=(dr.deleted||[]).slice();S.b.dirty=true;restored=true}
+S.grow.clear();
+var dr=DB.drafts[id],restored=false,draftAt=dr&&Number(dr.at)||0,savedAt=t.updated_at?Date.parse(t.updated_at):0;
+var canRestore=dr&&Array.isArray(dr.fields)&&dr.fields.length&&(!savedAt||!draftAt||draftAt>savedAt);
+if(canRestore){S.b.fields=JSON.parse(JSON.stringify(dr.fields)).map(norm);S.b.deleted=(dr.deleted||[]).slice();S.b.dirty=true;restored=true}
+else if(dr){delete DB.drafts[id];persist()}
+var repaired=0;
+if(layoutNeedsRepair(S.b.fields)){repaired=resolveOverlaps();if(repaired){S.grow.clear();S.b.dirty=true}}
 LAYOUT.sig='';S.sec=null;go('builder');
-if(restored)toast('กู้คืนฉบับร่างที่ค้างไว้ ('+fdate(new Date(dr.at).toISOString())+')',{type:'info',ms:5000})})}
+if(repaired)toast('ตรวจพบฟิลด์ซ้อนทับจำนวนมาก จัดตำแหน่งใหม่แล้ว — กรุณากดบันทึก',{type:'warn',ms:7000});
+else if(restored)toast('กู้คืนฉบับร่างที่ค้างไว้ ('+fdate(new Date(dr.at).toISOString())+')',{type:'info',ms:5000})})}
 function vBuilder(v){if(!S.b.id){var list=DB.templates;
 v.innerHTML=head('builder','<button class="btn pri" data-a="new">'+ic('plus')+'สร้างฟอร์มใหม่</button>')+
 (list.length?'<div class="grid">'+list.map(function(t,i){
@@ -1428,7 +1451,9 @@ if(o)openBuilder(o.dataset.open)};return}
 var t=tpl(S.b.id),b=S.b;
 v.innerHTML='<div class="shead"><div class="stit"><h1>'+esc(t.name)+'</h1></div>'+
 '<div class="sact"><span class="ss '+(b.dirty?'dirty':'saved')+'" id="saveState">'+ic(b.dirty?'clock':'check',13)+(b.dirty?'ยังไม่บันทึก (เก็บเป็นร่างอัตโนมัติ)':'บันทึกแล้ว')+'</span>'+
-'<button class="btn qa" data-b="parity">'+ic('shield')+'ตรวจความตรงแบบ</button>'+
+'<button class="btn sm" data-b="undo" title="ย้อนกลับการกระทำ (Ctrl+Z)">'+ic('undo',13)+'ย้อนกลับ</button>'+
+'<button class="btn sm" data-b="redo" title="ทำซ้ำการกระทำ (Ctrl+Y)">'+ic('redo',13)+'ทำซ้ำ</button>'+
+'<button class="btn qa" data-b="parity">'+ic('shield')+'ตรวจความตรงแบบ</button>'+ 
 '<button class="btn" data-b="preview">'+ic('eye')+'ตัวอย่างกรอก</button>'+
 '<button class="btn pri" data-b="save">'+ic('save')+'บันทึก</button></div></div>'+
 '<div class="bld"><div class="bcol">'+
@@ -1752,6 +1777,7 @@ if(S.sec==='builder'&&S.b.id===t.id){repaint();renderControls();paintBadges()}
 if(!auto&&isActive)return rawApi('publishFormTemplate',{id:tid},true,{timeout:30000});
 return null})
 .catch(function(e){b.dirty=true;var s2=$('#saveState');
+DB.drafts[b.id]={fields:JSON.parse(JSON.stringify(b.fields)),deleted:b.deleted.slice(),at:Date.now()};persist();
 if(s2){s2.className='ss dirty';s2.innerHTML=ic('warn',13)+'ส่งไม่สำเร็จ (ร่างยังอยู่ในเครื่อง)'}
 setConn('bad',e.message);toast('บันทึกขึ้นเซิร์ฟเวอร์ไม่สำเร็จ: '+e.message+' — ฉบับร่างยังอยู่ในเครื่อง',{type:'bad',ms:7000})})
 .then(function(){b.saving=false})}
@@ -2174,7 +2200,7 @@ if(!typing&&(e.key==='?'||(e.shiftKey&&k==='/'))){e.preventDefault();showHelp();
 if(S.shell!=='admin'||S.sec!=='builder'||!S.b.id)return;
 if(mod&&k==='s'){e.preventDefault();saveBuilder(false);return}
 if(typing)return;
-if(mod&&k==='z'){e.preventDefault();if(e.shiftKey)doRedo();else doUndo();return}
+if(mod&&(k==='z'||k==='y')){e.preventDefault();if(k==='y'||e.shiftKey)doRedo();else doUndo();return}
 if(!S.b.sel)return;
 if(mod&&k==='d'){e.preventDefault();dupField(S.b.sel);return}
 if(k==='delete'||k==='backspace'){var a=document.activeElement;
