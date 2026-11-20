@@ -445,7 +445,7 @@ body{overflow:visible;background:#fff}
 .sheet .og{display:flex;flex-wrap:wrap;gap:.2em .9em;align-items:center}
 .sheet .og.col{flex-direction:column;align-items:flex-start}
 .sheet .ol{display:inline-flex;align-items:center;gap:.32em;font:inherit;cursor:pointer;line-height:1.3}
-.sheet .oi{width:.86em;height:.86em;flex:none;accent-color:#0E7C86;cursor:pointer}
+.sheet .oi{width:.86em;height:.86em;flex:none;margin:0;accent-color:#0E7C86;cursor:pointer;vertical-align:middle}
 .sheet .ob{display:inline-flex;align-items:center;justify-content:center;width:.86em;height:.86em;flex:none;border:1px solid currentColor;font-size:.78em;background:#fff}
 .sheet .ob.rd{border-radius:50%}
 .sheet .sg{height:100%;display:flex;flex-direction:column;justify-content:flex-end}
@@ -1036,6 +1036,7 @@ function uniqueFields(fields){var seen={},out=[];
 (fields||[]).map(norm).forEach(function(f,i){if(INP.indexOf(f.field_type)<0){out.push(f);return}
 var n=String(f.name||'').trim().toLowerCase().replace(/[^a-z0-9_]/g,'_')||('field_'+(i+1));
 if(seen[n]){var k=2;while(seen[n+'_'+k])k++;n=n+'_'+k}seen[n]=1;var c=Object.assign({},f);c.name=n;out.push(c)});return out}
+function previewFields(id,t){if(S.b.id===id&&Array.isArray(S.b.fields)&&S.b.fields.length)return JSON.parse(JSON.stringify(S.b.fields));return (t&&t.fields)||[]}
 function initFillData(){var d={};S.fill.fields.forEach(function(f){if(INP.indexOf(f.field_type)>=0)d[f.name]=(OPT.concat('checkbox_agree').indexOf(f.field_type)>=0)?'':(f.value||'')});
 S.fill.data=d;S.fill.errors={}}
 var fillBusy=false;
@@ -1045,7 +1046,7 @@ if(fillBusy)return;fillBusy=true;
 if(S.shell!=='public')setShell('public');
 ensureFields(id).then(function(t){
 if(!t){toast('ไม่พบแบบฟอร์มนี้',{type:'warn'});pubGo('forms');return}
-var fields=uniqueFields(t.fields||[]);
+var fields=uniqueFields(previewFields(id,t));
 if(!fields.some(function(f){return INP.indexOf(f.field_type)>=0})){toast('ฟอร์มนี้ยังไม่มีช่องให้กรอก',{type:'warn'});pubGo('forms');return}
 S.fill={tpl:t.id,fields:fields,data:{},mode:'paper',zoom:0,errors:{}};
 initFillData();$('#fillTitle').textContent=t.name;$('#fillDesc').textContent=t.description||'';
@@ -1112,9 +1113,9 @@ var f=S.fill.fields.filter(function(x){return x.name===n})[0];if(!f)return;
 var t=S.fill.mode==='simple'?$('#fillSimple').querySelector('[data-card="'+cssEsc(n)+'"]'):$('#fillCanvas').querySelector('[data-fid="'+cssEsc(f.id)+'"]');
 if(t){t.scrollIntoView({block:'center',behavior:'smooth'});var i=t.querySelector('input,textarea,select');if(i)setTimeout(function(){i.focus()},300)}}
 function previewPub(id){ensureFields(id).then(function(t){
-if(!t||!(t.fields||[]).length)return toast('ยังไม่มีฟิลด์ให้แสดงตัวอย่าง',{type:'warn'});
+var fields=previewFields(id,t);if(!t||!fields.length)return toast('ยังไม่มีฟิลด์ให้แสดงตัวอย่าง',{type:'warn'});
 openDrawer('ตัวอย่างฟอร์ม',t.name,'<div class="ma4" id="pvA4"><div class="sc"></div></div>','<button class="btn pri" data-pv="1">'+ic('edit')+'กรอกออนไลน์</button>');
-miniA4('#pvA4',t.fields,{});
+miniA4('#pvA4',fields,{});
 $('#drawerFoot').onclick=function(e){if(e.target.closest('[data-pv]')){closeDrawer();openFill(id)}}})}
 function submitFill(){var name=$('#fillName').value.trim(),cid=$('#fillCid').value.trim();
 if(!name){toast('กรุณากรอกชื่อ-นามสกุลผู้ยื่น',{type:'warn'});$('#fillName').focus();return}
