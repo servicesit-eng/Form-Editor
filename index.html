@@ -174,7 +174,6 @@ body.mini .rail-item,html.pre-mini .rail-item{justify-content:center;padding:0}
 .star{width:26px;height:26px;border-radius:var(--r1);display:grid;place-items:center;color:var(--tx3);flex:none}
 .star.on{color:var(--am)}
 .card p{font-size:12px;color:var(--tx2);min-height:34px}
-.card p{font-size:12px;color:var(--tx2);min-height:34px}
 .pubstate{display:flex;align-items:center;gap:9px;margin-top:10px;padding:9px 10px;border:1px solid var(--ln);border-radius:var(--r1);background:var(--sf2)}
 .pubstate .psdot{width:9px;height:9px;border-radius:50%;flex:none;background:var(--tx3);box-shadow:0 0 0 3px color-mix(in srgb,var(--tx3) 14%,transparent)}
 .pubstate.open{border-color:color-mix(in srgb,var(--okT) 32%,var(--ln));background:color-mix(in srgb,var(--ok) 58%,var(--sf))}
@@ -446,7 +445,6 @@ body{overflow:visible;background:#fff}
 .sheet .og{display:flex;flex-wrap:wrap;gap:.2em .9em;align-items:center}
 .sheet .og.col{flex-direction:column;align-items:flex-start}
 .sheet .ol{display:inline-flex;align-items:center;gap:.32em;font:inherit;cursor:pointer;line-height:1.3}
-.sheet .oi{width:.86em;height:.86em;flex:none;accent-color:#0E7C86;cursor:pointer}
 .sheet .oi{width:.86em;height:.86em;flex:none;margin:0;accent-color:#0E7C86;cursor:pointer;vertical-align:middle}
 .sheet .ob{display:inline-flex;align-items:center;justify-content:center;width:.86em;height:.86em;flex:none;border:1px solid currentColor;font-size:.78em;background:#fff}
 .sheet .ob.rd{border-radius:50%}
@@ -681,7 +679,6 @@ if(!DB.drafts||typeof DB.drafts!=='object')DB.drafts={};
 try{
 var fix=function(arr,p){return arr.filter(function(it){return it&&it.id&&(fixUuid(it.id)||String(it.id).indexOf(p)===0)}).map(function(it){var r=fixUuid(it.id);if(r)it.id=r;return it})};
 DB.templates=fix(DB.templates,'tpl_');DB.submissions=fix(DB.submissions,'sub_');DB.staff=fix(DB.staff,'stf_');
-DB.templates.forEach(function(t){t.fields=(Array.isArray(t.fields)?t.fields:[]).filter(function(f){return f&&typeof f==='object'}).map(function(f){var r=fixUuid(f.id);if(r)f.id=r;else if(!isLocal(f.id))f.id=tmpId('f_');return f})});
 DB.templates.forEach(function(t){var c=dedupeFields(Array.isArray(t.fields)?t.fields:[]);t.fields=c.fields;setStaleFieldIds(t,c.stale)});
 var ids={};DB.templates.forEach(function(t){ids[t.id]=1});
 DB.submissions=DB.submissions.filter(function(s){return s&&(ids[s.template_id]||String(s.id).indexOf('sub_')===0)});
@@ -760,8 +757,6 @@ rawApi(job.action,job.payload,true).then(function(){QUEUE=QUEUE.filter(function(
  .catch(function(e){var fkDelete=job.action==='deleteFormTemplate'&&/23503|foreign key|form_submissions_template_id_fkey/i.test(e&&e.message||'');
  if(fkDelete){QUEUE=QUEUE.filter(function(j){return j.id!==job.id});invalidate('getFormTemplates');if(token)syncAdmin().catch(function(){});
  toast('ลบฟอร์มไม่ได้ เพราะมีคำขอที่ผูกกับฟอร์มแล้ว — ให้ปิดรับกรอกแทน',{type:'warn',ms:7000});return}
-.catch(function(e){job.tries++;if(job.tries>=4){QUEUE=QUEUE.filter(function(j){return j.id!==job.id});toast('ส่ง '+job.label+' ไม่สำเร็จ: '+e.message,{type:'bad',ms:6000})}
-else job.next=Date.now()+Math.min(30000,2000*Math.pow(2,job.tries))})
  job.tries++;if(job.tries>=4){QUEUE=QUEUE.filter(function(j){return j.id!==job.id});toast('ส่ง '+job.label+' ไม่สำเร็จ: '+e.message,{type:'bad',ms:6000})}
  else job.next=Date.now()+Math.min(30000,2000*Math.pow(2,job.tries))})
 .then(function(){NET.active--;qSave();paintConn();setTimeout(pump,120)})}}
@@ -777,11 +772,6 @@ if(!silent)toast('เชื่อมต่อสำเร็จ ('+ms+' ms)',{ty
 .catch(function(e){setConn('bad',e.message);if(!silent)toast('เชื่อมต่อไม่สำเร็จ: '+e.message,{type:'bad',ms:7000});return false})}
 function applyTemplates(list,activeOnly){if(!Array.isArray(list))return;
 var keep=DB.templates.filter(function(t){return isLocal(t.id)});
-var server=list.filter(function(t){return isUuid(t.id)}).map(function(t){var ex=tpl(t.id);
-if(ex&&ex.department&&ex.department!=='—')DB.deptMap[t.id]=ex.department;
-return{id:String(t.id).toLowerCase(),name:t.name,description:t.description||'',department:DB.deptMap[t.id]||(ex&&ex.department)||'—',
-is_active:activeOnly?true:t.is_active===true,created_at:t.created_at||new Date().toISOString(),updated_at:t.updated_at||t.created_at||new Date().toISOString(),
-fields:(t.fields&&t.fields.length)?t.fields.map(norm):((ex&&ex.fields)||[])}});
 var server=list.filter(function(t){return isUuid(t.id)}).map(function(t){var ex=tpl(t.id),clean=dedupeFields(t.fields&&t.fields.length?t.fields:((ex&&ex.fields)||[]));
 if(ex&&ex.department&&ex.department!=='—')DB.deptMap[t.id]=ex.department;
 return{id:String(t.id).toLowerCase(),name:t.name,description:t.description||'',department:DB.deptMap[t.id]||(ex&&ex.department)||'—',
@@ -818,11 +808,6 @@ DB.submissions=DB.submissions.filter(function(s){return s.template_id!==t.id||is
 S.loaded.add(t.id);persist();paintCounts();
 if(S.shell==='admin'&&S.sec==='inbox'&&(S.inbox.tpl==='all'||S.inbox.tpl===t.id))render()})
 .catch(function(){}).then(function(){setTimeout(next,40)})};next()}
-function ensureFields(id){var t=tpl(id);if(!t)return Promise.resolve(null);
-if((t.fields||[]).length)return Promise.resolve(t);
-if(!isUuid(id))return Promise.resolve(t);
-return get(S.shell==='admin'?'getFormTemplate':'getPublicFormTemplate',{id:id},{token:S.shell==='admin'})
-.then(function(r){if(r&&r.fields){t.fields=r.fields.map(norm);S.grow.clear();THUMBS.clear();LAYOUT.sig='';persist()}return t}).catch(function(){return t})}
 function ensureFields(id,force){var t=tpl(id);if(!t)return Promise.resolve(null);
 if((t.fields||[]).length&&!force)return Promise.resolve(t);
 if(!isUuid(id))return Promise.resolve(t);
@@ -853,9 +838,6 @@ function tickClock(){var now=new Date(),t=$('#clockTime'),d=$('#clockDate');if(!
 try{t.textContent=new Intl.DateTimeFormat('th-TH',{timeZone:'Asia/Bangkok',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).format(now);
 d.textContent=new Intl.DateTimeFormat('th-TH',{timeZone:'Asia/Bangkok',weekday:'short',day:'numeric',month:'short',year:'numeric'}).format(now)}
 catch(e){t.textContent=now.toLocaleTimeString('th-TH');d.textContent=now.toLocaleDateString('th-TH')}}
-function norm(f){var n=function(v,d){var x=Number(v);return isFinite(x)?x:d};
-var o=f.options;if(typeof o==='string'){try{o=JSON.parse(o)}catch(e){o=o.split(',').map(function(s){return s.trim()}).filter(Boolean)}}
-var r=Object.assign({},f);r.options=Array.isArray(o)?o.map(String).filter(Boolean):[];r.auto_grow=f.auto_grow===true;
 function norm(f){f=f||{};
 var read=function(v,d){if(v===null||v===undefined||v==='')return{v:d,u:''};var s=String(v).trim(),x=parseFloat(s);if(!isFinite(x))return{v:d,u:''};return{v:x,u: /%$/.test(s)?'%':/px$/i.test(s)?'px':''}};
 var pick=function(a){for(var i=0;i<a.length;i++){if(f[a[i]]!==null&&f[a[i]]!==undefined&&f[a[i]]!=='')return f[a[i]]}return null};
@@ -867,8 +849,6 @@ var r=Object.assign({},f),w=clamp(mm(rw,PW),3,PW),h=clamp(mm(rh,PH),1,PH);
 r.options=Array.isArray(o)?o.map(String).filter(Boolean):[];
 r.auto_grow=f.auto_grow===true||f.auto_grow===1||String(f.auto_grow||'').toLowerCase()==='true';
 r.field_group=typeof f.field_group==='string'?f.field_group.trim():(typeof f.group_name==='string'?f.group_name.trim():'');
-r.pos_x=n(f.pos_x,15);r.pos_y=n(f.pos_y,20);r.width=n(f.width,70);r.height=n(f.height,8);r.font_size=n(f.font_size,14);return r}
-function mk(t,c,x){var e=document.createElement(t);if(c)e.className=c;if(x!==undefined)e.textContent=x;return e}
 r.width=w;r.height=h;
 r.pos_x=clamp(mm(rx,PW),0,PW-w);r.pos_y=clamp(mm(ry,PH),0,PH-h);
 r.font_size=clamp(read(f.font_size,14).v,6,72);return r}
@@ -929,7 +909,6 @@ r.appendChild(cb);var lb=mk('label','',txt);lb.htmlFor='ag_'+pfx+f.id;r.appendCh
 else{r.appendChild(mk('span','ob',mode==='print'&&val?'✓':''));r.appendChild(mk('span','',txt))}
 fc.appendChild(r);return fc}
 return fc}
-function measureGrow(fields){var need=(fields||[]).filter(function(f){return f.auto_grow});if(!need.length)return;
 function measureGrow(fields){var need=(fields||[]).filter(function(f){return f.auto_grow});
 var active={};need.forEach(function(f){active[f.id]=1});S.grow.forEach(function(v,k){if(!active[k])S.grow.delete(k)});
 if(!need.length)return;
@@ -1071,22 +1050,10 @@ function uniqueFields(fields){var seen={},out=[];
 (fields||[]).map(norm).forEach(function(f,i){if(INP.indexOf(f.field_type)<0){out.push(f);return}
 var n=String(f.name||'').trim().toLowerCase().replace(/[^a-z0-9_]/g,'_')||('field_'+(i+1));
 if(seen[n]){var k=2;while(seen[n+'_'+k])k++;n=n+'_'+k}seen[n]=1;var c=Object.assign({},f);c.name=n;out.push(c)});return out}
-function initFillData(){var d={};S.fill.fields.forEach(function(f){if(INP.indexOf(f.field_type)>=0)d[f.name]=(OPT.concat('checkbox_agree').indexOf(f.field_type)>=0)?'':(f.value||'')});
-function uniqueFields(fields){var seen={},out=[];
-(fields||[]).map(norm).forEach(function(f,i){if(INP.indexOf(f.field_type)<0){out.push(f);return}
-var n=String(f.name||'').trim().toLowerCase().replace(/[^a-z0-9_]/g,'_')||('field_'+(i+1));
-if(seen[n]){var k=2;while(seen[n+'_'+k])k++;n=n+'_'+k}seen[n]=1;var c=Object.assign({},f);c.name=n;out.push(c)});return out}
 function previewFields(id,t){if(S.b.id===id&&Array.isArray(S.b.fields)&&S.b.fields.length)return JSON.parse(JSON.stringify(S.b.fields));return (t&&t.fields)||[]}
 function initFillData(){var d={};S.fill.fields.forEach(function(f){if(INP.indexOf(f.field_type)>=0)d[f.name]=(OPT.concat('checkbox_agree').indexOf(f.field_type)>=0)?'':(f.value||'')});
 S.fill.data=d;S.fill.errors={}}
 var fillBusy=false;
-function openFill(rawId){var id=fixUuid(rawId)||String(rawId||'');
-if(!id||(!isUuid(id)&&!isLocal(id))){toast('ลิงก์ฟอร์มไม่ถูกต้อง',{type:'warn'});pubGo('forms');return}
-if(fillBusy)return;fillBusy=true;
-if(S.shell!=='public')setShell('public');
-ensureFields(id).then(function(t){
-if(!t){toast('ไม่พบแบบฟอร์มนี้',{type:'warn'});pubGo('forms');return}
-var fields=uniqueFields(t.fields||[]);
 function openFill(rawId){var id=fixUuid(rawId)||String(rawId||'');
 if(!id||(!isUuid(id)&&!isLocal(id))){toast('ลิงก์ฟอร์มไม่ถูกต้อง',{type:'warn'});pubGo('forms');return}
 if(fillBusy)return;fillBusy=true;
@@ -1161,10 +1128,6 @@ var f=S.fill.fields.filter(function(x){return x.name===n})[0];if(!f)return;
 var t=S.fill.mode==='simple'?$('#fillSimple').querySelector('[data-card="'+cssEsc(n)+'"]'):$('#fillCanvas').querySelector('[data-fid="'+cssEsc(f.id)+'"]');
 if(t){t.scrollIntoView({block:'center',behavior:'smooth'});var i=t.querySelector('input,textarea,select');if(i)setTimeout(function(){i.focus()},300)}}
 function previewPub(id){var fromBuilder=S.b.id===id&&Array.isArray(S.b.fields)&&S.b.fields.length>0;
-function previewPub(id){ensureFields(id).then(function(t){
-if(!t||!(t.fields||[]).length)return toast('ยังไม่มีฟิลด์ให้แสดงตัวอย่าง',{type:'warn'});
-openDrawer('ตัวอย่างฟอร์ม',t.name,'<div class="ma4" id="pvA4"><div class="sc"></div></div>','<button class="btn pri" data-pv="1">'+ic('edit')+'กรอกออนไลน์</button>');
-miniA4('#pvA4',t.fields,{});
 ensureFields(id,!fromBuilder).then(function(t){
 var fields=fromBuilder?S.b.fields:previewFields(id,t);if(!t||!fields.length)return toast('ยังไม่มีฟิลด์ให้แสดงตัวอย่าง',{type:'warn'});
 openDrawer('ตัวอย่างฟอร์ม',t.name,'<div class="ma4" id="pvA4"><div class="sc"></div></div>','<button class="btn pri" data-pv="1">'+ic('edit')+'กรอกออนไลน์</button>');
@@ -1233,7 +1196,6 @@ $('#pubMain').onclick=function(e){var nav=e.target.closest('[data-pnav]');if(nav
 var f=e.target.closest('[data-fill]'),p=e.target.closest('[data-pview]'),sv=e.target.closest('[data-st-view]'),sp=e.target.closest('[data-st-print]');
 if(f)openFill(f.dataset.fill);else if(p)previewPub(p.dataset.pview);
 else if(sv)openStatusDoc(sv.dataset.stView,sv.dataset.cid);
-else if(sp)openStatusDoc(sv.dataset.stPrint,sp.dataset.cid)};
 else if(sp)openStatusDoc(sp.dataset.stPrint,sp.dataset.cid)};
 $('#pubMain').addEventListener('scroll',function(){var y=$('#pubMain').scrollTop,a=$('#heroArt');
 if(a&&S.pubView==='home'&&y<600)a.style.transform='translateY('+(y*.14)+'px)'},{passive:true});
@@ -1361,7 +1323,6 @@ f.sort==='count'?DB.submissions.filter(function(s){return s.template_id===b.id})
 new Date(b.updated_at)-new Date(a.updated_at)});
 v.innerHTML=head('forms',resyncBtn+'<button class="btn" data-a="csv">'+ic('csv')+'CSV</button><button class="btn pri" data-a="new">'+ic('plus')+'สร้างฟอร์มใหม่</button>')+
 '<div class="toolbar"><div class="search">'+ic('search')+'<input id="fq" value="'+esc(f.q)+'" placeholder="ค้นหาชื่อฟอร์ม / หน่วยงาน…"><kbd>/</kbd></div>'+
-'<select class="sel" id="fstatus"><option value="all">ทุกสถานะ</option><option value="active"'+(f.status==='active'?' selected':'')+'>เปิดใช้งาน</option><option value="draft"'+(f.status==='draft'?' selected':'')+'>ฉบับร่าง</option></select>'+
 '<select class="sel" id="fstatus"><option value="all">สถานะผู้ใช้ทั้งหมด</option><option value="active"'+(f.status==='active'?' selected':'')+'>ผู้ใช้กรอกได้</option><option value="draft"'+(f.status==='draft'?' selected':'')+'>ยังไม่เปิดให้ผู้ใช้</option></select>'+ 
 '<select class="sel" id="fdept"><option value="all">ทุกหน่วยงาน</option>'+DEPTS.map(function(d){return '<option'+(f.dept===d?' selected':'')+'>'+esc(d)+'</option>'}).join('')+'</select>'+
 '<select class="sel" id="fsort"><option value="updated">ล่าสุดที่แก้ไข</option><option value="name"'+(f.sort==='name'?' selected':'')+'>ชื่อ ก–ฮ</option><option value="count"'+(f.sort==='count'?' selected':'')+'>คำขอมากสุด</option></select>'+
@@ -1393,25 +1354,19 @@ return '<article class="card" data-id="'+esc(t.id)+'" style="animation-delay:'+M
 '<div class="ctop"><h3>'+esc(t.name)+'</h3><button class="star'+(DB.favorites.indexOf(t.id)>=0?' on':'')+'" data-a="star" data-id="'+esc(t.id)+'">'+ic('star',15)+'</button></div>'+
 '<p>'+esc(t.description)+'</p><div class="thumb" data-t="'+esc(t.id)+'"><span class="ttag">A4</span><div class="thumbc"></div></div>'+
 '<div class="cmeta"><span>'+(t.fields||[]).length+' ฟิลด์</span><span>'+n+' คำขอ</span><span>'+ago(t.updated_at)+'</span></div>'+
-'<span class="pill '+(t.is_active?'on':'off')+'">'+(t.is_active?'เปิดใช้งาน':'ฉบับร่าง')+'</span>'+
-'<div class="cact"><button class="btn sm pri" data-a="fill" data-id="'+esc(t.id)+'">'+ic('edit',13)+'กรอก</button>'+
 '<div class="pubstate '+(t.is_active?'open':'closed')+'"><span class="psdot"></span><div><b>'+(t.is_active?'ผู้ใช้สามารถกรอกได้':'ผู้ใช้ยังใช้งานไม่ได้')+'</b><small>'+(t.is_active?'ฟอร์มกำลังเปิดรับ':'ต้องเปิดให้ผู้ใช้กรอกก่อน')+'</small></div><button class="btn sm pubtoggle" data-a="pub" data-id="'+esc(t.id)+'">'+ic(t.is_active?'lock':'check',13)+(t.is_active?'ปิดรับกรอก':(isUuid(t.id)?'เปิดให้ผู้ใช้กรอก':'บันทึกก่อนเปิด'))+'</button></div>'+
 '<div class="cact"><button class="btn sm pri" data-a="fill" data-id="'+esc(t.id)+'">'+ic('edit',13)+'กรอก</button>'+ 
 '<button class="btn sm" data-a="edit" data-id="'+esc(t.id)+'">'+ic('builder',13)+'ออกแบบ</button>'+
 '<button class="btn sm ic" data-a="dup" data-id="'+esc(t.id)+'">'+ic('copy',13)+'</button>'+
 '<button class="btn sm ic" data-a="dl" data-id="'+esc(t.id)+'">'+ic('dl',13)+'</button>'+
 '<button class="btn sm ic" data-a="del" data-id="'+esc(t.id)+'">'+ic('trash',13)+'</button></div></article>'}).join('')+'</div>'}
-function formTable(list){return '<div class="tw"><div class="ts"><table><thead><tr><th style="width:34px"></th><th>ชื่อฟอร์ม</th><th>หน่วยงาน</th><th>ฟิลด์</th><th>คำขอ</th><th>สถานะ</th><th>แก้ไข</th><th></th></tr></thead><tbody>'+
 function formTable(list){return '<div class="tw"><div class="ts"><table><thead><tr><th style="width:34px"></th><th>ชื่อฟอร์ม</th><th>หน่วยงาน</th><th>ฟิลด์</th><th>คำขอ</th><th>สถานะผู้ใช้</th><th>แก้ไข</th><th></th></tr></thead><tbody>'+ 
 list.map(function(t){var n=DB.submissions.filter(function(s){return s.template_id===t.id}).length;
 return '<tr data-id="'+esc(t.id)+'"><td><button class="star'+(DB.favorites.indexOf(t.id)>=0?' on':'')+'" data-a="star" data-id="'+esc(t.id)+'">'+ic('star',14)+'</button></td>'+
 '<td><b>'+esc(t.name)+'</b></td><td>'+esc(t.department)+'</td><td class="num">'+(t.fields||[]).length+'</td><td class="num">'+n+'</td>'+
-'<td><span class="pill '+(t.is_active?'on':'off')+'">'+(t.is_active?'เปิด':'ร่าง')+'</span></td><td class="num">'+ago(t.updated_at)+'</td>'+
-'<td class="acts"><button class="btn sm" data-a="edit" data-id="'+esc(t.id)+'">ออกแบบ</button>'+
 '<td><span class="pill '+(t.is_active?'on':'off')+'">'+(t.is_active?'ผู้ใช้กรอกได้':'ยังไม่เปิด')+'</span></td><td class="num">'+ago(t.updated_at)+'</td>'+ 
 '<td class="acts"><button class="btn sm" data-a="edit" data-id="'+esc(t.id)+'">ออกแบบ</button>'+ 
 '<button class="btn sm ic" data-a="dup" data-id="'+esc(t.id)+'">'+ic('copy',13)+'</button>'+
-'<button class="btn sm ic" data-a="pub" data-id="'+esc(t.id)+'">'+ic(t.is_active?'lock':'check',13)+'</button>'+
 '<button class="btn sm" data-a="pub" data-id="'+esc(t.id)+'">'+ic(t.is_active?'lock':'check',13)+(t.is_active?'ปิดรับ':'เปิดให้ผู้ใช้')+'</button>'+ 
 '<button class="btn sm ic" data-a="del" data-id="'+esc(t.id)+'">'+ic('trash',13)+'</button></td></tr>'}).join('')+'</tbody></table></div></div>'}
 function newForm(){modal('สร้างฟอร์มใหม่',
@@ -1443,10 +1398,6 @@ function dupLocal(s){var t=JSON.parse(JSON.stringify(s));t.id=uid('tpl_');t.name
 t.created_at=t.updated_at=new Date().toISOString();t.fields=(t.fields||[]).map(function(f){f.id=tmpId('f_');return f});
 DB.deptMap[t.id]=t.department;DB.templates.unshift(t);persist();render();
 toast('คัดลอก '+t.name+' แล้ว',{type:'ok',undo:function(){DB.templates=DB.templates.filter(function(x){return x.id!==t.id});persist();render()}})}
-function delForm(id){var i=DB.templates.map(function(t){return t.id}).indexOf(id);if(i<0)return;
-var t=DB.templates[i];DB.templates.splice(i,1);delete DB.drafts[id];persist();render();
-enqueue('deleteFormTemplate',{id:id},'ลบฟอร์ม');
-toast('ลบ '+t.name+' แล้ว',{type:'bad',undo:function(){DB.templates.splice(i,0,t);persist();render()}})}
 function delForm(id){var i=DB.templates.map(function(t){return t.id}).indexOf(id);if(i<0)return;
 var t=DB.templates[i];
 var finish=function(){DB.templates.splice(i,1);delete DB.drafts[id];persist();render();
@@ -1486,24 +1437,6 @@ miniA4('#dThumb',t.fields||[],{});
 $('#drawerFoot').onclick=function(e){var b=e.target.closest('[data-d]');if(!b)return;closeDrawer();
 var k=b.dataset.d;
 if(k==='fill')openFill(id);else if(k==='edit')openBuilder(id);else if(k==='dup')dupForm(id);else if(k==='dl')dlForm(id);else if(k==='pub')togglePub(id)}}
-function layoutFlags(){var sig=S.b.fields.map(function(f){return [f.id,f.pos_x,f.pos_y,f.width,f.height,f.font_size,f.auto_grow?1:0,(f.value||'').length,(f.options||[]).join('|').length].join(',')}).join(';');
-if(LAYOUT.sig===sig)return LAYOUT;
-var set=new Set(),fs=S.b.fields;
-for(var i=0;i<fs.length;i++)for(var j=i+1;j<fs.length;j++){var a=fs[i],b=fs[j];
-var w=Math.min(a.pos_x+a.width,b.pos_x+b.width)-Math.max(a.pos_x,b.pos_x);
-var h=Math.min(a.pos_y+a.height,b.pos_y+b.height)-Math.max(a.pos_y,b.pos_y);
-if(w<=0||h<=0)continue;var sm=Math.min(a.width*a.height,b.width*b.height);
-if(sm>0&&(w*h)/sm>=.6){set.add(a.id);set.add(b.id)}}
-LAYOUT={sig:sig,ov:set,clip:overflowReport(S.b.fields)};return LAYOUT}
-var saveDraft=debounce(function(){if(!S.b.id||!S.b.dirty)return;
-DB.drafts[S.b.id]={fields:JSON.parse(JSON.stringify(S.b.fields)),deleted:S.b.deleted.slice(),at:Date.now()};persist()},700);
-function openBuilder(id){if(S.shell!=='admin'||!token){setShell('public');openLogin();return}
-ensureFields(id).then(function(t){if(!t)return;
-S.b=Object.assign({},S.b,{id:id,fields:JSON.parse(JSON.stringify(t.fields||[])).map(norm),deleted:[],sel:null,selIds:[],dirty:false,undo:[],redo:[],saving:false});
-var dr=DB.drafts[id],restored=false;
-if(dr&&Array.isArray(dr.fields)&&dr.fields.length){S.b.fields=JSON.parse(JSON.stringify(dr.fields)).map(norm);S.b.deleted=(dr.deleted||[]).slice();S.b.dirty=true;restored=true}
-LAYOUT.sig='';S.sec=null;go('builder');
-if(restored)toast('กู้คืนฉบับร่างที่ค้างไว้ ('+fdate(new Date(dr.at).toISOString())+')',{type:'info',ms:5000})})}
 function layoutFlags(){var sig=S.b.fields.map(function(f){return [f.id,f.pos_x,f.pos_y,f.width,f.height,f.font_size,f.auto_grow?1:0,(f.value||'').length,(f.options||[]).join('|').length].join(',')}).join(';');
 if(LAYOUT.sig===sig)return LAYOUT;
 var set=new Set(),fs=S.b.fields;
@@ -1554,9 +1487,6 @@ if(o)openBuilder(o.dataset.open)};return}
 var t=tpl(S.b.id),b=S.b;
 v.innerHTML='<div class="shead"><div class="stit"><h1>'+esc(t.name)+'</h1></div>'+
 '<div class="sact"><span class="ss '+(b.dirty?'dirty':'saved')+'" id="saveState">'+ic(b.dirty?'clock':'check',13)+(b.dirty?'ยังไม่บันทึก (เก็บเป็นร่างอัตโนมัติ)':'บันทึกแล้ว')+'</span>'+
-'<button class="btn qa" data-b="parity">'+ic('shield')+'ตรวจความตรงแบบ</button>'+
-v.innerHTML='<div class="shead"><div class="stit"><h1>'+esc(t.name)+'</h1></div>'+
-'<div class="sact"><span class="ss '+(b.dirty?'dirty':'saved')+'" id="saveState">'+ic(b.dirty?'clock':'check',13)+(b.dirty?'ยังไม่บันทึก (เก็บเป็นร่างอัตโนมัติ)':'บันทึกแล้ว')+'</span>'+
 '<button class="btn sm" data-b="undo" title="ย้อนกลับการกระทำ (Ctrl+Z)">'+ic('undo',13)+'ย้อนกลับ</button>'+
 '<button class="btn sm" data-b="redo" title="ทำซ้ำการกระทำ (Ctrl+Y)">'+ic('redo',13)+'ทำซ้ำ</button>'+
 '<button class="btn qa" data-b="parity">'+ic('shield')+'ตรวจความตรงแบบ</button>'+ 
@@ -1567,8 +1497,6 @@ v.innerHTML='<div class="shead"><div class="stit"><h1>'+esc(t.name)+'</h1></div>
 FT.map(function(x){return '<div class="tool" draggable="true" tabindex="0" role="button" data-ft="'+x+'">'+ic(FTI[x],16)+'<span>'+FTL[x]+'</span></div>'}).join('')+
 '</div></div></div>'+
 '<div class="pan" style="flex:1"><div class="ph">'+ic('rows',14)+'<b>ลำดับชั้น (ลากจัดเรียง)</b></div><div class="pb"><div class="layers" id="layers"></div></div></div></div>'+
-'<div class="bmid"><div class="bbar"><input class="bname" id="bName" value="'+esc(t.name)+'">'+
-'<button class="ochip" id="ovlChip" data-b="ovl">'+ic('layers',13)+'<span>—</span></button>'+
 '<div class="bmid"><div class="bbar"><input class="bname" id="bName" value="'+esc(t.name)+'">'+
 '<button class="btn sm top-action" data-b="dl" title="ดาวน์โหลดแบบฟอร์ม">'+ic('dl',13)+'ดาวน์โหลด</button>'+ 
 '<button class="btn sm top-action" data-b="print" title="สั่งพิมพ์แบบฟอร์ม">'+ic('print',13)+'สั่งพิมพ์</button>'+ 
@@ -1596,8 +1524,6 @@ if(!f)return '<div class="cs"><h4>'+ic('edit',13)+'ฟิลด์ที่เ�
 '<div class="cs"><h4>'+ic('bolt',13)+'การกระทำทั้งฟอร์ม</h4><div class="cact2">'+
 '<button class="btn sm" data-b="arrange">'+ic('rows',13)+'จัดเรียงอัตโนมัติ</button>'+
 '<button class="btn sm" data-b="random">'+ic('dice',13)+'สุ่มข้อมูลตัวอย่าง</button>'+
-'<button class="btn sm" data-b="undo">'+ic('undo',13)+'ย้อน</button><button class="btn sm" data-b="redo">'+ic('redo',13)+'ทำซ้ำ</button>'+
-'<button class="btn sm" data-b="dl">'+ic('dl',13)+'ดาวน์โหลด</button><button class="btn sm" data-b="preview">'+ic('eye',13)+'ตัวอย่างกรอก</button></div></div>';
 '<button class="btn sm" data-b="undo">'+ic('undo',13)+'ย้อน</button><button class="btn sm" data-b="redo">'+ic('redo',13)+'ทำซ้ำ</button>'+ 
 '<button class="btn sm" data-b="preview">'+ic('eye',13)+'ตัวอย่างกรอก</button></div></div>';
 var t=f.field_type,isTxt=(t==='label'||t==='title'),isIn=INP.indexOf(t)>=0;
@@ -1636,7 +1562,6 @@ g('สีเส้น','<input type="color" data-p="border_color" value="'+(/^#[
 h+='<div class="cs"><h4>'+ic('bolt',13)+'การกระทำ</h4><div class="cact2">'+
 '<button class="btn sm" data-b="resetf">'+ic('refresh',13)+'คืนค่าฟิลด์</button><button class="btn sm" data-b="random">'+ic('dice',13)+'สุ่มตัวอย่าง</button>'+
 '<button class="btn sm" data-b="undo">'+ic('undo',13)+'ย้อน</button><button class="btn sm" data-b="redo">'+ic('redo',13)+'ทำซ้ำ</button>'+
-'<button class="btn sm" data-b="dl">'+ic('dl',13)+'ดาวน์โหลด</button><button class="btn sm" data-b="preview">'+ic('eye',13)+'ตัวอย่างกรอก</button></div></div>';
 '<button class="btn sm" data-b="preview">'+ic('eye',13)+'ตัวอย่างกรอก</button></div></div>';
 return h}
 function renderControls(){var b=S.b,f=b.fields.filter(function(x){return x.id===b.sel})[0],hd=$('#ctlId'),body=$('#ctlBody');
@@ -1726,17 +1651,6 @@ a.innerHTML=ic(ov?'layers':'check',13)+'<span>'+(ov?'ซ้อนทับ '+ov:
 if(b){b.classList.toggle('bad',cl>0);b.classList.toggle('clean',cl===0);
 b.innerHTML=ic(cl?'warn':'check',13)+'<span>'+(cl?'เกินกล่อง '+cl:'เนื้อหาพอดี')+'</span>'}}
 function resolveOverlaps(){var fs=S.b.fields.slice().sort(function(a,b){return a.pos_y-b.pos_y||a.pos_x-b.pos_x});
-var placed=[],moved=0;
-fs.forEach(function(f){var guard=0;
-while(guard++<80){var hit=placed.filter(function(p){
-var w=Math.min(p.pos_x+p.width,f.pos_x+f.width)-Math.max(p.pos_x,f.pos_x);
-var h=Math.min(p.pos_y+p.height,f.pos_y+f.height)-Math.max(p.pos_y,f.pos_y);
-if(w<=0||h<=0)return false;var sm=Math.min(p.width*p.height,f.width*f.height);
-return sm>0&&(w*h)/sm>=.6})[0];
-if(!hit)break;var ny=Math.round((hit.pos_y+hit.height+3)*2)/2;
-if(ny+f.height>PH-2){f.pos_x=clamp(f.pos_x+6,0,PW-f.width);f.pos_y=2}else f.pos_y=ny;moved++}
-placed.push(f)});return moved}
-function resolveOverlaps(){var fs=S.b.fields.slice().sort(function(a,b){return a.pos_y-b.pos_y||a.pos_x-b.pos_x});
 var placed=[],moved=0,overlap=function(a,b){var w=Math.min(a.pos_x+a.width,b.pos_x+b.width)-Math.max(a.pos_x,b.pos_x),h=Math.min(a.pos_y+a.height,b.pos_y+b.height)-Math.max(a.pos_y,b.pos_y);
 if(w<=0||h<=0)return false;var sm=Math.min(a.width*a.height,b.width*b.height);return sm>0&&(w*h)/sm>=.6},free=function(f){return !placed.some(function(p){return overlap(p,f)})};
 fs.forEach(function(f){var ox=clamp(f.pos_x,0,PW-f.width),oy=clamp(f.pos_y,0,PH-f.height),found=false;
@@ -1816,10 +1730,6 @@ else if(k==='undo')doUndo();else if(k==='redo')doRedo();
 else if(k==='fit'||k==='z100'){b.zoom=k==='fit'?fitSheet($('#cwrap')):1;zoomSheet($('#canvas'),b.zoom);renderControls()}
 else if(k==='preview')openPreview();
 else if(k==='dl')dlForm(b.id);
-else if(k==='dupf')dupField(b.sel);else if(k==='delf')removeField(b.sel);
-else if(k==='fit'||k==='z100'){b.zoom=k==='fit'?fitSheet($('#cwrap')):1;zoomSheet($('#canvas'),b.zoom);renderControls()}
-else if(k==='preview')openPreview();
-else if(k==='dl')dlForm(b.id);
 else if(k==='print')printSheet(b.fields,{},(tpl(b.id)||{}).name||'form');
 else if(k==='dupf')dupField(b.sel);else if(k==='delf')removeField(b.sel);
 else if(k==='front')reorder(b.sel,-1);else if(k==='back')reorder(b.sel,1);
@@ -1870,8 +1780,6 @@ var autoSave=debounce(function(){if(!S.b.dirty||!S.b.id||S.b.saving)return;
 var a=document.activeElement;
 if(a&&(a.id==='bName'||(a.closest&&a.closest('#ctlBody,.bbar'))))return;saveBuilder(true)},2600);
 function saveBuilder(auto){var b=S.b,t=tpl(b.id);if(!t||b.saving)return Promise.resolve();
-var seen={};
-function saveBuilder(auto){var b=S.b,t=tpl(b.id);if(!t||b.saving)return Promise.resolve();
 var clean=dedupeFields(b.fields);if(clean.fields.length!==b.fields.length){b.fields=clean.fields;b.deleted=mergeIds(b.deleted,clean.stale);S.grow.clear();LAYOUT.sig='';repaint();renderLayers();renderControls();paintBadges()}
 var seen={};
 for(var i=0;i<b.fields.length;i++){var f=b.fields[i];
@@ -1886,7 +1794,6 @@ var st=$('#saveState');if(st){st.className='ss saved';st.innerHTML=ic('check',13
 b.undo=[];b.redo=[];updateUndoUI();
 if(!auto)toast('บันทึก '+t.name+' แล้ว — ผู้ใช้ใช้งานได้ทันที',{type:'ok'});
 if(!token){delete DB.drafts[b.id];persist();return Promise.resolve();}
-b.saving=true;var tid=t.id;
 b.saving=true;var oldId=b.id,tid=t.id,layoutSaved=false,ids=[];
 var create=isUuid(tid)?Promise.resolve(tid):rawApi('createFormTemplate',{data:{name:t.name,description:t.description}},true,{timeout:30000}).then(function(c){
 var nid=fixUuid(c&&c.id);if(!nid)throw new Error('รหัสฟอร์มกลับไม่ถูกต้อง');
@@ -1894,16 +1801,10 @@ var ix=DB.templates.map(function(x){return x.id}).indexOf(t.id);
 if(DB.deptMap[t.id])DB.deptMap[nid]=DB.deptMap[t.id];
 delete DB.deptMap[t.id];t.id=nid;if(ix>=0)DB.templates[ix]=t;b.id=nid;persist();return nid});
 return create.then(function(id){tid=id;
-var ids=[],send=b.fields.map(function(f,i){var c=Object.assign({},f);
-return create.then(function(id){tid=id;
 var send=b.fields.map(function(f,i){var c=Object.assign({},f);
 if(isUuid(f.id)){ids[i]=f.id;c.id=f.id}
 else{var s='tmp_'+Math.random().toString(36).slice(2,10)+'i'+i;ids[i]=s;c.id=s}return c});
 return rawApi('saveFormLayout',{templateId:tid,meta:{name:t.name,description:t.description,is_active:isActive},fields:send,deletedIds:b.deleted.filter(isUuid)},true,{timeout:40000})})
-.then(function(res){var map=(res&&res.idMap)||{};
-b.fields.forEach(function(f,i){var n=fixUuid(map[ids[i]]);if(n){if(b.sel===f.id)b.sel=n;f.id=n}});
-t.fields=JSON.parse(JSON.stringify(b.fields));b.deleted=[];LAYOUT.sig='';
-delete DB.drafts[tid];persist();
  .then(function(res){var map=(res&&res.idMap)||{},unresolved=[];
  b.fields.forEach(function(f,i){var n=fixUuid(map[ids[i]]||(res&&res.fields&&res.fields[i]&&res.fields[i].id));if(n){if(b.sel===f.id)b.sel=n;f.id=n}else if(!isUuid(f.id))unresolved.push(f.name||ids[i])});
  if(unresolved.length)throw new Error('เซิร์ฟเวอร์ไม่ส่งรหัสฟิลด์กลับมา: '+unresolved.join(', ')+' — ยกเลิกการยืนยันการบันทึกเพื่อป้องกันฟิลด์ซ้ำ');
@@ -1914,9 +1815,6 @@ invalidate('getFormTemplate');invalidate('getFormTemplates');invalidate('getPubl
 if(S.sec==='builder'&&S.b.id===t.id){repaint();renderControls();paintBadges()}
 if(!auto&&isActive)return rawApi('publishFormTemplate',{id:tid},true,{timeout:30000});
 return null})
-.catch(function(e){b.dirty=true;var s2=$('#saveState');
-if(s2){s2.className='ss dirty';s2.innerHTML=ic('warn',13)+'ส่งไม่สำเร็จ (ร่างยังอยู่ในเครื่อง)'}
-setConn('bad',e.message);toast('บันทึกขึ้นเซิร์ฟเวอร์ไม่สำเร็จ: '+e.message+' — ฉบับร่างยังอยู่ในเครื่อง',{type:'bad',ms:7000})})
  .catch(function(e){var s2=$('#saveState');
  if(layoutSaved){b.dirty=false;delete DB.drafts[oldId];delete DB.drafts[tid];persist();if(s2){s2.className='ss saved';s2.innerHTML=ic('warn',13)+'บันทึกแล้ว แต่เผยแพร่ไม่สำเร็จ'}}
  else{b.dirty=true;delete DB.drafts[oldId];DB.drafts[b.id]={fields:JSON.parse(JSON.stringify(b.fields)),deleted:b.deleted.slice(),at:Date.now(),baseUpdatedAt:t.updated_at||''};persist();if(s2){s2.className='ss dirty';s2.innerHTML=ic('warn',13)+'ส่งไม่สำเร็จ (ร่างยังอยู่ในเครื่อง)'}}
@@ -2334,8 +2232,6 @@ return}
 if(mod&&k==='j'){e.preventDefault();toggleTheme();return}
 if(mod&&k==='b'&&S.shell==='admin'){e.preventDefault();$('#railToggle').click();return}
 if(S.shell==='admin'&&e.altKey&&/^[1-6]$/.test(e.key)){e.preventDefault();S.sec=null;go(ORDER[+e.key-1]);return}
-if(mod&&k==='b'&&S.shell==='admin'){e.preventDefault();$('#railToggle').click();return}
-if(S.shell==='admin'&&e.altKey&&/^[1-6]$/.test(e.key)){e.preventDefault();S.sec=null;go(ORDER[+e.key-1]);return}
 if(!typing&&k==='/'){e.preventDefault();
 if(S.shell==='public'&&S.pubView!=='forms')pubGo('forms');
 var s=S.shell==='admin'?$('.search input',$('#view')):$('#pfSearch');if(s){s.focus();s.select()}return}
@@ -2343,7 +2239,6 @@ if(!typing&&(e.key==='?'||(e.shiftKey&&k==='/'))){e.preventDefault();showHelp();
 if(S.shell!=='admin'||S.sec!=='builder'||!S.b.id)return;
 if(mod&&k==='s'){e.preventDefault();saveBuilder(false);return}
 if(typing)return;
-if(mod&&k==='z'){e.preventDefault();if(e.shiftKey)doRedo();else doUndo();return}
 if(mod&&(k==='z'||k==='y')){e.preventDefault();if(k==='y'||e.shiftKey)doRedo();else doUndo();return}
 if(!S.b.sel)return;
 if(mod&&k==='d'){e.preventDefault();dupField(S.b.sel);return}
