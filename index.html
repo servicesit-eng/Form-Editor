@@ -753,7 +753,7 @@ else job.next=Date.now()+Math.min(30000,2000*Math.pow(2,job.tries))})
 function setConn(s,m){S.conn=s;S.connMsg=m||'';paintConn()}
 function paintConn(){var el=$('#connChip');if(!el)return;
 var txt=S.conn==='ok'?'เชื่อมต่อแล้ว':S.conn==='bad'?'เชื่อมต่อไม่ได้':'กำลังตรวจสอบ…';
-el.className='conn '+(q>0&&S.conn==='ok'?'wait':S.conn);
+el.className='conn '+S.conn;
 el.innerHTML='<i></i><span>'+esc(txt)+'</span>';el.title=S.connMsg||'คลิกเพื่อทดสอบการเชื่อมต่อ'}
 function testConn(silent){setConn('wait');var t0=performance.now();
 return rawApi('getHeaderLogo',{},false,{timeout:20000}).then(function(){
