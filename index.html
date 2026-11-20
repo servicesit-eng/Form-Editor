@@ -720,7 +720,7 @@ var tm=setTimeout(kill,life);$('.tx',t).onclick=function(){clearTimeout(tm);kill
 if(opt.undo)$('.undo',t).onclick=function(){clearTimeout(tm);kill();opt.undo()}}
 function logAct(text,kind){DB.activity.unshift({id:uid('a_'),text:text,kind:kind||'info',at:new Date().toISOString(),read:false});
 DB.activity=DB.activity.slice(0,30);persist();paintBell()}
-var NET={cache:new Map(),fly:new Map(),active:0};
+var NET={cache:new Map(),fly:new Map(),active:0,running:new Set(),pausedAuth:!token};
 try{var cc=JSON.parse(localStorage.getItem(CCH)||'{}');Object.keys(cc).forEach(function(k){NET.cache.set(k,cc[k])})}catch(e){}
 var cacheSave=debounce(function(){try{var o={},n=0;NET.cache.forEach(function(v,k){if(n++<40)o[k]=v});localStorage.setItem(CCH,JSON.stringify(o))}catch(e){}},1200);
 var QUEUE=[];try{QUEUE=JSON.parse(localStorage.getItem(OBX))||[]}catch(e){QUEUE=[]}
@@ -754,19 +754,24 @@ NET.fly.set(key,p);return p}
 function invalidate(pre){Array.from(NET.cache.keys()).forEach(function(k){if(!pre||k.indexOf(pre)===0)NET.cache.delete(k)});cacheSave()}
 function enqueue(action,payload,label){if(!token)return;try{guard(payload)}catch(e){return}
 QUEUE.push({id:uid('job_'),action:action,payload:payload,label:label||action,tries:0,next:0});qSave();paintConn();pump()}
-function runQueuedJob(job){NET.active++;job.next=Date.now()+30000;paintConn();
+function runQueuedJob(job){NET.active++;NET.running.add(job.id);job.next=Date.now()+30000;paintConn();
 rawApi(job.action,job.payload,true).then(function(){QUEUE=QUEUE.filter(function(j){return j.id!==job.id});invalidate()})
- .catch(function(e){var fkDelete=job.action==='deleteFormTemplate'&&/23503|foreign key|form_submissions_template_id_fkey/i.test(e&&e.message||'');
+ .catch(function(e){var msg=String(e&&e.message||'');if(/(?:HTTP|Supabase error)\s*(?:401|403)\b|เซสชันหมดอายุ|invalid JWT|JWT expired/i.test(msg)){
+var first=!NET.pausedAuth;NET.pausedAuth=true;job.tries=0;job.next=0;setConn('bad','เซสชันหมดอายุหรือไม่มีสิทธิ์ — คิวถูกพักไว้จนกว่าจะเข้าสู่ระบบอีกครั้ง');
+if(first)toast('เซสชันหมดอายุ คิวที่รออยู่ถูกพักไว้ — เข้าสู่ระบบใหม่เพื่อส่งต่อ',{type:'warn',ms:7000});return}
+var fkDelete=job.action==='deleteFormTemplate'&&/23503|foreign key|form_submissions_template_id_fkey/i.test(msg);
  if(fkDelete){QUEUE=QUEUE.filter(function(j){return j.id!==job.id});invalidate('getFormTemplates');if(token)syncAdmin().catch(function(){});
  toast('ลบฟอร์มไม่ได้ เพราะมีคำขอที่ผูกกับฟอร์มแล้ว — ให้ปิดรับกรอกแทน',{type:'warn',ms:7000});return}
  job.tries++;if(job.tries>=4){QUEUE=QUEUE.filter(function(j){return j.id!==job.id});toast('ส่ง '+job.label+' ไม่สำเร็จ: '+e.message,{type:'bad',ms:6000})}
  else job.next=Date.now()+Math.min(30000,2000*Math.pow(2,job.tries))})
-.then(function(){NET.active--;qSave();paintConn();setTimeout(pump,120)})}
-function pump(){while(NET.active<2){var job=QUEUE.filter(function(j){return j.next<=Date.now()})[0];if(!job)break;runQueuedJob(job)}
+.then(function(){NET.running.delete(job.id);NET.active--;qSave();paintConn();setTimeout(pump,120)})}
+function pump(){if(!token||NET.pausedAuth){if(queueTimer){clearTimeout(queueTimer);queueTimer=null}return}
+while(NET.active<2){var job=QUEUE.filter(function(j){return !NET.running.has(j.id)&&j.next<=Date.now()})[0];if(!job)break;runQueuedJob(job)}
 if(queueTimer){clearTimeout(queueTimer);queueTimer=null}
 if(NET.active>=2||!QUEUE.length)return;
-var next=QUEUE.reduce(function(m,j){return Math.min(m,Number(j.next)||0)},Infinity);
+var next=QUEUE.reduce(function(m,j){return NET.running.has(j.id)?m:Math.min(m,Number(j.next)||0)},Infinity);
 if(isFinite(next))queueTimer=setTimeout(function(){queueTimer=null;pump()},Math.max(50,next-Date.now()))}
+function resumeQueue(){NET.pausedAuth=false;QUEUE.forEach(function(j){if(!NET.running.has(j.id))j.next=0});qSave();pump()}
 function setConn(s,m){S.conn=s;S.connMsg=m||'';paintConn()}
 function paintConn(){var el=$('#connChip');if(!el)return;
 var txt=S.conn==='ok'?'เชื่อมต่อแล้ว':S.conn==='bad'?'เชื่อมต่อไม่ได้':'กำลังตรวจสอบ…';
@@ -1280,7 +1285,7 @@ rawApi('loginWithPassword',{email:email,password:pass},false,{timeout:30000}).th
 if(!r||!r.accessToken)throw new Error('ไม่ได้รับ accessToken — ตรวจว่าบัญชีมี role = ADMIN และ active = true');
 token=r.accessToken;try{localStorage.setItem(TOK,token)}catch(e){}
 S.me=r.fullName||'ผู้ดูแลระบบ';S.role=r.role||'ADMIN';paintUser();
-setConn('ok','เข้าสู่ระบบสำเร็จ');closeLogin();$('#lgPass').value='';lgDiag(null);
+setConn('ok','เข้าสู่ระบบสำเร็จ');resumeQueue();closeLogin();$('#lgPass').value='';lgDiag(null);
 toast('ยินดีต้อนรับ '+S.me,{type:'ok'});logAct('เข้าสู่ระบบผู้ดูแล '+S.me,'ok');setShell('admin')})
 .catch(function(e){var m=e.message;setConn('bad',m);var hint='กด ทดสอบการเชื่อมต่อ เพื่อดูสาเหตุและวิธีแก้ทีละขั้น';
 if(/ไม่ถูกต้อง/.test(m))hint='ตรวจอีเมลและรหัสผ่านอีกครั้ง — ตัวพิมพ์ใหญ่เล็กของรหัสผ่านมีผล';
@@ -1290,13 +1295,13 @@ else if(/Unknown action/.test(m))hint='Backend ยังไม่มี action �
 lgDiag('err','เข้าสู่ระบบไม่สำเร็จ',esc(m)+'<br><br>'+hint);toast('เข้าสู่ระบบไม่สำเร็จ: '+m,{type:'bad',ms:6000})})
 .then(function(){b.disabled=false;b.innerHTML=old})}
 function clearAuth(){if(S.b&&S.b.id&&S.b.dirty){try{writeDraftNow();if(persist&&persist.flush)persist.flush()}catch(e){}}
-token=null;S.me='';S.role='';try{localStorage.removeItem(TOK)}catch(e){}
+token=null;NET.pausedAuth=true;if(queueTimer){clearTimeout(queueTimer);queueTimer=null}S.me='';S.role='';try{localStorage.removeItem(TOK)}catch(e){}
 if(saveDraft&&saveDraft.cancel)saveDraft.cancel();if(autoSave&&autoSave.cancel)autoSave.cancel();NET.cache.clear();cacheSave();
 S.b={id:null,fields:[],deleted:[],sel:null,selIds:[],zoom:0,grid:true,snap:true,step:.5,guides:false,warnOvl:true,warnClip:true,dirty:false,undo:[],redo:[],saving:false,saveQueued:false,remoteReady:false,saveBlocked:false};
 S.inbox.sel=new Set();S.staff.sel=new Set();S.loaded.clear();LAYOUT.sig='';paintUser()}
 function restoreSession(){if(!token)return Promise.resolve(false);
 return rawApi('getSession',{},true,{timeout:20000}).then(function(s){S.me=s.fullName||'ผู้ดูแลระบบ';S.role=s.role||'ADMIN';
-paintUser();setConn('ok','เซสชันยังใช้งานได้');return true}).catch(function(){clearAuth();return false})}
+paintUser();setConn('ok','เซสชันยังใช้งานได้');resumeQueue();return true}).catch(function(){clearAuth();return false})}
 $('#logoutBtn').onclick=function(){if(!confirm('ออกจากระบบผู้ดูแล?'))return;clearAuth();setShell('public');toast('ออกจากระบบแล้ว — กลับสู่หน้าสาธารณะ',{type:'info'})};
 $('#goPublicBtn').onclick=function(){setShell('public')};
 $('#connChip').onclick=function(){testConn()};
