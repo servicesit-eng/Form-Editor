@@ -805,10 +805,10 @@ DB.submissions=DB.submissions.filter(function(s){return s.template_id!==t.id||is
 S.loaded.add(t.id);persist();paintCounts();
 if(S.shell==='admin'&&S.sec==='inbox'&&(S.inbox.tpl==='all'||S.inbox.tpl===t.id))render()})
 .catch(function(){}).then(function(){setTimeout(next,40)})};next()}
-function ensureFields(id){var t=tpl(id);if(!t)return Promise.resolve(null);
-if((t.fields||[]).length)return Promise.resolve(t);
+function ensureFields(id,force){var t=tpl(id);if(!t)return Promise.resolve(null);
+if((t.fields||[]).length&&!force)return Promise.resolve(t);
 if(!isUuid(id))return Promise.resolve(t);
-return get(S.shell==='admin'?'getFormTemplate':'getPublicFormTemplate',{id:id},{token:S.shell==='admin'})
+return get(S.shell==='admin'?'getFormTemplate':'getPublicFormTemplate',{id:id},{token:S.shell==='admin',force:!!force})
 .then(function(r){if(r&&r.fields){t.fields=r.fields.map(norm);S.grow.clear();THUMBS.clear();LAYOUT.sig='';persist()}return t}).catch(function(){return t})}
 function paintBrand(){$('#brandMark').innerHTML=DB.logo?'<img src="'+esc(DB.logo)+'" alt="ตรา">':'ด';
 $('#brandSub').textContent=S.shell==='admin'?'DONTUM e-FORM · ADMIN CONSOLE':'DONTUM e-FORM · บริการประชาชน'}
@@ -1043,10 +1043,11 @@ var fillBusy=false;
 function openFill(rawId){var id=fixUuid(rawId)||String(rawId||'');
 if(!id||(!isUuid(id)&&!isLocal(id))){toast('ลิงก์ฟอร์มไม่ถูกต้อง',{type:'warn'});pubGo('forms');return}
 if(fillBusy)return;fillBusy=true;
+var fromBuilder=S.b.id===id&&Array.isArray(S.b.fields)&&S.b.fields.length>0;
 if(S.shell!=='public')setShell('public');
-ensureFields(id).then(function(t){
+ensureFields(id,!fromBuilder).then(function(t){
 if(!t){toast('ไม่พบแบบฟอร์มนี้',{type:'warn'});pubGo('forms');return}
-var fields=uniqueFields(previewFields(id,t));
+var fields=uniqueFields(fromBuilder?S.b.fields:previewFields(id,t));
 if(!fields.some(function(f){return INP.indexOf(f.field_type)>=0})){toast('ฟอร์มนี้ยังไม่มีช่องให้กรอก',{type:'warn'});pubGo('forms');return}
 S.fill={tpl:t.id,fields:fields,data:{},mode:'paper',zoom:0,errors:{}};
 initFillData();$('#fillTitle').textContent=t.name;$('#fillDesc').textContent=t.description||'';
@@ -1112,8 +1113,9 @@ function focusErr(){var n=Object.keys(S.fill.errors)[0];if(!n)return;
 var f=S.fill.fields.filter(function(x){return x.name===n})[0];if(!f)return;
 var t=S.fill.mode==='simple'?$('#fillSimple').querySelector('[data-card="'+cssEsc(n)+'"]'):$('#fillCanvas').querySelector('[data-fid="'+cssEsc(f.id)+'"]');
 if(t){t.scrollIntoView({block:'center',behavior:'smooth'});var i=t.querySelector('input,textarea,select');if(i)setTimeout(function(){i.focus()},300)}}
-function previewPub(id){ensureFields(id).then(function(t){
-var fields=previewFields(id,t);if(!t||!fields.length)return toast('ยังไม่มีฟิลด์ให้แสดงตัวอย่าง',{type:'warn'});
+function previewPub(id){var fromBuilder=S.b.id===id&&Array.isArray(S.b.fields)&&S.b.fields.length>0;
+ensureFields(id,!fromBuilder).then(function(t){
+var fields=fromBuilder?S.b.fields:previewFields(id,t);if(!t||!fields.length)return toast('ยังไม่มีฟิลด์ให้แสดงตัวอย่าง',{type:'warn'});
 openDrawer('ตัวอย่างฟอร์ม',t.name,'<div class="ma4" id="pvA4"><div class="sc"></div></div>','<button class="btn pri" data-pv="1">'+ic('edit')+'กรอกออนไลน์</button>');
 miniA4('#pvA4',fields,{});
 $('#drawerFoot').onclick=function(e){if(e.target.closest('[data-pv]')){closeDrawer();openFill(id)}}})}
