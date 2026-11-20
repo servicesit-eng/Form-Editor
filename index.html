@@ -1674,9 +1674,9 @@ var before=b.fields.map(function(f){return f.id}).join('\u001f');next.splice(ins
 if(oldGroup===newGroup&&before===next.map(function(f){return f.id}).join('\u001f'))return;
 pushUndo();moving.field_group=newGroup;b.fields=next;var el=$('#canvas [data-fid="'+cssEsc(id)+'"]');if(el){if(newGroup)el.dataset.group=newGroup;else delete el.dataset.group}
 markDirty();renderLayers();selectField(id)}
-$('.layer').forEach(function(l){
+$$('.layer').forEach(function(l){
 l.addEventListener('dragstart',function(e){dragId=l.dataset.lid;l.classList.add('drag');try{e.dataTransfer.setData('text/plain',dragId);e.dataTransfer.effectAllowed='move'}catch(x){}});
-l.addEventListener('dragend',function(){dragId=null;l.classList.remove('drag');$('.layer,.layer-group').forEach(function(x){x.classList.remove('over')})});
+l.addEventListener('dragend',function(){dragId=null;l.classList.remove('drag');$$('.layer,.layer-group').forEach(function(x){x.classList.remove('over')})});
 l.addEventListener('dragover',function(e){e.preventDefault();l.classList.add('over')});
 l.addEventListener('dragleave',function(){l.classList.remove('over')});
 l.addEventListener('drop',function(e){e.preventDefault();l.classList.remove('over');var id=dragId||e.dataTransfer&&e.dataTransfer.getData('text/plain'),r=l.getBoundingClientRect();
@@ -1684,7 +1684,7 @@ var target=fields.filter(function(f){return f.id===l.dataset.lid})[0];if(!target
 l.addEventListener('click',function(e){if(e.target.closest('[data-lx]'))return;selectField(l.dataset.lid)});
 var x=l.querySelector('[data-lx]');
 if(x)x.addEventListener('click',function(e){e.stopPropagation();removeField(x.dataset.lx)})});
-$('.layer-group').forEach(function(g){g.addEventListener('dragover',function(e){e.preventDefault();g.classList.add('over')});g.addEventListener('dragleave',function(){g.classList.remove('over')});
+$$('.layer-group').forEach(function(g){g.addEventListener('dragover',function(e){e.preventDefault();g.classList.add('over')});g.addEventListener('dragleave',function(){g.classList.remove('over')});
 g.addEventListener('drop',function(e){e.preventDefault();g.classList.remove('over');var id=dragId||e.dataTransfer&&e.dataTransfer.getData('text/plain');dropField(id,null,g.dataset.lg,true)})})}
 function paintBadges(){var F=layoutFlags(),ov=F.ov.size,cl=F.clip.length;
 var a=$('#ovlChip'),b=$('#clipChip');
