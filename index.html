@@ -839,17 +839,19 @@ try{t.textContent=new Intl.DateTimeFormat('th-TH',{timeZone:'Asia/Bangkok',hour:
 d.textContent=new Intl.DateTimeFormat('th-TH',{timeZone:'Asia/Bangkok',weekday:'short',day:'numeric',month:'short',year:'numeric'}).format(now)}
 catch(e){t.textContent=now.toLocaleTimeString('th-TH');d.textContent=now.toLocaleDateString('th-TH')}}
 function norm(f){f=f||{};
-var n=function(v,d){if(v===null||v===undefined||v==='')return d;var x=Number(v);return isFinite(x)?x:d};
+var read=function(v,d){if(v===null||v===undefined||v==='')return{v:d,u:''};var s=String(v).trim(),x=parseFloat(s);if(!isFinite(x))return{v:d,u:''};return{v:x,u: /%$/.test(s)?'%':/px$/i.test(s)?'px':''}};
 var pick=function(a){for(var i=0;i<a.length;i++){if(f[a[i]]!==null&&f[a[i]]!==undefined&&f[a[i]]!=='')return f[a[i]]}return null};
 var o=f.options;if(typeof o==='string'){try{o=JSON.parse(o)}catch(e){o=o.split(',').map(function(s){return s.trim()}).filter(Boolean)}}
-var r=Object.assign({},f),w=clamp(n(pick(['width','w']),70),3,PW),h=clamp(n(pick(['height','h']),8),1,PH);
+var rx=read(pick(['pos_x','position_x','x','left']),15),ry=read(pick(['pos_y','position_y','y','top']),20),rw=read(pick(['width','w']),70),rh=read(pick(['height','h']),8);
+var pxLike=(rx.u===''&&Math.abs(rx.v)>PW*1.25)||(ry.u===''&&Math.abs(ry.v)>PH*1.25)||(rw.u===''&&Math.abs(rw.v)>PW*1.25)||(rh.u===''&&Math.abs(rh.v)>PH*1.25);
+var mm=function(q,max){return q.u==='%'?q.v*max/100:q.u==='px'?q.v/MM:(pxLike&&q.u===''?q.v/MM:q.v)};
+var r=Object.assign({},f),w=clamp(mm(rw,PW),3,PW),h=clamp(mm(rh,PH),1,PH);
 r.options=Array.isArray(o)?o.map(String).filter(Boolean):[];
 r.auto_grow=f.auto_grow===true||f.auto_grow===1||String(f.auto_grow||'').toLowerCase()==='true';
 r.field_group=typeof f.field_group==='string'?f.field_group.trim():(typeof f.group_name==='string'?f.group_name.trim():'');
 r.width=w;r.height=h;
-r.pos_x=clamp(n(pick(['pos_x','position_x','x','left']),15),0,PW-w);
-r.pos_y=clamp(n(pick(['pos_y','position_y','y','top']),20),0,PH-h);
-r.font_size=clamp(n(f.font_size,14),6,72);return r}
+r.pos_x=clamp(mm(rx,PW),0,PW-w);r.pos_y=clamp(mm(ry,PH),0,PH-h);
+r.font_size=clamp(read(f.font_size,14).v,6,72);return r}
 function mk(t,c,x){var e=document.createElement(t);if(c)e.className=c;if(x!==undefined)e.textContent=x;return e}
 function fieldEl(f,mode,data,pfx){var el=document.createElement('div');
 el.className='cf ft-'+f.field_type+(f.required&&INP.indexOf(f.field_type)>=0?' req':'');
@@ -1443,20 +1445,20 @@ var h=Math.min(a.pos_y+a.height,b.pos_y+b.height)-Math.max(a.pos_y,b.pos_y);
 if(w<=0||h<=0)continue;var sm=Math.min(a.width*a.height,b.width*b.height);
 if(sm>0&&(w*h)/sm>=.6){ids.add(a.id);ids.add(b.id)}}
 return ids.size>=4&&ids.size>=Math.ceil(fs.length*.6)}
-var saveDraft=debounce(function(){if(!S.b.id||!S.b.dirty)return;
-DB.drafts[S.b.id]={fields:JSON.parse(JSON.stringify(S.b.fields)),deleted:S.b.deleted.slice(),at:Date.now()};persist()},700);
+var saveDraft=debounce(function(){if(!S.b.id||!S.b.dirty)return;var t=tpl(S.b.id);
+DB.drafts[S.b.id]={fields:JSON.parse(JSON.stringify(S.b.fields)),deleted:S.b.deleted.slice(),at:Date.now(),baseUpdatedAt:t&&t.updated_at||''};persist()},700);
 function openBuilder(id){if(S.shell!=='admin'||!token){setShell('public');openLogin();return}
-ensureFields(id).then(function(t){if(!t)return;
+ensureFields(id,isUuid(id)).then(function(t){if(!t)return;
 S.b=Object.assign({},S.b,{id:id,fields:JSON.parse(JSON.stringify(t.fields||[])).map(norm),deleted:[],sel:null,selIds:[],dirty:false,undo:[],redo:[],saving:false});
 S.grow.clear();
 var dr=DB.drafts[id],restored=false,draftAt=dr&&Number(dr.at)||0,savedAt=t.updated_at?Date.parse(t.updated_at):0;
-var canRestore=dr&&Array.isArray(dr.fields)&&dr.fields.length&&(!savedAt||!draftAt||draftAt>savedAt);
+if(!isFinite(savedAt))savedAt=0;var draftBase=dr&&String(dr.baseUpdatedAt||''),currentBase=String(t.updated_at||'');
+var canRestore=dr&&Array.isArray(dr.fields)&&dr.fields.length&&((draftBase&&draftBase===currentBase)||(!draftBase&&savedAt>0&&draftAt>savedAt));
 if(canRestore){S.b.fields=JSON.parse(JSON.stringify(dr.fields)).map(norm);S.b.deleted=(dr.deleted||[]).slice();S.b.dirty=true;restored=true}
 else if(dr){delete DB.drafts[id];persist()}
-var repaired=0;
-if(layoutNeedsRepair(S.b.fields)){repaired=resolveOverlaps();if(repaired){S.grow.clear();S.b.dirty=true}}
+var needsRepair=layoutNeedsRepair(S.b.fields);
 LAYOUT.sig='';S.sec=null;go('builder');
-if(repaired)toast('ตรวจพบฟิลด์ซ้อนทับจำนวนมาก จัดตำแหน่งใหม่แล้ว — กรุณากดบันทึก',{type:'warn',ms:7000});
+if(needsRepair)toast('ตรวจพบฟิลด์ซ้อนทับจำนวนมาก — ระบบยังไม่ขยับตำแหน่งอัตโนมัติ ให้ใช้ปุ่ม “จัดไม่ทับ” หรือ “จัดเรียงอัตโนมัติ” แล้วตรวจสอบก่อนบันทึก',{type:'warn',ms:8000});
 else if(restored)toast('กู้คืนฉบับร่างที่ค้างไว้ ('+fdate(new Date(dr.at).toISOString())+')',{type:'info',ms:5000})})}
 function vBuilder(v){if(!S.b.id){var list=DB.templates;
 v.innerHTML=head('builder','<button class="btn pri" data-a="new">'+ic('plus')+'สร้างฟอร์มใหม่</button>')+
@@ -1638,16 +1640,13 @@ a.innerHTML=ic(ov?'layers':'check',13)+'<span>'+(ov?'ซ้อนทับ '+ov:
 if(b){b.classList.toggle('bad',cl>0);b.classList.toggle('clean',cl===0);
 b.innerHTML=ic(cl?'warn':'check',13)+'<span>'+(cl?'เกินกล่อง '+cl:'เนื้อหาพอดี')+'</span>'}}
 function resolveOverlaps(){var fs=S.b.fields.slice().sort(function(a,b){return a.pos_y-b.pos_y||a.pos_x-b.pos_x});
-var placed=[],moved=0;
-fs.forEach(function(f){var guard=0;
-while(guard++<80){var hit=placed.filter(function(p){
-var w=Math.min(p.pos_x+p.width,f.pos_x+f.width)-Math.max(p.pos_x,f.pos_x);
-var h=Math.min(p.pos_y+p.height,f.pos_y+f.height)-Math.max(p.pos_y,f.pos_y);
-if(w<=0||h<=0)return false;var sm=Math.min(p.width*p.height,f.width*f.height);
-return sm>0&&(w*h)/sm>=.6})[0];
-if(!hit)break;var ny=Math.round((hit.pos_y+hit.height+3)*2)/2;
-if(ny+f.height>PH-2){f.pos_x=clamp(f.pos_x+6,0,PW-f.width);f.pos_y=2}else f.pos_y=ny;moved++}
-placed.push(f)});return moved}
+var placed=[],moved=0,overlap=function(a,b){var w=Math.min(a.pos_x+a.width,b.pos_x+b.width)-Math.max(a.pos_x,b.pos_x),h=Math.min(a.pos_y+a.height,b.pos_y+b.height)-Math.max(a.pos_y,b.pos_y);
+if(w<=0||h<=0)return false;var sm=Math.min(a.width*a.height,b.width*b.height);return sm>0&&(w*h)/sm>=.6},free=function(f){return !placed.some(function(p){return overlap(p,f)})};
+fs.forEach(function(f){var ox=clamp(f.pos_x,0,PW-f.width),oy=clamp(f.pos_y,0,PH-f.height),found=false;
+f.pos_x=ox;f.pos_y=oy;found=free(f);
+var seek=function(sx,sy){for(var y=Math.max(0,Math.floor(sy));y<=PH-f.height&&!found;y+=1)for(var x=Math.max(0,Math.floor(sx));x<=PW-f.width&&!found;x+=1){f.pos_x=Math.round(x*2)/2;f.pos_y=Math.round(y*2)/2;if(free(f))found=true}};
+if(!found){seek(ox,oy);if(!found){f.pos_x=0;f.pos_y=0;seek(0,0)}}
+if(!found){f.pos_x=ox;f.pos_y=oy}if(f.pos_x!==ox||f.pos_y!==oy)moved++;placed.push(f)});return moved}
 function autoArrange(){var fs=S.b.fields.slice().sort(function(a,b){return a.pos_y-b.pos_y||a.pos_x-b.pos_x});
 var y=18;fs.forEach(function(f){f.pos_x=clamp(f.pos_x,0,PW-f.width);f.pos_y=Math.round(y*2)/2;y+=Math.max(f.height,3)+3});return fs.length}
 function clipDrawer(){var list=layoutFlags().clip;
@@ -1783,7 +1782,7 @@ var st=$('#saveState');if(st){st.className='ss saved';st.innerHTML=ic('check',13
 b.undo=[];b.redo=[];updateUndoUI();
 if(!auto)toast('บันทึก '+t.name+' แล้ว — ผู้ใช้ใช้งานได้ทันที',{type:'ok'});
 if(!token){delete DB.drafts[b.id];persist();return Promise.resolve();}
-b.saving=true;var tid=t.id;
+b.saving=true;var oldId=b.id,tid=t.id,layoutSaved=false;
 var create=isUuid(tid)?Promise.resolve(tid):rawApi('createFormTemplate',{data:{name:t.name,description:t.description}},true,{timeout:30000}).then(function(c){
 var nid=fixUuid(c&&c.id);if(!nid)throw new Error('รหัสฟอร์มกลับไม่ถูกต้อง');
 var ix=DB.templates.map(function(x){return x.id}).indexOf(t.id);
@@ -1794,18 +1793,18 @@ var ids=[],send=b.fields.map(function(f,i){var c=Object.assign({},f);
 if(isUuid(f.id)){ids[i]=f.id;c.id=f.id}
 else{var s='tmp_'+Math.random().toString(36).slice(2,10)+'i'+i;ids[i]=s;c.id=s}return c});
 return rawApi('saveFormLayout',{templateId:tid,meta:{name:t.name,description:t.description,is_active:isActive},fields:send,deletedIds:b.deleted.filter(isUuid)},true,{timeout:40000})})
-.then(function(res){var map=(res&&res.idMap)||{};
-b.fields.forEach(function(f,i){var n=fixUuid(map[ids[i]]);if(n){if(b.sel===f.id)b.sel=n;f.id=n}});
-t.fields=JSON.parse(JSON.stringify(b.fields));b.deleted=[];LAYOUT.sig='';
-delete DB.drafts[tid];persist();
+ .then(function(res){layoutSaved=true;var map=(res&&res.idMap)||{};
+ b.fields.forEach(function(f,i){var n=fixUuid(map[ids[i]]);if(n){if(b.sel===f.id)b.sel=n;f.id=n}});
+ t.fields=JSON.parse(JSON.stringify(b.fields));b.deleted=[];LAYOUT.sig='';
+ delete DB.drafts[oldId];delete DB.drafts[tid];persist();
 invalidate('getFormTemplate');invalidate('getFormTemplates');invalidate('getPublicFormTemplate');
 if(S.sec==='builder'&&S.b.id===t.id){repaint();renderControls();paintBadges()}
 if(!auto&&isActive)return rawApi('publishFormTemplate',{id:tid},true,{timeout:30000});
 return null})
-.catch(function(e){b.dirty=true;var s2=$('#saveState');
-DB.drafts[b.id]={fields:JSON.parse(JSON.stringify(b.fields)),deleted:b.deleted.slice(),at:Date.now()};persist();
-if(s2){s2.className='ss dirty';s2.innerHTML=ic('warn',13)+'ส่งไม่สำเร็จ (ร่างยังอยู่ในเครื่อง)'}
-setConn('bad',e.message);toast('บันทึกขึ้นเซิร์ฟเวอร์ไม่สำเร็จ: '+e.message+' — ฉบับร่างยังอยู่ในเครื่อง',{type:'bad',ms:7000})})
+ .catch(function(e){var s2=$('#saveState');
+ if(layoutSaved){b.dirty=false;delete DB.drafts[oldId];delete DB.drafts[tid];persist();if(s2){s2.className='ss saved';s2.innerHTML=ic('warn',13)+'บันทึกแล้ว แต่เผยแพร่ไม่สำเร็จ'}}
+ else{b.dirty=true;delete DB.drafts[oldId];DB.drafts[b.id]={fields:JSON.parse(JSON.stringify(b.fields)),deleted:b.deleted.slice(),at:Date.now(),baseUpdatedAt:t.updated_at||''};persist();if(s2){s2.className='ss dirty';s2.innerHTML=ic('warn',13)+'ส่งไม่สำเร็จ (ร่างยังอยู่ในเครื่อง)'}}
+ setConn('bad',e.message);toast((layoutSaved?'บันทึกเลย์เอาต์แล้ว แต่เผยแพร่ไม่สำเร็จ: ':'บันทึกขึ้นเซิร์ฟเวอร์ไม่สำเร็จ: ')+e.message+(layoutSaved?'':' — ฉบับร่างยังอยู่ในเครื่อง'),{type:'bad',ms:7000})})
 .then(function(){b.saving=false})}
 function addField(type,x,y,center){var b=S.b;if(!b.id)return;
 var d={title:{width:150,height:11,font_size:18,font_weight:'bold',text_align:'center',border_style:'none',value:'หัวข้อเรื่อง'},
