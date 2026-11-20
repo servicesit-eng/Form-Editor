@@ -692,7 +692,7 @@ fill:{tpl:null,fields:[],data:{},mode:'paper',zoom:0,errors:{}},lastSub:null,
 forms:{q:'',status:'all',dept:'all',sort:'updated',view:'grid',fav:false},
 inbox:{tpl:'all',status:'ALL',q:'',sort:'newest',sel:new Set()},mine:{q:'',status:'all'},
 staff:{q:'',dept:'all',active:'all',sel:new Set()},
-b:{id:null,fields:[],deleted:[],sel:null,selIds:[],zoom:0,grid:true,snap:true,step:.5,guides:false,warnOvl:true,warnClip:true,dirty:false,undo:[],redo:[],saving:false},
+b:{id:null,fields:[],deleted:[],sel:null,selIds:[],zoom:0,grid:true,snap:true,step:.5,guides:false,warnOvl:true,warnClip:true,dirty:false,undo:[],redo:[],saving:false,remoteReady:false,saveBlocked:false},
 pal:{q:'',idx:0,items:[]},loaded:new Set(),grow:new Map()};
 var THUMBS=new Map(),LAYOUT={sig:'',ov:new Set(),clip:[]};
 var refOf=function(s){return s.referenceId||(String(s.id).replace(/[^0-9]/g,'').slice(-6).padStart(6,'0')||String(s.id).slice(0,6).toUpperCase())};
@@ -770,9 +770,14 @@ return rawApi('getHeaderLogo',{},false,{timeout:20000}).then(function(){
 var ms=Math.round(performance.now()-t0);setConn('ok','เชื่อมต่อสำเร็จ '+ms+' ms');
 if(!silent)toast('เชื่อมต่อสำเร็จ ('+ms+' ms)',{type:'ok'});return true})
 .catch(function(e){setConn('bad',e.message);if(!silent)toast('เชื่อมต่อไม่สำเร็จ: '+e.message,{type:'bad',ms:7000});return false})}
+function fieldList(value){
+var x=Array.isArray(value)?value:(value&&value.fields);
+if(typeof x==='string'){try{x=JSON.parse(x)}catch(e){x=null}}
+if(!Array.isArray(x)&&value&&value.data){var d=value.data;x=Array.isArray(d)?d:(d&&d.fields);if(typeof x==='string'){try{x=JSON.parse(x)}catch(e){x=null}}}
+return Array.isArray(x)?x:null}
 function applyTemplates(list,activeOnly){if(!Array.isArray(list))return;
 var keep=DB.templates.filter(function(t){return isLocal(t.id)});
-var server=list.filter(function(t){return isUuid(t.id)}).map(function(t){var ex=tpl(t.id),clean=dedupeFields(t.fields&&t.fields.length?t.fields:((ex&&ex.fields)||[]));
+var server=list.filter(function(t){return isUuid(t.id)}).map(function(t){var ex=tpl(t.id),rf=fieldList(t),source=rf!==null?rf:((ex&&Array.isArray(ex.fields))?ex.fields:[]),clean=dedupeFields(source);
 if(ex&&ex.department&&ex.department!=='—')DB.deptMap[t.id]=ex.department;
 return{id:String(t.id).toLowerCase(),name:t.name,description:t.description||'',department:DB.deptMap[t.id]||(ex&&ex.department)||'—',
 is_active:activeOnly?true:t.is_active===true,created_at:t.created_at||new Date().toISOString(),updated_at:t.updated_at||t.created_at||new Date().toISOString(),
@@ -808,11 +813,11 @@ DB.submissions=DB.submissions.filter(function(s){return s.template_id!==t.id||is
 S.loaded.add(t.id);persist();paintCounts();
 if(S.shell==='admin'&&S.sec==='inbox'&&(S.inbox.tpl==='all'||S.inbox.tpl===t.id))render()})
 .catch(function(){}).then(function(){setTimeout(next,40)})};next()}
-function ensureFields(id,force){var t=tpl(id);if(!t)return Promise.resolve(null);
+function ensureFields(id,force,strict){var t=tpl(id);if(!t)return Promise.resolve(null);
 if((t.fields||[]).length&&!force)return Promise.resolve(t);
 if(!isUuid(id))return Promise.resolve(t);
 return get(S.shell==='admin'?'getFormTemplate':'getPublicFormTemplate',{id:id},{token:S.shell==='admin',force:!!force})
- .then(function(r){if(r&&r.fields){var c=dedupeFields(r.fields);t.fields=c.fields;setStaleFieldIds(t,(t._staleFieldIds||[]).concat(c.stale));S.grow.clear();THUMBS.clear();LAYOUT.sig='';persist()}return t}).catch(function(){return t})}
+ .then(function(r){var rf=fieldList(r);if(rf===null){if(strict)throw new Error('เซิร์ฟเวอร์ไม่ส่งรายการฟิลด์ของฟอร์มกลับมา');return t}var c=dedupeFields(rf);t.fields=c.fields;setStaleFieldIds(t,(t._staleFieldIds||[]).concat(c.stale));S.grow.clear();THUMBS.clear();LAYOUT.sig='';persist();return t}).catch(function(e){if(strict)throw e;return t})}
 function paintBrand(){$('#brandMark').innerHTML=DB.logo?'<img src="'+esc(DB.logo)+'" alt="ตรา">':'ด';
 $('#brandSub').textContent=S.shell==='admin'?'DONTUM e-FORM · ADMIN CONSOLE':'DONTUM e-FORM · บริการประชาชน'}
 function applyPrefs(){var d=document.documentElement;d.dataset.theme=DB.prefs.theme;d.dataset.density=DB.prefs.density;
@@ -845,7 +850,8 @@ var o=f.options;if(typeof o==='string'){try{o=JSON.parse(o)}catch(e){o=o.split('
 var rx=read(pick(['pos_x','position_x','x','left']),15),ry=read(pick(['pos_y','position_y','y','top']),20),rw=read(pick(['width','w']),70),rh=read(pick(['height','h']),8);
 var pxLike=(rx.u===''&&Math.abs(rx.v)>PW*1.25)||(ry.u===''&&Math.abs(ry.v)>PH*1.25)||(rw.u===''&&Math.abs(rw.v)>PW*1.25)||(rh.u===''&&Math.abs(rh.v)>PH*1.25);
 var mm=function(q,max){return q.u==='%'?q.v*max/100:q.u==='px'?q.v/MM:(pxLike&&q.u===''?q.v/MM:q.v)};
-var r=Object.assign({},f),w=clamp(mm(rw,PW),3,PW),h=clamp(mm(rh,PH),1,PH);
+var r=Object.assign({},f),rid=pick(['id','field_id','fieldId','uuid']),rname=pick(['name','field_name','fieldName','key']),rtype=pick(['field_type','fieldType','type','kind']);if((r.id===null||r.id===undefined||r.id==='')&&rid!==null)r.id=rid;if((r.name===null||r.name===undefined||r.name==='')&&rname!==null)r.name=String(rname);if((r.field_type===null||r.field_type===undefined||r.field_type==='')&&rtype!==null)r.field_type=String(rtype);
+var w=clamp(mm(rw,PW),3,PW),h=clamp(mm(rh,PH),1,PH);
 r.options=Array.isArray(o)?o.map(String).filter(Boolean):[];
 r.auto_grow=f.auto_grow===true||f.auto_grow===1||String(f.auto_grow||'').toLowerCase()==='true';
 r.field_group=typeof f.field_group==='string'?f.field_group.trim():(typeof f.group_name==='string'?f.group_name.trim():'');
@@ -854,11 +860,12 @@ r.pos_x=clamp(mm(rx,PW),0,PW-w);r.pos_y=clamp(mm(ry,PH),0,PH-h);
 r.font_size=clamp(read(f.font_size,14).v,6,72);return r}
 function setStaleFieldIds(t,ids){var u=[],seen={};(ids||[]).forEach(function(id){id=String(id||'');if(id&&isUuid(id)&&!seen[id]){seen[id]=1;u.push(id)}});
 try{Object.defineProperty(t,'_staleFieldIds',{value:u,writable:true,configurable:true,enumerable:false})}catch(e){t._staleFieldIds=u}return u}
-function fieldSignature(f){return[norm(f).field_type,f.label||'',f.value||'',(f.options||[]).join('\u001f'),f.pos_x,f.pos_y,f.width,f.height,f.font_size,f.font_family||'',f.font_weight||'',f.text_color||'',f.bg_color||'',f.border_style||'',f.border_color||'',f.text_align||'',f.required?'1':'0',f.auto_grow?'1':'0',f.field_group||''].join('\u001e')}
-function visualSignature(f){return[norm(f).field_type,f.label||'',f.value||'',(f.options||[]).join('\u001f'),f.width,f.height,f.font_size,f.font_family||'',f.font_weight||'',f.text_color||'',f.bg_color||'',f.border_style||'',f.border_color||'',f.text_align||'',f.required?'1':'0',f.auto_grow?'1':'0',f.field_group||''].join('\u001e')}
+function sigText(v){return String(v==null?'':v).trim().replace(/\s+/g,' ')}
+function fieldSignature(f){return[norm(f).field_type,sigText(f.label),sigText(f.value),(f.options||[]).map(sigText).join('\u001f'),f.pos_x,f.pos_y,f.width,f.height,f.font_size,sigText(f.font_family),sigText(f.font_weight),sigText(f.text_color),sigText(f.bg_color),sigText(f.border_style),sigText(f.border_color),sigText(f.text_align),f.required?'1':'0',f.auto_grow?'1':'0',sigText(f.field_group)].join('\u001e')}
+function visualSignature(f){return[norm(f).field_type,sigText(f.label),sigText(f.value),(f.options||[]).map(sigText).join('\u001f'),f.font_size,sigText(f.font_family),sigText(f.font_weight),sigText(f.text_color),sigText(f.bg_color),sigText(f.border_style),sigText(f.border_color),sigText(f.text_align),f.required?'1':'0',f.auto_grow?'1':'0',sigText(f.field_group)].join('\u001e')}
 function overlapRatio(a,b){var w=Math.min(a.pos_x+a.width,b.pos_x+b.width)-Math.max(a.pos_x,b.pos_x),h=Math.min(a.pos_y+a.height,b.pos_y+b.height)-Math.max(a.pos_y,b.pos_y);if(w<=0||h<=0)return 0;var sm=Math.min(a.width*a.height,b.width*b.height);return sm>0?(w*h)/sm:0}
 function dedupeFields(fields){var out=[],byId={},bySig={},byVisual={},stale=[];(fields||[]).forEach(function(raw){if(!raw||typeof raw!=='object')return;var f=norm(raw),id=String(f.id||'');
-if(!id){f.id=tmpId('f_');id=f.id}var sig=fieldSignature(f),vk=visualSignature(f),near=(byVisual[vk]||[]).some(function(p){return overlapRatio(p,f)>=.85});if(byId[id])return;if(bySig[sig]||near){if(isUuid(id))stale.push(id);return}
+if(!id){f.id=tmpId('f_');id=f.id}var sig=fieldSignature(f),vk=visualSignature(f),near=(byVisual[vk]||[]).some(function(p){return overlapRatio(p,f)>=.55}),logoNear=f.field_type==='logo'&&out.some(function(p){return p.field_type==='logo'&&((sigText(p.value)===sigText(f.value))||(sigText(p.label)===sigText(f.label)))&&overlapRatio(p,f)>=.15});if(byId[id])return;if(bySig[sig]||near||logoNear){if(isUuid(id))stale.push(id);return}
 byId[id]=1;bySig[sig]=1;(byVisual[vk]||(byVisual[vk]=[])).push(f);out.push(f)});return{fields:out,stale:stale}}
 function mergeIds(){var out=[],seen={};Array.prototype.forEach.call(arguments,function(list){(list||[]).forEach(function(id){id=String(id||'');if(id&&!seen[id]){seen[id]=1;out.push(id)}})});return out}
 function mk(t,c,x){var e=document.createElement(t);if(c)e.className=c;if(x!==undefined)e.textContent=x;return e}
@@ -1059,7 +1066,7 @@ if(!id||(!isUuid(id)&&!isLocal(id))){toast('ลิงก์ฟอร์มไม
 if(fillBusy)return;fillBusy=true;
 var fromBuilder=S.b.id===id&&Array.isArray(S.b.fields)&&S.b.fields.length>0;
 if(S.shell!=='public')setShell('public');
-ensureFields(id,!fromBuilder).then(function(t){
+ensureFields(id,isUuid(id),false).then(function(t){
 if(!t){toast('ไม่พบแบบฟอร์มนี้',{type:'warn'});pubGo('forms');return}
 var fields=uniqueFields(fromBuilder?S.b.fields:previewFields(id,t));
 if(!fields.some(function(f){return INP.indexOf(f.field_type)>=0})){toast('ฟอร์มนี้ยังไม่มีช่องให้กรอก',{type:'warn'});pubGo('forms');return}
@@ -1128,7 +1135,7 @@ var f=S.fill.fields.filter(function(x){return x.name===n})[0];if(!f)return;
 var t=S.fill.mode==='simple'?$('#fillSimple').querySelector('[data-card="'+cssEsc(n)+'"]'):$('#fillCanvas').querySelector('[data-fid="'+cssEsc(f.id)+'"]');
 if(t){t.scrollIntoView({block:'center',behavior:'smooth'});var i=t.querySelector('input,textarea,select');if(i)setTimeout(function(){i.focus()},300)}}
 function previewPub(id){var fromBuilder=S.b.id===id&&Array.isArray(S.b.fields)&&S.b.fields.length>0;
-ensureFields(id,!fromBuilder).then(function(t){
+ensureFields(id,isUuid(id),false).then(function(t){
 var fields=fromBuilder?S.b.fields:previewFields(id,t);if(!t||!fields.length)return toast('ยังไม่มีฟิลด์ให้แสดงตัวอย่าง',{type:'warn'});
 openDrawer('ตัวอย่างฟอร์ม',t.name,'<div class="ma4" id="pvA4"><div class="sc"></div></div>','<button class="btn pri" data-pv="1">'+ic('edit')+'กรอกออนไลน์</button>');
 miniA4('#pvA4',fields,{});
@@ -1274,7 +1281,7 @@ else if(/Unknown action/.test(m))hint='Backend ยังไม่มี action �
 lgDiag('err','เข้าสู่ระบบไม่สำเร็จ',esc(m)+'<br><br>'+hint);toast('เข้าสู่ระบบไม่สำเร็จ: '+m,{type:'bad',ms:6000})})
 .then(function(){b.disabled=false;b.innerHTML=old})}
 function clearAuth(){token=null;S.me='';S.role='';try{localStorage.removeItem(TOK)}catch(e){}
-S.b={id:null,fields:[],deleted:[],sel:null,selIds:[],zoom:0,grid:true,snap:true,step:.5,guides:false,warnOvl:true,warnClip:true,dirty:false,undo:[],redo:[],saving:false};
+S.b={id:null,fields:[],deleted:[],sel:null,selIds:[],zoom:0,grid:true,snap:true,step:.5,guides:false,warnOvl:true,warnClip:true,dirty:false,undo:[],redo:[],saving:false,remoteReady:false,saveBlocked:false};
 S.inbox.sel=new Set();S.staff.sel=new Set();S.loaded.clear();LAYOUT.sig='';paintUser()}
 function restoreSession(){if(!token)return Promise.resolve(false);
 return rawApi('getSession',{},true,{timeout:20000}).then(function(s){S.me=s.fullName||'ผู้ดูแลระบบ';S.role=s.role||'ADMIN';
@@ -1390,7 +1397,7 @@ if(isUuid(id)&&token){rawApi('duplicateFormTemplate',{id:id,newName:s.name+' (�
 var nid=fixUuid(r&&r.id);if(!nid)throw new Error('รหัสกลับไม่ถูกต้อง');
 invalidate('getFormTemplates');
 DB.templates.unshift({id:nid,name:r.name||s.name+' (สำเนา)',description:s.description,department:s.department,is_active:false,
-created_at:new Date().toISOString(),updated_at:new Date().toISOString(),fields:JSON.parse(JSON.stringify(s.fields||[])).map(function(f){f.id=tmpId('f_');return f})});
+created_at:new Date().toISOString(),updated_at:new Date().toISOString(),fields:[]});
 DB.deptMap[nid]=s.department;persist();render();toast('คัดลอกขึ้นเซิร์ฟเวอร์แล้ว',{type:'ok'})})
 .catch(function(){dupLocal(s)});return}
 dupLocal(s)}
@@ -1457,20 +1464,21 @@ return ids.size>=4&&ids.size>=Math.ceil(fs.length*.6)}
 var saveDraft=debounce(function(){if(!S.b.id||!S.b.dirty)return;var t=tpl(S.b.id);
 DB.drafts[S.b.id]={fields:JSON.parse(JSON.stringify(S.b.fields)),deleted:S.b.deleted.slice(),at:Date.now(),baseUpdatedAt:t&&t.updated_at||''};persist()},700);
 function openBuilder(id){if(S.shell!=='admin'||!token){setShell('public');openLogin();return}
-ensureFields(id,isUuid(id)).then(function(t){if(!t)return;
+ensureFields(id,isUuid(id),true).then(function(t){if(!t)return;
  var clean=dedupeFields(t.fields||[]),staleIds=mergeIds(t._staleFieldIds,clean.stale);t.fields=clean.fields;setStaleFieldIds(t,staleIds);if(staleIds.length)persist();
- S.b=Object.assign({},S.b,{id:id,fields:JSON.parse(JSON.stringify(t.fields||[])).map(norm),deleted:staleIds.slice(),sel:null,selIds:[],dirty:staleIds.length>0,undo:[],redo:[],saving:false});
+ S.b=Object.assign({},S.b,{id:id,fields:JSON.parse(JSON.stringify(t.fields||[])).map(norm),deleted:staleIds.slice(),sel:null,selIds:[],dirty:staleIds.length>0,undo:[],redo:[],saving:false,remoteReady:isUuid(id),saveBlocked:false});
  S.grow.clear();
  var dr=DB.drafts[id],restored=false,draftAt=dr&&Number(dr.at)||0,savedAt=t.updated_at?Date.parse(t.updated_at):0;
  if(!isFinite(savedAt))savedAt=0;var draftBase=dr&&String(dr.baseUpdatedAt||''),currentBase=String(t.updated_at||'');
- var canRestore=dr&&Array.isArray(dr.fields)&&dr.fields.length&&((draftBase&&draftBase===currentBase)||(!draftBase&&savedAt>0&&draftAt>savedAt));
+ var draftHasPersisted=dr&&Array.isArray(dr.fields)&&dr.fields.some(function(f){return isUuid(f&&f.id)}),canRestore=dr&&Array.isArray(dr.fields)&&dr.fields.length&&((!isUuid(id)||draftHasPersisted)&&((draftBase&&draftBase===currentBase)||(!draftBase&&savedAt>0&&draftAt>savedAt)));
  if(canRestore){var draftClean=dedupeFields(dr.fields);S.b.fields=JSON.parse(JSON.stringify(draftClean.fields)).map(norm);S.b.deleted=mergeIds(S.b.deleted,dr.deleted,draftClean.stale);S.b.dirty=true;restored=true}
  else if(dr){delete DB.drafts[id];persist()}
- var needsRepair=layoutNeedsRepair(S.b.fields);
+ var needsRepair=layoutNeedsRepair(S.b.fields),repaired=0;
+ if(needsRepair){repaired=resolveOverlaps();if(!repaired)repaired=autoArrange();if(repaired){S.b.dirty=true;LAYOUT.sig='';}}
  LAYOUT.sig='';S.sec=null;go('builder');
  if(staleIds.length)toast('ตรวจพบฟิลด์ซ้ำ '+staleIds.length+' รายการ — ตัดออกจากหน้าจอแล้ว กด “บันทึก” เพื่อเคลียร์ข้อมูลซ้ำบนเซิร์ฟเวอร์',{type:'warn',ms:9000});
- else if(needsRepair)toast('ตรวจพบฟิลด์ซ้อนทับจำนวนมาก — ระบบยังไม่ขยับตำแหน่งอัตโนมัติ ให้ใช้ปุ่ม “จัดไม่ทับ” หรือ “จัดเรียงอัตโนมัติ” แล้วตรวจสอบก่อนบันทึก',{type:'warn',ms:8000});
- else if(restored)toast('กู้คืนฉบับร่างที่ค้างไว้ ('+fdate(new Date(dr.at).toISOString())+')',{type:'info',ms:5000})})}
+ else if(repaired)toast('ตรวจพบฟิลด์ซ้อนทับจำนวนมาก — จัดตำแหน่งให้อัตโนมัติแล้ว กด “บันทึก” เพื่อยืนยัน',{type:'warn',ms:8000});
+ else if(restored)toast('กู้คืนฉบับร่างที่ค้างไว้ ('+fdate(new Date(dr.at).toISOString())+')',{type:'info',ms:5000})}).catch(function(e){setConn('bad',e.message);toast('โหลดฟิลด์ของฟอร์มไม่สำเร็จ: '+e.message+' — จึงยังไม่เปิดหน้าแก้ไขเพื่อป้องกันข้อมูลซ้ำ',{type:'bad',ms:9000})})}
 function vBuilder(v){if(!S.b.id){var list=DB.templates;
 v.innerHTML=head('builder','<button class="btn pri" data-a="new">'+ic('plus')+'สร้างฟอร์มใหม่</button>')+
 (list.length?'<div class="grid">'+list.map(function(t,i){
@@ -1779,7 +1787,14 @@ saveDraft();autoSave()}
 var autoSave=debounce(function(){if(!S.b.dirty||!S.b.id||S.b.saving)return;
 var a=document.activeElement;
 if(a&&(a.id==='bName'||(a.closest&&a.closest('#ctlBody,.bbar'))))return;saveBuilder(true)},2600);
-function saveBuilder(auto){var b=S.b,t=tpl(b.id);if(!t||b.saving)return Promise.resolve();
+function mappedFieldId(res,key,index){var map=res&&res.idMap,value=null;
+if(typeof map==='string'){try{map=JSON.parse(map)}catch(e){map=null}}
+if(Array.isArray(map)){var hit=map.filter(function(x){return x&&typeof x==='object'&&String(x.tempId||x.clientId||x.client_id||x.localId||'')===String(key)})[0];value=hit!==undefined?hit:map[index]}
+else if(map&&typeof map==='object')value=map[key];
+if(value===null||value===undefined){var rows=res&&res.fields;if(Array.isArray(rows))value=rows[index];else if(rows&&typeof rows==='object')value=rows[key]}
+if(value&&typeof value==='object')value=value.id||value.field_id||value.fieldId||value.uuid;
+return fixUuid(value)}
+function saveBuilder(auto){var b=S.b,t=tpl(b.id);if(!t||b.saving)return Promise.resolve();if(b.saveBlocked){toast('การบันทึกถูกหยุดไว้ชั่วคราว เพราะผลตอบกลับจากเซิร์ฟเวอร์ไม่แน่ชัด — ปิดแล้วเปิดฟอร์มใหม่ก่อนลองอีกครั้ง',{type:'warn',ms:8000});return Promise.resolve()}var creating=!isUuid(t.id);if(!creating&&b.remoteReady!==true){toast('ยังโหลดฟิลด์จากเซิร์ฟเวอร์ไม่ครบ จึงยกเลิกการบันทึกเพื่อป้องกันฟิลด์ซ้ำ',{type:'bad',ms:7000});return Promise.resolve()}
 var clean=dedupeFields(b.fields);if(clean.fields.length!==b.fields.length){b.fields=clean.fields;b.deleted=mergeIds(b.deleted,clean.stale);S.grow.clear();LAYOUT.sig='';repaint();renderLayers();renderControls();paintBadges()}
 var seen={};
 for(var i=0;i<b.fields.length;i++){var f=b.fields[i];
@@ -1805,10 +1820,10 @@ var send=b.fields.map(function(f,i){var c=Object.assign({},f);
 if(isUuid(f.id)){ids[i]=f.id;c.id=f.id}
 else{var s='tmp_'+Math.random().toString(36).slice(2,10)+'i'+i;ids[i]=s;c.id=s}return c});
 return rawApi('saveFormLayout',{templateId:tid,meta:{name:t.name,description:t.description,is_active:isActive},fields:send,deletedIds:b.deleted.filter(isUuid)},true,{timeout:40000})})
- .then(function(res){var map=(res&&res.idMap)||{},unresolved=[];
- b.fields.forEach(function(f,i){var n=fixUuid(map[ids[i]]||(res&&res.fields&&res.fields[i]&&res.fields[i].id));if(n){if(b.sel===f.id)b.sel=n;f.id=n}else if(!isUuid(f.id))unresolved.push(f.name||ids[i])});
+ .then(function(res){var unresolved=[];
+ b.fields.forEach(function(f,i){var n=mappedFieldId(res,ids[i],i);if(n){if(b.sel===f.id)b.sel=n;f.id=n}else if(!isUuid(f.id))unresolved.push(f.name||ids[i])});
  if(unresolved.length)throw new Error('เซิร์ฟเวอร์ไม่ส่งรหัสฟิลด์กลับมา: '+unresolved.join(', ')+' — ยกเลิกการยืนยันการบันทึกเพื่อป้องกันฟิลด์ซ้ำ');
- layoutSaved=true;
+ layoutSaved=true;b.remoteReady=true;b.saveBlocked=false;
  t.fields=JSON.parse(JSON.stringify(b.fields));b.deleted=[];setStaleFieldIds(t,[]);LAYOUT.sig='';
  delete DB.drafts[oldId];delete DB.drafts[tid];persist();
 invalidate('getFormTemplate');invalidate('getFormTemplates');invalidate('getPublicFormTemplate');
@@ -1818,7 +1833,8 @@ return null})
  .catch(function(e){var s2=$('#saveState');
  if(layoutSaved){b.dirty=false;delete DB.drafts[oldId];delete DB.drafts[tid];persist();if(s2){s2.className='ss saved';s2.innerHTML=ic('warn',13)+'บันทึกแล้ว แต่เผยแพร่ไม่สำเร็จ'}}
  else{b.dirty=true;delete DB.drafts[oldId];DB.drafts[b.id]={fields:JSON.parse(JSON.stringify(b.fields)),deleted:b.deleted.slice(),at:Date.now(),baseUpdatedAt:t.updated_at||''};persist();if(s2){s2.className='ss dirty';s2.innerHTML=ic('warn',13)+'ส่งไม่สำเร็จ (ร่างยังอยู่ในเครื่อง)'}}
- setConn('bad',e.message);toast((layoutSaved?'บันทึกเลย์เอาต์แล้ว แต่เผยแพร่ไม่สำเร็จ: ':'บันทึกขึ้นเซิร์ฟเวอร์ไม่สำเร็จ: ')+e.message+(layoutSaved?'':' — ฉบับร่างยังอยู่ในเครื่อง'),{type:'bad',ms:7000})})
+ if(/เซิร์ฟเวอร์ไม่ส่งรหัสฟิลด์กลับมา/.test(String(e&&e.message||''))){b.remoteReady=false;b.saveBlocked=true}
+ setConn('bad',e.message);toast((layoutSaved?'บันทึกเลย์เอาต์แล้ว แต่เผยแพร่ไม่สำเร็จ: ':'บันทึกขึ้นเซิร์ฟเวอร์ไม่สำเร็จ: ')+e.message+(b.saveBlocked?' — ต้องปิดแล้วเปิดฟอร์มใหม่ก่อนลองอีกครั้ง':(layoutSaved?'':' — ฉบับร่างยังอยู่ในเครื่อง')),{type:'bad',ms:7000})})
 .then(function(){b.saving=false})}
 function addField(type,x,y,center){var b=S.b;if(!b.id)return;
 var d={title:{width:150,height:11,font_size:18,font_weight:'bold',text_align:'center',border_style:'none',value:'หัวข้อเรื่อง'},
