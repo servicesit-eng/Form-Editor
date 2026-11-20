@@ -754,8 +754,11 @@ QUEUE.push({id:uid('job_'),action:action,payload:payload,label:label||action,tri
 function pump(){while(NET.active<2){var job=QUEUE.filter(function(j){return j.next<=Date.now()})[0];if(!job)break;
 NET.active++;job.next=Date.now()+30000;paintConn();
 rawApi(job.action,job.payload,true).then(function(){QUEUE=QUEUE.filter(function(j){return j.id!==job.id});invalidate()})
-.catch(function(e){job.tries++;if(job.tries>=4){QUEUE=QUEUE.filter(function(j){return j.id!==job.id});toast('ส่ง '+job.label+' ไม่สำเร็จ: '+e.message,{type:'bad',ms:6000})}
-else job.next=Date.now()+Math.min(30000,2000*Math.pow(2,job.tries))})
+ .catch(function(e){var fkDelete=job.action==='deleteFormTemplate'&&/23503|foreign key|form_submissions_template_id_fkey/i.test(e&&e.message||'');
+ if(fkDelete){QUEUE=QUEUE.filter(function(j){return j.id!==job.id});invalidate('getFormTemplates');if(token)syncAdmin().catch(function(){});
+ toast('ลบฟอร์มไม่ได้ เพราะมีคำขอที่ผูกกับฟอร์มแล้ว — ให้ปิดรับกรอกแทน',{type:'warn',ms:7000});return}
+ job.tries++;if(job.tries>=4){QUEUE=QUEUE.filter(function(j){return j.id!==job.id});toast('ส่ง '+job.label+' ไม่สำเร็จ: '+e.message,{type:'bad',ms:6000})}
+ else job.next=Date.now()+Math.min(30000,2000*Math.pow(2,job.tries))})
 .then(function(){NET.active--;qSave();paintConn();setTimeout(pump,120)})}}
 function setConn(s,m){S.conn=s;S.connMsg=m||'';paintConn()}
 function paintConn(){var el=$('#connChip');if(!el)return;
@@ -1182,7 +1185,7 @@ $('#pubMain').onclick=function(e){var nav=e.target.closest('[data-pnav]');if(nav
 var f=e.target.closest('[data-fill]'),p=e.target.closest('[data-pview]'),sv=e.target.closest('[data-st-view]'),sp=e.target.closest('[data-st-print]');
 if(f)openFill(f.dataset.fill);else if(p)previewPub(p.dataset.pview);
 else if(sv)openStatusDoc(sv.dataset.stView,sv.dataset.cid);
-else if(sp)openStatusDoc(sv.dataset.stPrint,sp.dataset.cid)};
+else if(sp)openStatusDoc(sp.dataset.stPrint,sp.dataset.cid)};
 $('#pubMain').addEventListener('scroll',function(){var y=$('#pubMain').scrollTop,a=$('#heroArt');
 if(a&&S.pubView==='home'&&y<600)a.style.transform='translateY('+(y*.14)+'px)'},{passive:true});
 $('#pfSearch').oninput=debounce(function(e){S.pubQ=e.target.value;renderForms()},160);
@@ -1385,9 +1388,19 @@ t.created_at=t.updated_at=new Date().toISOString();t.fields=(t.fields||[]).map(f
 DB.deptMap[t.id]=t.department;DB.templates.unshift(t);persist();render();
 toast('คัดลอก '+t.name+' แล้ว',{type:'ok',undo:function(){DB.templates=DB.templates.filter(function(x){return x.id!==t.id});persist();render()}})}
 function delForm(id){var i=DB.templates.map(function(t){return t.id}).indexOf(id);if(i<0)return;
-var t=DB.templates[i];DB.templates.splice(i,1);delete DB.drafts[id];persist();render();
+var t=DB.templates[i];
+var finish=function(){DB.templates.splice(i,1);delete DB.drafts[id];persist();render();
 enqueue('deleteFormTemplate',{id:id},'ลบฟอร์ม');
-toast('ลบ '+t.name+' แล้ว',{type:'bad',undo:function(){DB.templates.splice(i,0,t);persist();render()}})}
+toast('ลบ '+t.name+' แล้ว',{type:'bad',undo:function(){DB.templates.splice(i,0,t);persist();render()}})};
+var hasLocal=DB.submissions.some(function(s){return s&&s.template_id===id});
+var block=function(){toast('ลบฟอร์มนี้ไม่ได้ เพราะมีคำขอที่ผูกกับฟอร์มแล้ว — ให้ปิดรับกรอกแทน',{type:'warn',ms:7000})};
+if(hasLocal){block();return}
+if(!isUuid(id)){finish();return}
+if(!token){toast('ต้องเข้าสู่ระบบ Admin ก่อนลบฟอร์ม',{type:'warn'});return}
+get('getFormSubmissions',{templateId:id},{force:true}).then(function(rows){
+if(!Array.isArray(rows)){toast('ยังตรวจสอบคำขอของฟอร์มไม่สำเร็จ จึงยังไม่ลบเพื่อป้องกันข้อมูลเสียหาย',{type:'warn',ms:7000});return}
+if(rows.length){block();return}
+finish()}).catch(function(e){toast('ยังตรวจสอบคำขอของฟอร์มไม่สำเร็จ จึงยังไม่ลบ: '+e.message,{type:'warn',ms:7000})})}
 function togglePub(id){var t=tpl(id);if(!t)return;
 if(!isUuid(id)){toast('ฟอร์มร่างต้องบันทึกขึ้นเซิร์ฟเวอร์ก่อนเผยแพร่',{type:'warn'});return}
 t.is_active=!t.is_active;t.updated_at=new Date().toISOString();persist();render();
