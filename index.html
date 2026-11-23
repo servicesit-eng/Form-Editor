@@ -411,6 +411,12 @@ textarea.fin{min-height:110px;resize:vertical}
 @keyframes pop{0%{transform:scale(.5);opacity:0}60%{transform:scale(1.08)}100%{transform:scale(1)}}
 .okh h2{font-size:24px;margin-bottom:6px}
 .refbox{display:inline-flex;align-items:center;gap:11px;font-family:var(--mo);font-size:26px;font-weight:600;letter-spacing:.16em;padding:12px 22px;border-radius:var(--r3);border:2px dashed var(--p4);background:var(--sf2);margin:16px 0}
+.nextsteps{max-width:720px;margin:22px auto 0;padding:18px 20px;text-align:left;border:1px solid var(--ln2);border-radius:var(--r3);background:linear-gradient(145deg,var(--sf2),var(--sf));box-shadow:var(--s1)}
+.nextsteps h3{display:flex;align-items:center;gap:8px;font-size:15px;color:var(--p6);margin-bottom:9px}
+.nextsteps ol{margin:0;padding-left:22px;color:var(--tx2);font-size:13px;line-height:1.75}
+.nextsteps li+li{margin-top:3px}
+.nextsteps strong{color:var(--tx)}
+.nextsteps .note{margin-top:10px;padding-top:9px;border-top:1px dashed var(--ln2);font-size:12px;color:var(--tx3)}
 .okact{display:flex;gap:9px;justify-content:center;margin-top:20px;flex-wrap:wrap}
 #probe{position:fixed;left:-99999px;top:0;width:210mm;pointer-events:none;opacity:0;z-index:-1}
 body.boot *,body.boot *:before,body.boot *:after{animation-duration:0ms!important;transition-duration:0ms!important}
@@ -540,6 +546,7 @@ html,body{margin:0;padding:0;font-family:'Noto Sans Thai','Sarabun',sans-serif;c
 <p id="okName" style="color:var(--tx2)"></p>
 <div class="refbox"><span id="okRef">------</span><button class="btn sm ic" id="okCopy"></button></div>
 <p style="font-size:12.5px;color:var(--tx3)">เก็บเลขอ้างอิงนี้ไว้ตรวจสอบสถานะและพิมพ์เอกสาร</p>
+<div class="nextsteps" role="status" aria-live="polite"><h3>📌 ขั้นตอนถัดไป</h3><ol><li><strong>พิมพ์เอกสาร</strong> จากปุ่ม “พิมพ์เอกสาร” หรือดาวน์โหลด HTML แล้วสั่งพิมพ์</li><li><strong>นำเอกสารให้หัวหน้าลงลายมือชื่อรับทราบ</strong> ในส่วนที่หน่วยงานกำหนด</li><li>เมื่อหัวหน้าลงนามแล้ว ให้ดำเนินการส่งต่อเอกสารตามขั้นตอนของหน่วยงาน</li></ol><div class="note">ระบบบันทึกคำขอแล้ว กรุณาเก็บเลขอ้างอิงไว้ใช้ติดตามสถานะภายหลัง</div></div>
 <div class="okact"><button class="btn pri" id="okPrint">🖨️ พิมพ์เอกสาร</button><button class="btn" id="okDl">📥 ดาวน์โหลด HTML</button><button class="btn" id="okStatus">🔍 ตรวจสอบคำขอ</button><button class="btn" id="okHome">🏠 กลับหน้าแรก</button></div></div></section>
 <section class="pv" id="pvStatus">
 <div class="psh"><h2>ตรวจสอบคำขอของฉัน</h2><p>กรอกเลขบัตรประชาชน 13 หลักที่ใช้ยื่นคำขอ</p></div>
@@ -593,7 +600,7 @@ html,body{margin:0;padding:0;font-family:'Noto Sans Thai','Sarabun',sans-serif;c
 <script>
 'use strict';
 var NL=String.fromCharCode(10),CR=String.fromCharCode(13),CRLF=CR+NL,TAB=String.fromCharCode(9),DQ=String.fromCharCode(34),BSL=String.fromCharCode(92),BOMC=String.fromCharCode(0xFEFF);
-var API='https://script.google.com/macros/s/AKfycbwlBmF7UCDh1b-DlGy6uzT_Vot2J0Z02EoLoCRm5XFjtra1nDzCBD-cBHJ_8Yl6hX6oig/exec';
+var API='https://script.google.com/macros/s/AKfycbx_6HLauzKZxlv8qg7OL7DnYU8mztWhLOhLxEeBK0M7GyXBmOK-3Vkq-QySFxUouSGelw/exec';
 var KEY='dontum.v8',TOK='dontum_token_v8',OBX='dontum.outbox.v8',CCH='dontum.cache.v8';
 var $=function(s,r){return (r||document).querySelector(s)};
 var $$=function(s,r){return Array.prototype.slice.call((r||document).querySelectorAll(s))};
