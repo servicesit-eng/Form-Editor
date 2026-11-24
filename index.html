@@ -411,12 +411,6 @@ textarea.fin{min-height:110px;resize:vertical}
 @keyframes pop{0%{transform:scale(.5);opacity:0}60%{transform:scale(1.08)}100%{transform:scale(1)}}
 .okh h2{font-size:24px;margin-bottom:6px}
 .refbox{display:inline-flex;align-items:center;gap:11px;font-family:var(--mo);font-size:26px;font-weight:600;letter-spacing:.16em;padding:12px 22px;border-radius:var(--r3);border:2px dashed var(--p4);background:var(--sf2);margin:16px 0}
-.nextsteps{max-width:720px;margin:22px auto 0;padding:18px 20px;text-align:left;border:1px solid var(--ln2);border-radius:var(--r3);background:linear-gradient(145deg,var(--sf2),var(--sf));box-shadow:var(--s1)}
-.nextsteps h3{display:flex;align-items:center;gap:8px;font-size:15px;color:var(--p6);margin-bottom:9px}
-.nextsteps ol{margin:0;padding-left:22px;color:var(--tx2);font-size:13px;line-height:1.75}
-.nextsteps li+li{margin-top:3px}
-.nextsteps strong{color:var(--tx)}
-.nextsteps .note{margin-top:10px;padding-top:9px;border-top:1px dashed var(--ln2);font-size:12px;color:var(--tx3)}
 .okact{display:flex;gap:9px;justify-content:center;margin-top:20px;flex-wrap:wrap}
 #probe{position:fixed;left:-99999px;top:0;width:210mm;pointer-events:none;opacity:0;z-index:-1}
 body.boot *,body.boot *:before,body.boot *:after{animation-duration:0ms!important;transition-duration:0ms!important}
@@ -546,7 +540,6 @@ html,body{margin:0;padding:0;font-family:'Noto Sans Thai','Sarabun',sans-serif;c
 <p id="okName" style="color:var(--tx2)"></p>
 <div class="refbox"><span id="okRef">------</span><button class="btn sm ic" id="okCopy"></button></div>
 <p style="font-size:12.5px;color:var(--tx3)">เก็บเลขอ้างอิงนี้ไว้ตรวจสอบสถานะและพิมพ์เอกสาร</p>
-<div class="nextsteps" role="status" aria-live="polite"><h3>📌 ขั้นตอนถัดไป</h3><ol><li><strong>พิมพ์เอกสาร</strong> จากปุ่ม “พิมพ์เอกสาร” หรือดาวน์โหลด HTML แล้วสั่งพิมพ์</li><li><strong>นำเอกสารให้หัวหน้าลงลายมือชื่อรับทราบ</strong> ในส่วนที่หน่วยงานกำหนด</li><li>เมื่อหัวหน้าลงนามแล้ว ให้ดำเนินการส่งต่อเอกสารตามขั้นตอนของหน่วยงาน</li></ol><div class="note">ระบบบันทึกคำขอแล้ว กรุณาเก็บเลขอ้างอิงไว้ใช้ติดตามสถานะภายหลัง</div></div>
 <div class="okact"><button class="btn pri" id="okPrint">🖨️ พิมพ์เอกสาร</button><button class="btn" id="okDl">📥 ดาวน์โหลด HTML</button><button class="btn" id="okStatus">🔍 ตรวจสอบคำขอ</button><button class="btn" id="okHome">🏠 กลับหน้าแรก</button></div></div></section>
 <section class="pv" id="pvStatus">
 <div class="psh"><h2>ตรวจสอบคำขอของฉัน</h2><p>กรอกเลขบัตรประชาชน 13 หลักที่ใช้ยื่นคำขอ</p></div>
@@ -763,7 +756,7 @@ function enqueue(action,payload,label){if(!token)return;try{guard(payload)}catch
 QUEUE.push({id:uid('job_'),action:action,payload:payload,label:label||action,tries:0,next:0});qSave();paintConn();pump()}
 function pump(){while(NET.active<2){var job=QUEUE.filter(function(j){return j.next<=Date.now()})[0];if(!job)break;
 NET.active++;job.next=Date.now()+30000;paintConn();
-rawApi(job.action,job.payload,true).then(function(){QUEUE=QUEUE.filter(function(j){return j.id!==job.id});invalidate()})
+ rawApi(job.action,job.payload,true).then(function(){if(job.action==='submitFormAnonymous')showSaveNextStepModal();QUEUE=QUEUE.filter(function(j){return j.id!==job.id});invalidate()})
  .catch(function(e){var fkDelete=job.action==='deleteFormTemplate'&&/23503|foreign key|form_submissions_template_id_fkey/i.test(e&&e.message||'');
  if(fkDelete){QUEUE=QUEUE.filter(function(j){return j.id!==job.id});invalidate('getFormTemplates');if(token)syncAdmin().catch(function(){});
  toast('ลบฟอร์มไม่ได้ เพราะมีคำขอที่ผูกกับฟอร์มแล้ว — ให้ปิดรับกรอกแทน',{type:'warn',ms:7000});return}
@@ -1016,6 +1009,7 @@ toast('ส่งออก '+name+' แล้ว',{type:'ok'})}
 function modal(title,body,foot){$('#modalTitle').textContent=title;$('#modalBody').innerHTML=body;$('#modalFoot').innerHTML=foot||'';$('#modalScrim').hidden=false;
 $$('[data-close-modal]',$('#modalScrim')).forEach(function(b){b.onclick=closeModal})}
 function closeModal(){$('#modalScrim').hidden=true}
+function showSaveNextStepModal(){modal('ขั้นตอนถัดไป','<p>รบกวนปริ้นเอกสารเพื่อนำส่งฝ่ายบุคคลเป็นลำดับถัดไป</p>','<button class="btn pri" data-close-modal>รับทราบ</button>')}
 $('#modalScrim').onclick=function(e){if(e.target.id==='modalScrim')closeModal()};
 $('#helpScrim').onclick=function(e){if(e.target.id==='helpScrim')$('#helpScrim').hidden=true};
 function openDrawer(kicker,title,body,foot){$('#drawerKicker').textContent=kicker;$('#drawerTitle').textContent=title;
@@ -1176,7 +1170,7 @@ rawApi('submitFormAnonymous',{templateId:S.fill.tpl,formData:data,citizenId:cid,
 .then(function(res){var row=DB.submissions.filter(function(x){return x.id===lid})[0];
 if(row&&res){row.id=String(res.id||lid).toLowerCase();row.referenceId=res.referenceId||rid;delete row._pending;
 S.lastSub.id=row.id;S.lastSub.referenceId=row.referenceId;$('#okRef').textContent=row.referenceId;persist();paintCounts()}
-invalidate('getFormSubmissions');toast('ส่งคำขอเข้าเซิร์ฟเวอร์แล้ว',{type:'ok'})})
+ invalidate('getFormSubmissions');toast('ส่งคำขอเข้าเซิร์ฟเวอร์แล้ว',{type:'ok'});showSaveNextStepModal()})
 .catch(function(er){setConn('bad',er.message);toast('ส่งไม่สำเร็จ: '+er.message+' — จะลองใหม่อัตโนมัติ',{type:'bad',ms:7000});
 QUEUE.push({id:uid('job_'),action:'submitFormAnonymous',payload:{templateId:S.fill.tpl,formData:data,citizenId:cid,fullName:name},label:'ส่งคำขอ #'+rid,tries:0,next:Date.now()+3000});
 qSave();paintConn();pump()})
@@ -1874,7 +1868,7 @@ if(S.sec==='builder'&&S.b.id===t.id){repaint();renderControls();paintBadges()}
 if(!auto&&stillDeleted.length)toast('บันทึกเลย์เอาต์แล้ว เหลือรายการซ้ำที่ต้องล้างอีก '+stillDeleted.length+' รายการ — กดบันทึกซ้ำได้',{type:'warn',ms:7000});
 if(!auto&&isActive)return rawApi('publishFormTemplate',{id:tid,isActive:isActive},true,{timeout:30000});return null})
 .then(function(){var st=$('#saveState');if(!b.dirty&&st){st.className='ss saved';st.innerHTML=ic('check',13)+'บันทึกแล้ว · ผู้ใช้ใช้งานได้'}
-if(!auto&&!b.dirty)toast('บันทึก '+t.name+' แล้ว — ผู้ใช้ใช้งานได้ทันที',{type:'ok'});return null})
+ if(!auto&&!b.dirty){toast('บันทึก '+t.name+' แล้ว — ผู้ใช้ใช้งานได้ทันที',{type:'ok'});showSaveNextStepModal()}return null})
 .catch(function(e){var s2=$('#saveState'),msg=String(e&&e.message||e);
 if(layoutSaved&&!retryAfter){b.dirty=false;b.serverUpdatedAt=t.updated_at;delete DB.drafts[oldId];delete DB.drafts[tid];persist();if(s2){s2.className='ss saved';s2.innerHTML=ic('warn',13)+'บันทึกแล้ว แต่เผยแพร่ไม่สำเร็จ'} }
 else{b.dirty=true;b.serverUpdatedAt=layoutSaved?t.updated_at:serverBase;writeDraftNow();if(s2){s2.className='ss dirty';s2.innerHTML=ic('warn',13)+'ส่งไม่สำเร็จ (ร่างยังอยู่ในเครื่อง)'}}
